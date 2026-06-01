@@ -1,0 +1,6 @@
+{
+  "name": "RBA Fretes Digital",
+  "description": "Sistema avançado para digitalização e gestão de ordens de frete da RBA Transporte e Logística.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

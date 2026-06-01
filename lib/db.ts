@@ -1,0 +1,1355 @@
+import fs from 'fs';
+import path from 'path';
+import { supabaseServer, isSupabaseServerConfigured } from './supabase/server';
+
+// Define DB Types based on PRD
+
+export interface Profile {
+  id: string;
+  user_id: string;
+  name: string;
+  email: string;
+  role: 'Administrador' | 'Operacional' | 'Financeiro' | 'Consulta/Auditoria';
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Driver {
+  id: string;
+  name: string;
+  cpf: string;
+  rg: string;
+  phone: string;
+  bank_name: string;
+  bank_agency: string;
+  bank_account: string;
+  pix_key: string;
+  beneficiary_name: string;
+  beneficiary_document: string;
+  status: 'Ativo' | 'Inativo' | 'Bloqueado';
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Vehicle {
+  id: string;
+  tractor_plate: string;
+  trailer_plate: string;
+  year: number;
+  model: string;
+  owner_name: string;
+  owner_document: string;
+  antt: string;
+  renavam: string;
+  uf: string;
+  status: 'Ativo' | 'Inativo' | 'Bloqueado';
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Client {
+  id: string;
+  name: string;
+  document: string;
+  phone: string;
+  email: string;
+  address: string;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FreightOrder {
+  id: string;
+  order_number: string;
+  driver_id: string;
+  vehicle_id: string;
+  client_id: string;
+  freight_value: number;
+  advance_value: number;
+  cash_value: number;
+  balance_value: number;
+  loading_expense: number;
+  unloading_expense: number;
+  other_expenses: number;
+  total_expenses: number;
+  net_value: number;
+  bank_data_snapshot: {
+    bank_name: string;
+    bank_agency: string;
+    bank_account: string;
+    pix_key: string;
+    beneficiary_name: string;
+  };
+  buonny_status: 'Aprovado' | 'Em Análise' | 'Reprovado';
+  pancary_status: 'Aprovado' | 'Em Análise' | 'Reprovado';
+  cte_number: string;
+  shipment_release_status: 'Liberado' | 'Pendente' | 'Bloqueado';
+  shipment_release_limit: 'Até 100.000' | 'Até 200.000' | 'Até 300.000' | 'Até 400.000' | 'Até 500.000';
+  origin: string;
+  destination: string;
+  delivery_date: string;
+  responsible_name: string;
+  signature_url: string;
+  status: 'Rascunho' | 'Em Análise' | 'Aprovado' | 'Liberado para Embarque' | 'Em Viagem' | 'Entregue' | 'Pago' | 'Cancelado';
+  notes: string;
+  created_by: string;
+  approved_by: string;
+  approved_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FreightPayment {
+  id: string;
+  freight_order_id: string;
+  type: string; // e.g. "Adiantamento", "Saldo", "À Vista"
+  amount: number;
+  payment_date: string;
+  payment_method: string;
+  proof_url: string;
+  status: 'Pendente' | 'Pago' | 'Cancelado';
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FreightOrderAttachment {
+  id: string;
+  freight_order_id: string;
+  file_name: string;
+  file_url: string;
+  file_type: string;
+  uploaded_by: string;
+  created_at: string;
+}
+
+export interface AuditLog {
+  id: string;
+  user_id: string;
+  user_name: string;
+  action: string;
+  entity: string;
+  entity_id: string;
+  old_data: string;
+  new_data: string;
+  created_at: string;
+}
+
+export interface AppSetting {
+  id: string;
+  key: string;
+  value: string;
+  updated_at: string;
+}
+
+// Memory database loaded from file
+interface Database {
+  profiles: Profile[];
+  drivers: Driver[];
+  vehicles: Vehicle[];
+  clients: Client[];
+  freight_orders: FreightOrder[];
+  freight_payments: FreightPayment[];
+  freight_order_attachments: FreightOrderAttachment[];
+  audit_logs: AuditLog[];
+  app_settings: AppSetting[];
+}
+
+const DB_PATH = path.join(process.cwd(), 'rba_database.json');
+
+// Initial seed data
+const initialDB: Database = {
+  profiles: [
+    {
+      id: "prof_1",
+      user_id: "00000000-0000-0000-0000-000000000001",
+      name: "Morgan Ribeiro (Admin)",
+      email: "admin@rba.com",
+      role: "Administrador",
+      active: true,
+      created_at: "2026-05-20T10:00:00Z",
+      updated_at: "2026-05-20T10:00:00Z"
+    },
+    {
+      id: "prof_2",
+      user_id: "00000000-0000-0000-0000-000000000002",
+      name: "Ana Costa",
+      email: "operacional@rba.com",
+      role: "Operacional",
+      active: true,
+      created_at: "2026-05-21T08:30:00Z",
+      updated_at: "2026-05-21T08:30:00Z"
+    },
+    {
+      id: "prof_3",
+      user_id: "00000000-0000-0000-0000-000000000003",
+      name: "Bruno Silva",
+      email: "financeiro@rba.com",
+      role: "Financeiro",
+      active: true,
+      created_at: "2026-05-21T09:00:00Z",
+      updated_at: "2026-05-21T09:00:00Z"
+    },
+    {
+      id: "prof_4",
+      user_id: "00000000-0000-0000-0000-000000000004",
+      name: "Carlos Santos",
+      email: "auditor@rba.com",
+      role: "Consulta/Auditoria",
+      active: true,
+      created_at: "2026-05-22T14:15:00Z",
+      updated_at: "2026-05-22T14:15:00Z"
+    }
+  ],
+  drivers: [
+    {
+      id: "drv_1",
+      name: "José Roberto de Almeida",
+      cpf: "12345678909",
+      rg: "12345678X",
+      phone: "11988887777",
+      bank_name: "Banco do Brasil",
+      bank_agency: "1234",
+      bank_account: "54321-0",
+      pix_key: "12345678909",
+      beneficiary_name: "José Roberto de Almeida",
+      beneficiary_document: "12345678909",
+      status: "Ativo",
+      notes: "Motorista de confiança, carreta graneleiro.",
+      created_at: "2026-05-20T11:00:00Z",
+      updated_at: "2026-05-20T11:00:00Z"
+    },
+    {
+      id: "drv_2",
+      name: "Marcos Vinicius Santos",
+      cpf: "98765432101",
+      rg: "987654321",
+      phone: "31977776666",
+      bank_name: "Banco Itaú",
+      bank_agency: "0432",
+      bank_account: "10987-6",
+      pix_key: "marcos@gmail.com",
+      beneficiary_name: "Marcos Vinicius Santos",
+      beneficiary_document: "98765432101",
+      status: "Ativo",
+      notes: "Sempre pontual na rota São Paulo x Salvador.",
+      created_at: "2026-05-21T11:15:00Z",
+      updated_at: "2026-05-21T11:15:00Z"
+    },
+    {
+      id: "drv_3",
+      name: "Antônio Ferreira",
+      cpf: "45678912345",
+      rg: "4567891",
+      phone: "41966665555",
+      bank_name: "Banco Bradesco",
+      bank_agency: "0101",
+      bank_account: "89898-9",
+      pix_key: "45678912345",
+      beneficiary_name: "Maria Ferreira (Esposa)",
+      beneficiary_document: "98754321098",
+      status: "Ativo",
+      notes: "Pix em nome da esposa conforme autorização.",
+      created_at: "2026-05-22T13:40:00Z",
+      updated_at: "2026-05-22T13:40:00Z"
+    },
+    {
+      id: "drv_4",
+      name: "Claudio de Souza",
+      cpf: "36925814725",
+      rg: "9912831",
+      phone: "21955554444",
+      bank_name: "Nubank",
+      bank_agency: "0001",
+      bank_account: "123123-1",
+      pix_key: "claudio@outlook.com",
+      beneficiary_name: "Claudio de Souza",
+      beneficiary_document: "36925814725",
+      status: "Bloqueado",
+      notes: "Bloqueado temporariamente por sinistro anterior.",
+      created_at: "2026-05-23T15:20:00Z",
+      updated_at: "2026-05-23T15:20:00Z"
+    }
+  ],
+  vehicles: [
+    {
+      id: "vhc_1",
+      tractor_plate: "ABC1D23",
+      trailer_plate: "XYZ9W87",
+      year: 2021,
+      model: "Volvo FH 540",
+      owner_name: "José Roberto de Almeida",
+      owner_document: "12345678909",
+      antt: "123456789",
+      renavam: "01234567890",
+      uf: "SP",
+      status: "Ativo",
+      notes: "Cavalo e carreta em perfeito estado.",
+      created_at: "2026-05-20T11:05:00Z",
+      updated_at: "2026-05-20T11:05:00Z"
+    },
+    {
+      id: "vhc_2",
+      tractor_plate: "MNO4X56",
+      trailer_plate: "PQR1A23",
+      year: 2019,
+      model: "Scania R 450",
+      owner_name: "RBA Transportes Ltda",
+      owner_document: "01.234.567/0001-89",
+      antt: "987654321",
+      renavam: "09876543211",
+      uf: "MG",
+      status: "Ativo",
+      notes: "Frota própria RBA.",
+      created_at: "2026-05-21T11:20:00Z",
+      updated_at: "2026-05-21T11:20:00Z"
+    },
+    {
+      id: "vhc_3",
+      tractor_plate: "DEF5G67",
+      trailer_plate: "JKL3M45",
+      year: 2018,
+      model: "Mercedes-Benz Actros",
+      owner_name: "Transportes Rapido Sul",
+      owner_document: "12.345.678/0001-90",
+      antt: "456123789",
+      renavam: "44455566677",
+      uf: "PR",
+      status: "Ativo",
+      notes: "Agenciado fixo.",
+      created_at: "2026-05-22T13:45:00Z",
+      updated_at: "2026-05-22T13:45:00Z"
+    }
+  ],
+  clients: [
+    {
+      id: "cli_1",
+      name: "Ambev S.A.",
+      document: "07.526.557/0001-85",
+      phone: "1130001000",
+      email: "logistica@ambev.com.br",
+      address: "Av. Renato Paes de Barros, 1017 - Itaim Bibi, São Paulo - SP",
+      notes: "Faturamento quinzenal. Exige seguro pancary cadastrado.",
+      created_at: "2026-05-20T11:10:00Z",
+      updated_at: "2026-05-20T11:10:00Z"
+    },
+    {
+      id: "cli_2",
+      name: "Klabin S.A.",
+      document: "89.637.492/0001-10",
+      phone: "1138244000",
+      email: "fretes@klabin.com.br",
+      address: "Av. Brigadeiro Faria Lima, 4400 - São Paulo - SP",
+      notes: "Cargas de bobina de papel. Exige lona limpa e cantoneiras.",
+      created_at: "2026-05-21T11:30:00Z",
+      updated_at: "2026-05-21T11:30:00Z"
+    },
+    {
+      id: "cli_3",
+      name: "Cargill Alimentos",
+      document: "60.498.706/0001-52",
+      phone: "1935431100",
+      email: "transportes@cargill.com",
+      address: "Rodovia Anhanguera, km 120 - Americana - SP",
+      notes: "Grãos e cereais. Peso balança origem vs destino rigido.",
+      created_at: "2026-05-22T13:50:00Z",
+      updated_at: "2026-05-22T13:50:00Z"
+    }
+  ],
+  freight_orders: [
+    {
+      id: "ord_1",
+      order_number: "RBA-2026-0001",
+      driver_id: "drv_1",
+      vehicle_id: "vhc_1",
+      client_id: "cli_1",
+      freight_value: 12000.00,
+      advance_value: 5000.00,
+      cash_value: 2000.00,
+      balance_value: 5000.00,
+      loading_expense: 150.00,
+      unloading_expense: 200.00,
+      other_expenses: 50.00,
+      total_expenses: 400.00,
+      net_value: 11600.00,
+      bank_data_snapshot: {
+        bank_name: "Banco do Brasil",
+        bank_agency: "1234",
+        bank_account: "54321-0",
+        pix_key: "12345678909",
+        beneficiary_name: "José Roberto de Almeida"
+      },
+      buonny_status: "Aprovado",
+      pancary_status: "Aprovado",
+      cte_number: "CTE-10293",
+      shipment_release_status: "Liberado",
+      shipment_release_limit: "Até 100.000",
+      origin: "Jundiaí - SP",
+      destination: "Cajamar - SP",
+      delivery_date: "2026-06-03",
+      responsible_name: "Ana Costa",
+      signature_url: "Assinado Digitalmente por Ana Costa",
+      status: "Liberado para Embarque",
+      notes: "Carregamento de bebidas Ambev. Liberação autorizada Buonny ativa.",
+      created_by: "Ana Costa",
+      approved_by: "Morgan Ribeiro (Admin)",
+      approved_at: "2026-05-30T14:00:00Z",
+      created_at: "2026-05-30T10:00:00Z",
+      updated_at: "2026-05-30T14:00:00Z"
+    },
+    {
+      id: "ord_2",
+      order_number: "RBA-2026-0002",
+      driver_id: "drv_2",
+      vehicle_id: "vhc_2",
+      client_id: "cli_2",
+      freight_value: 8500.00,
+      advance_value: 4000.00,
+      cash_value: 1000.00,
+      balance_value: 3500.00,
+      loading_expense: 100.00,
+      unloading_expense: 150.00,
+      other_expenses: 0.00,
+      total_expenses: 250.00,
+      net_value: 8250.00,
+      bank_data_snapshot: {
+        bank_name: "Banco Itaú",
+        bank_agency: "0432",
+        bank_account: "10987-6",
+        pix_key: "marcos@gmail.com",
+        beneficiary_name: "Marcos Vinicius Santos"
+      },
+      buonny_status: "Aprovado",
+      pancary_status: "Em Análise",
+      cte_number: "CTE-12831",
+      shipment_release_status: "Pendente",
+      shipment_release_limit: "Até 200.000",
+      origin: "Telêmaco Borba - PR",
+      destination: "Mogi das Cruzes - SP",
+      delivery_date: "2026-06-05",
+      responsible_name: "Ana Costa",
+      signature_url: "",
+      status: "Em Análise",
+      notes: "Pancary em análise, aguardando liberação do sinistro.",
+      created_by: "Ana Costa",
+      approved_by: "",
+      approved_at: "",
+      created_at: "2026-05-31T09:30:00Z",
+      updated_at: "2026-05-31T09:30:00Z"
+    }
+  ],
+  freight_payments: [
+    {
+      id: "pay_1",
+      freight_order_id: "ord_1",
+      type: "Adiantamento",
+      amount: 5000.00,
+      payment_date: "2026-05-30",
+      payment_method: "Pix",
+      proof_url: "https://picsum.photos/seed/comp1/600/400",
+      status: "Pago",
+      notes: "Adiantamento liberado pelo financeiro.",
+      created_at: "2026-05-30T15:00:00Z",
+      updated_at: "2026-05-30T15:00:00Z"
+    },
+    {
+      id: "pay_2",
+      freight_order_id: "ord_1",
+      type: "Taxa de Carga",
+      amount: 150.00,
+      payment_date: "2026-05-30",
+      payment_method: "Dinheiro",
+      proof_url: "",
+      status: "Pago",
+      notes: "Pago em mãos na portaria.",
+      created_at: "2026-05-30T15:05:00Z",
+      updated_at: "2026-05-30T15:05:00Z"
+    }
+  ],
+  freight_order_attachments: [
+    {
+      id: "att_1",
+      freight_order_id: "ord_1",
+      file_name: "CTE-10293.pdf",
+      file_url: "https://picsum.photos/seed/cte/600/400",
+      file_type: "application/pdf",
+      uploaded_by: "Ana Costa",
+      created_at: "2026-05-30T11:00:00Z"
+    },
+    {
+      id: "att_2",
+      freight_order_id: "ord_1",
+      file_name: "doc_veiculo.pdf",
+      file_url: "https://picsum.photos/seed/veiculo/600/400",
+      file_type: "application/pdf",
+      uploaded_by: "Ana Costa",
+      created_at: "2026-05-30T11:05:00Z"
+    }
+  ],
+  audit_logs: [
+    {
+      id: "log_1",
+      user_id: "user_operacional",
+      user_name: "Ana Costa",
+      action: "Criar",
+      entity: "Ordem de Frete",
+      entity_id: "ord_1",
+      old_data: "",
+      new_data: "Criação da primeira ordem RBA-2026-0001",
+      created_at: "2026-05-30T10:00:00Z"
+    },
+    {
+      id: "log_2",
+      user_id: "user_admin",
+      user_name: "Morgan Ribeiro (Admin)",
+      action: "Aprovar",
+      entity: "Ordem de Frete",
+      entity_id: "ord_1",
+      old_data: "Status: Em Análise",
+      new_data: "Status: Liberado para Embarque",
+      created_at: "2026-05-30T14:00:00Z"
+    }
+  ],
+  app_settings: [
+    {
+      id: "set_1",
+      key: "company_name",
+      value: "RBA Transporte e Logística",
+      updated_at: "2026-05-20T10:00:00Z"
+    },
+    {
+      id: "set_2",
+      key: "allow_negative_balance_override",
+      value: "true",
+      updated_at: "2026-05-20T10:00:00Z"
+    }
+  ]
+};
+
+export class RBADatabase {
+  private static load(): Database {
+    if (!fs.existsSync(DB_PATH)) {
+      this.save(initialDB);
+      return initialDB;
+    }
+    try {
+      const content = fs.readFileSync(DB_PATH, 'utf-8');
+      return JSON.parse(content);
+    } catch (e) {
+      this.save(initialDB);
+      return initialDB;
+    }
+  }
+
+  private static save(db: Database) {
+    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf-8');
+  }
+
+  // Auditing Helper
+  public static async addAuditLog(userId: string, userName: string, action: string, entity: string, entityId: string, oldData: any, newData: any) {
+    if (isSupabaseServerConfigured) {
+      const { error } = await supabaseServer
+        .from('audit_logs')
+        .insert({
+          id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          user_id: userId,
+          user_name: userName,
+          action,
+          entity,
+          entity_id: entityId,
+          old_data: JSON.stringify(oldData || {}),
+          new_data: JSON.stringify(newData || {}),
+          created_at: new Date().toISOString()
+        });
+      if (!error) return;
+    }
+
+    const db = this.load();
+    const newLog: AuditLog = {
+      id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      user_id: userId,
+      user_name: userName,
+      action,
+      entity,
+      entity_id: entityId,
+      old_data: JSON.stringify(oldData || {}),
+      new_data: JSON.stringify(newData || {}),
+      created_at: new Date().toISOString()
+    };
+    db.audit_logs.unshift(newLog);
+    this.save(db);
+  }
+
+  // Settings
+  public static async getSettings() {
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseServer.from('app_settings').select('*');
+      if (!error && data) return data as AppSetting[];
+    }
+    return this.load().app_settings;
+  }
+
+  // Profiles and user management
+  public static async getProfiles() {
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseServer.from('profiles').select('*');
+      if (!error && data) return data as Profile[];
+    }
+    return this.load().profiles;
+  }
+
+  public static async updateProfileRole(id: string, role: Profile['role'], active: boolean, operatorId: string, operatorName: string) {
+    if (isSupabaseServerConfigured) {
+      const { data: oldValArray } = await supabaseServer.from('profiles').select('*').eq('id', id).limit(1);
+      const oldVal = (oldValArray && oldValArray[0]) || null;
+
+      const { data, error } = await supabaseServer
+        .from('profiles')
+        .update({ role, active, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (!error && data) {
+        await this.addAuditLog(operatorId, operatorName, "Atualizar Perfil", "Perfil de Usuário", id, oldVal, data);
+        return data as Profile;
+      }
+    }
+
+    const db = this.load();
+    const idx = db.profiles.findIndex(p => p.id === id);
+    if (idx !== -1) {
+      const oldVal = { ...db.profiles[idx] };
+      db.profiles[idx].role = role;
+      db.profiles[idx].active = active;
+      db.profiles[idx].updated_at = new Date().toISOString();
+      await this.addAuditLog(operatorId, operatorName, "Atualizar Perfil", "Perfil de Usuário", id, oldVal, db.profiles[idx]);
+      this.save(db);
+      return db.profiles[idx];
+    }
+    throw new Error("Perfil não encontrado");
+  }
+
+  public static async getProfileByEmail(email: string) {
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseServer.from('profiles').select('*').eq('email', email).limit(1);
+      if (!error && data && data.length > 0) return data[0] as Profile;
+    }
+    return this.load().profiles.find(p => p.email.toLowerCase() === email.toLowerCase());
+  }
+
+  // Drivers CRUD
+  public static async getDrivers() {
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseServer.from('drivers').select('*');
+      if (!error && data) return data as Driver[];
+    }
+    return this.load().drivers;
+  }
+
+  public static async getDriverById(id: string) {
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseServer.from('drivers').select('*').eq('id', id).limit(1);
+      if (!error && data && data.length > 0) return data[0] as Driver;
+    }
+    return this.load().drivers.find(d => d.id === id);
+  }
+
+  public static async createDriver(driverData: Omit<Driver, 'id' | 'created_at' | 'updated_at'>, operatorId: string, operatorName: string) {
+    const newId = `drv_${Date.now()}`;
+    const cleanPayload = {
+      ...driverData,
+      id: newId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseServer
+        .from('drivers')
+        .insert(cleanPayload)
+        .select()
+        .single();
+      if (!error && data) {
+        await this.addAuditLog(operatorId, operatorName, "Criar Motorista", "Motorista", newId, null, data);
+        return data as Driver;
+      }
+    }
+
+    const db = this.load();
+    const newDriver: Driver = cleanPayload as Driver;
+    db.drivers.push(newDriver);
+    await this.addAuditLog(operatorId, operatorName, "Criar Motorista", "Motorista", newDriver.id, null, newDriver);
+    this.save(db);
+    return newDriver;
+  }
+
+  public static async updateDriver(id: string, driverData: Partial<Driver>, operatorId: string, operatorName: string) {
+    if (isSupabaseServerConfigured) {
+      const { data: oldValArray } = await supabaseServer.from('drivers').select('*').eq('id', id).limit(1);
+      const oldVal = (oldValArray && oldValArray[0]) || null;
+
+      const { data, error } = await supabaseServer
+        .from('drivers')
+        .update({ ...driverData, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (!error && data) {
+        await this.addAuditLog(operatorId, operatorName, "Editar Motorista", "Motorista", id, oldVal, data);
+        return data as Driver;
+      }
+    }
+
+    const db = this.load();
+    const idx = db.drivers.findIndex(d => d.id === id);
+    if (idx !== -1) {
+      const oldVal = { ...db.drivers[idx] };
+      db.drivers[idx] = {
+        ...db.drivers[idx],
+        ...driverData,
+        updated_at: new Date().toISOString()
+      };
+      await this.addAuditLog(operatorId, operatorName, "Editar Motorista", "Motorista", id, oldVal, db.drivers[idx]);
+      this.save(db);
+      return db.drivers[idx];
+    }
+    throw new Error("Motorista não encontrado");
+  }
+
+  public static async deleteDriver(id: string, operatorId: string, operatorName: string) {
+    if (isSupabaseServerConfigured) {
+      const { data: oldValArray } = await supabaseServer.from('drivers').select('*').eq('id', id).limit(1);
+      const oldVal = (oldValArray && oldValArray[0]) || null;
+
+      const { error } = await supabaseServer.from('drivers').delete().eq('id', id);
+      if (!error) {
+        await this.addAuditLog(operatorId, operatorName, "Excluir Motorista", "Motorista", id, oldVal, null);
+        return true;
+      }
+    }
+
+    const db = this.load();
+    const idx = db.drivers.findIndex(d => d.id === id);
+    if (idx !== -1) {
+      const oldVal = db.drivers[idx];
+      db.drivers.splice(idx, 1);
+      await this.addAuditLog(operatorId, operatorName, "Excluir Motorista", "Motorista", id, oldVal, null);
+      this.save(db);
+      return true;
+    }
+    return false;
+  }
+
+  // Vehicles CRUD
+  public static async getVehicles() {
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseServer.from('vehicles').select('*');
+      if (!error && data) return data as Vehicle[];
+    }
+    return this.load().vehicles;
+  }
+
+  public static async getVehicleById(id: string) {
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseServer.from('vehicles').select('*').eq('id', id).limit(1);
+      if (!error && data && data.length > 0) return data[0] as Vehicle;
+    }
+    return this.load().vehicles.find(v => v.id === id);
+  }
+
+  public static async createVehicle(vData: Omit<Vehicle, 'id' | 'created_at' | 'updated_at'>, operatorId: string, operatorName: string) {
+    const newId = `vhc_${Date.now()}`;
+    const cleanPayload = {
+      ...vData,
+      id: newId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseServer
+        .from('vehicles')
+        .insert(cleanPayload)
+        .select()
+        .single();
+      if (!error && data) {
+        await this.addAuditLog(operatorId, operatorName, "Criar Veículo", "Veículo", newId, null, data);
+        return data as Vehicle;
+      }
+    }
+
+    const db = this.load();
+    const newVehicle: Vehicle = cleanPayload as Vehicle;
+    db.vehicles.push(newVehicle);
+    await this.addAuditLog(operatorId, operatorName, "Criar Veículo", "Veículo", newVehicle.id, null, newVehicle);
+    this.save(db);
+    return newVehicle;
+  }
+
+  public static async updateVehicle(id: string, vData: Partial<Vehicle>, operatorId: string, operatorName: string) {
+    if (isSupabaseServerConfigured) {
+      const { data: oldValArray } = await supabaseServer.from('vehicles').select('*').eq('id', id).limit(1);
+      const oldVal = (oldValArray && oldValArray[0]) || null;
+
+      const { data, error } = await supabaseServer
+        .from('vehicles')
+        .update({ ...vData, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (!error && data) {
+        await this.addAuditLog(operatorId, operatorName, "Editar Veículo", "Veículo", id, oldVal, data);
+        return data as Vehicle;
+      }
+    }
+
+    const db = this.load();
+    const idx = db.vehicles.findIndex(v => v.id === id);
+    if (idx !== -1) {
+      const oldVal = { ...db.vehicles[idx] };
+      db.vehicles[idx] = {
+        ...db.vehicles[idx],
+        ...vData,
+        updated_at: new Date().toISOString()
+      };
+      await this.addAuditLog(operatorId, operatorName, "Editar Veículo", "Veículo", id, oldVal, db.vehicles[idx]);
+      this.save(db);
+      return db.vehicles[idx];
+    }
+    throw new Error("Veículo não encontrado");
+  }
+
+  public static async deleteVehicle(id: string, operatorId: string, operatorName: string) {
+    if (isSupabaseServerConfigured) {
+      const { data: oldValArray } = await supabaseServer.from('vehicles').select('*').eq('id', id).limit(1);
+      const oldVal = (oldValArray && oldValArray[0]) || null;
+
+      const { error } = await supabaseServer.from('vehicles').delete().eq('id', id);
+      if (!error) {
+        await this.addAuditLog(operatorId, operatorName, "Excluir Veículo", "Veículo", id, oldVal, null);
+        return true;
+      }
+    }
+
+    const db = this.load();
+    const idx = db.vehicles.findIndex(v => v.id === id);
+    if (idx !== -1) {
+      const oldVal = db.vehicles[idx];
+      db.vehicles.splice(idx, 1);
+      await this.addAuditLog(operatorId, operatorName, "Excluir Veículo", "Veículo", id, oldVal, null);
+      this.save(db);
+      return true;
+    }
+    return false;
+  }
+
+  // Clients CRUD
+  public static async getClients() {
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseServer.from('clients').select('*');
+      if (!error && data) return data as Client[];
+    }
+    return this.load().clients;
+  }
+
+  public static async getClientById(id: string) {
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseServer.from('clients').select('*').eq('id', id).limit(1);
+      if (!error && data && data.length > 0) return data[0] as Client;
+    }
+    return this.load().clients.find(c => c.id === id);
+  }
+
+  public static async createClient(cData: Omit<Client, 'id' | 'created_at' | 'updated_at'>, operatorId: string, operatorName: string) {
+    const newId = `cli_${Date.now()}`;
+    const cleanPayload = {
+      ...cData,
+      id: newId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseServer
+        .from('clients')
+        .insert(cleanPayload)
+        .select()
+        .single();
+      if (!error && data) {
+        await this.addAuditLog(operatorId, operatorName, "Criar Cliente", "Cliente", newId, null, data);
+        return data as Client;
+      }
+    }
+
+    const db = this.load();
+    const newClient: Client = cleanPayload as Client;
+    db.clients.push(newClient);
+    await this.addAuditLog(operatorId, operatorName, "Criar Cliente", "Cliente", newClient.id, null, newClient);
+    this.save(db);
+    return newClient;
+  }
+
+  public static async updateClient(id: string, cData: Partial<Client>, operatorId: string, operatorName: string) {
+    if (isSupabaseServerConfigured) {
+      const { data: oldValArray } = await supabaseServer.from('clients').select('*').eq('id', id).limit(1);
+      const oldVal = (oldValArray && oldValArray[0]) || null;
+
+      const { data, error } = await supabaseServer
+        .from('clients')
+        .update({ ...cData, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (!error && data) {
+         await this.addAuditLog(operatorId, operatorName, "Editar Cliente", "Cliente", id, oldVal, data);
+         return data as Client;
+      }
+    }
+
+    const db = this.load();
+    const idx = db.clients.findIndex(c => c.id === id);
+    if (idx !== -1) {
+      const oldVal = { ...db.clients[idx] };
+      db.clients[idx] = {
+        ...db.clients[idx],
+        ...cData,
+        updated_at: new Date().toISOString()
+      };
+      await this.addAuditLog(operatorId, operatorName, "Editar Cliente", "Cliente", id, oldVal, db.clients[idx]);
+      this.save(db);
+      return db.clients[idx];
+    }
+    throw new Error("Cliente não encontrado");
+  }
+
+  public static async deleteClient(id: string, operatorId: string, operatorName: string) {
+    if (isSupabaseServerConfigured) {
+      const { data: oldValArray } = await supabaseServer.from('clients').select('*').eq('id', id).limit(1);
+      const oldVal = (oldValArray && oldValArray[0]) || null;
+
+      const { error } = await supabaseServer.from('clients').delete().eq('id', id);
+      if (!error) {
+        await this.addAuditLog(operatorId, operatorName, "Excluir Cliente", "Cliente", id, oldVal, null);
+        return true;
+      }
+    }
+
+    const db = this.load();
+    const idx = db.clients.findIndex(c => c.id === id);
+    if (idx !== -1) {
+      const oldVal = db.clients[idx];
+      db.clients.splice(idx, 1);
+      await this.addAuditLog(operatorId, operatorName, "Excluir Cliente", "Cliente", id, oldVal, null);
+      this.save(db);
+      return true;
+    }
+    return false;
+  }
+
+  // Freight Orders CRUD
+  public static async getFreightOrders() {
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseServer.from('freight_orders').select('*');
+      if (!error && data) return data as FreightOrder[];
+    }
+    return this.load().freight_orders;
+  }
+
+  public static async getFreightOrderById(id: string) {
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseServer.from('freight_orders').select('*').eq('id', id).limit(1);
+      if (!error && data && data.length > 0) return data[0] as FreightOrder;
+    }
+    return this.load().freight_orders.find(o => o.id === id);
+  }
+
+  public static async createFreightOrder(orderData: Omit<FreightOrder, 'id' | 'order_number' | 'created_at' | 'updated_at' | 'balance_value' | 'total_expenses' | 'net_value'>, operatorId: string, operatorName: string) {
+    const fVal = Number(orderData.freight_value) || 0;
+    const advVal = Number(orderData.advance_value) || 0;
+    const cashVal = Number(orderData.cash_value) || 0;
+    const balVal = fVal - advVal - cashVal;
+
+    const loadExp = Number(orderData.loading_expense) || 0;
+    const unloadExp = Number(orderData.unloading_expense) || 0;
+    const otherExp = Number(orderData.other_expenses) || 0;
+    const totExp = loadExp + unloadExp + otherExp;
+
+    const netVal = fVal - totExp;
+    const newId = `ord_${Date.now()}`;
+
+    // Get counter
+    const dbLocal = this.load();
+    const sequence = dbLocal.freight_orders.length + 1;
+    const orderNumber = `RBA-2026-${String(sequence).padStart(4, '0')}`;
+
+    const cleanPayload = {
+      ...orderData,
+      id: newId,
+      order_number: orderNumber,
+      balance_value: balVal,
+      total_expenses: totExp,
+      net_value: netVal,
+      freight_value: fVal,
+      advance_value: advVal,
+      cash_value: cashVal,
+      loading_expense: loadExp,
+      unloading_expense: unloadExp,
+      other_expenses: otherExp,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseServer
+        .from('freight_orders')
+        .insert(cleanPayload)
+        .select()
+        .single();
+      if (!error && data) {
+        // Auto-create initial advance payments if specified
+        if (advVal > 0) {
+          const newPayId = `pay_${Date.now()}_adv`;
+          await supabaseServer.from('freight_payments').insert({
+            id: newPayId,
+            freight_order_id: newId,
+            type: 'Adiantamento',
+            amount: advVal,
+            payment_date: new Date().toISOString().split('T')[0],
+            payment_method: 'Pix',
+            proof_url: '',
+            status: 'Pendente',
+            notes: 'Adiantamento gerado automaticamente a aprovar.',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        }
+        await this.addAuditLog(operatorId, operatorName, "Criar Ordem Frete", "Ordem de Frete", newId, null, data);
+        return data as FreightOrder;
+      }
+    }
+
+    const db = this.load();
+    const newOrder: FreightOrder = cleanPayload as FreightOrder;
+    db.freight_orders.push(newOrder);
+
+    if (newOrder.advance_value > 0) {
+      const newPay: FreightPayment = {
+        id: `pay_${Date.now()}_adv`,
+        freight_order_id: newOrder.id,
+        type: 'Adiantamento',
+        amount: newOrder.advance_value,
+        payment_date: new Date().toISOString().split('T')[0],
+        payment_method: 'Pix',
+        proof_url: '',
+        status: 'Pendente',
+        notes: 'Adiantamento gerado automaticamente a aprovar.',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      db.freight_payments.push(newPay);
+    }
+
+    await this.addAuditLog(operatorId, operatorName, "Criar Ordem Frete", "Ordem de Frete", newOrder.id, null, newOrder);
+    this.save(db);
+    return newOrder;
+  }
+
+  public static async updateFreightOrder(id: string, orderData: Partial<FreightOrder>, operatorId: string, operatorName: string) {
+    if (isSupabaseServerConfigured) {
+      const { data: oldValArray } = await supabaseServer.from('freight_orders').select('*').eq('id', id).limit(1);
+      const oldVal = (oldValArray && oldValArray[0]) || null;
+      const baseObj = { ...oldVal, ...orderData };
+
+      const fVal = Number(baseObj.freight_value) || 0;
+      const advVal = Number(baseObj.advance_value) || 0;
+      const cashVal = Number(baseObj.cash_value) || 0;
+      const balVal = fVal - advVal - cashVal;
+
+      const loadExp = Number(baseObj.loading_expense) || 0;
+      const unloadExp = Number(baseObj.unloading_expense) || 0;
+      const otherExp = Number(baseObj.other_expenses) || 0;
+      const totExp = loadExp + unloadExp + otherExp;
+
+      const netVal = fVal - totExp;
+
+      let approvedBy = baseObj.approved_by || '';
+      let approvedAt = baseObj.approved_at || '';
+      if (orderData.status === 'Aprovado' && oldVal?.status !== 'Aprovado') {
+        approvedBy = operatorName;
+        approvedAt = new Date().toISOString();
+      }
+
+      const { data, error } = await supabaseServer
+        .from('freight_orders')
+        .update({
+          ...orderData,
+          balance_value: balVal,
+          total_expenses: totExp,
+          net_value: netVal,
+          freight_value: fVal,
+          advance_value: advVal,
+          cash_value: cashVal,
+          loading_expense: loadExp,
+          unloading_expense: unloadExp,
+          other_expenses: otherExp,
+          approved_by: approvedBy,
+          approved_at: approvedAt,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (!error && data) {
+        await this.addAuditLog(operatorId, operatorName, "Editar Ordem Frete", "Ordem de Frete", id, oldVal, data);
+        return data as FreightOrder;
+      }
+    }
+
+    const db = this.load();
+    const idx = db.freight_orders.findIndex(o => o.id === id);
+    if (idx !== -1) {
+      const oldVal = { ...db.freight_orders[idx] };
+      const baseObj = { ...db.freight_orders[idx], ...orderData };
+
+      const fVal = Number(baseObj.freight_value) || 0;
+      const advVal = Number(baseObj.advance_value) || 0;
+      const cashVal = Number(baseObj.cash_value) || 0;
+      const balVal = fVal - advVal - cashVal;
+
+      const loadExp = Number(baseObj.loading_expense) || 0;
+      const unloadExp = Number(baseObj.unloading_expense) || 0;
+      const otherExp = Number(baseObj.other_expenses) || 0;
+      const totExp = loadExp + unloadExp + otherExp;
+
+      const netVal = fVal - totExp;
+
+      let approvedBy = baseObj.approved_by || '';
+      let approvedAt = baseObj.approved_at || '';
+      if (orderData.status === 'Aprovado' && oldVal.status !== 'Aprovado') {
+        approvedBy = operatorName;
+        approvedAt = new Date().toISOString();
+      }
+
+      db.freight_orders[idx] = {
+        ...baseObj,
+        balance_value: balVal,
+        total_expenses: totExp,
+        net_value: netVal,
+        freight_value: fVal,
+        advance_value: advVal,
+        cash_value: cashVal,
+        loading_expense: loadExp,
+        unloading_expense: unloadExp,
+        other_expenses: otherExp,
+        approved_by: approvedBy,
+        approved_at: approvedAt,
+        updated_at: new Date().toISOString()
+      };
+
+      await this.addAuditLog(operatorId, operatorName, "Editar Ordem Frete", "Ordem de Frete", id, oldVal, db.freight_orders[idx]);
+      this.save(db);
+      return db.freight_orders[idx];
+    }
+    throw new Error("Ordem de frete não encontrada");
+  }
+
+  public static async deleteFreightOrder(id: string, operatorId: string, operatorName: string) {
+    if (isSupabaseServerConfigured) {
+      const { data: oldValArray } = await supabaseServer.from('freight_orders').select('*').eq('id', id).limit(1);
+      const oldVal = (oldValArray && oldValArray[0]) || null;
+
+      const { error } = await supabaseServer.from('freight_orders').delete().eq('id', id);
+      if (!error) {
+        await this.addAuditLog(operatorId, operatorName, "Excluir Ordem Frete", "Ordem de Frete", id, oldVal, null);
+        return true;
+      }
+    }
+
+    const db = this.load();
+    const idx = db.freight_orders.findIndex(o => o.id === id);
+    if (idx !== -1) {
+      const oldVal = db.freight_orders[idx];
+      db.freight_orders.splice(idx, 1);
+      await this.addAuditLog(operatorId, operatorName, "Excluir Ordem Frete", "Ordem de Frete", id, oldVal, null);
+      this.save(db);
+      return true;
+    }
+    return false;
+  }
+
+  // Payments CRUD
+  public static async getPayments() {
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseServer.from('freight_payments').select('*');
+      if (!error && data) return data as FreightPayment[];
+    }
+    return this.load().freight_payments;
+  }
+
+  public static async getPaymentsByOrderId(orderId: string) {
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseServer.from('freight_payments').select('*').eq('freight_order_id', orderId);
+      if (!error && data) return data as FreightPayment[];
+    }
+    return this.load().freight_payments.filter(p => p.freight_order_id === orderId);
+  }
+
+  public static async createPayment(payData: Omit<FreightPayment, 'id' | 'created_at' | 'updated_at'>, operatorId: string, operatorName: string) {
+    const newId = `pay_${Date.now()}`;
+    const cleanPayload = {
+      ...payData,
+      id: newId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseServer
+        .from('freight_payments')
+        .insert(cleanPayload)
+        .select()
+        .single();
+      if (!error && data) {
+         // Also verify if the complete payload moves the order status to "Pago"
+         await this.addAuditLog(operatorId, operatorName, "Registrar Pagamento", "Pagamentos do Frete", newId, null, data);
+         return data as FreightPayment;
+      }
+    }
+
+    const db = this.load();
+    const newPay: FreightPayment = cleanPayload as FreightPayment;
+    db.freight_payments.push(newPay);
+    await this.addAuditLog(operatorId, operatorName, "Registrar Pagamento", "Pagamentos do Frete", newPay.id, null, newPay);
+    this.save(db);
+    return newPay;
+  }
+
+  public static async updatePayment(id: string, payData: Partial<FreightPayment>, operatorId: string, operatorName: string) {
+    if (isSupabaseServerConfigured) {
+      const { data: oldValArray } = await supabaseServer.from('freight_payments').select('*').eq('id', id).limit(1);
+      const oldVal = (oldValArray && oldValArray[0]) || null;
+
+      const { data, error } = await supabaseServer
+        .from('freight_payments')
+        .update({ ...payData, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (!error && data) {
+        await this.addAuditLog(operatorId, operatorName, "Editar Pagamento", "Pagamentos do Frete", id, oldVal, data);
+        return data as FreightPayment;
+      }
+    }
+
+    const db = this.load();
+    const idx = db.freight_payments.findIndex(p => p.id === id);
+    if (idx !== -1) {
+      const oldVal = { ...db.freight_payments[idx] };
+      db.freight_payments[idx] = {
+        ...db.freight_payments[idx],
+        ...payData,
+        updated_at: new Date().toISOString()
+      };
+      await this.addAuditLog(operatorId, operatorName, "Editar Pagamento", "Pagamentos do Frete", id, oldVal, db.freight_payments[idx]);
+      this.save(db);
+      return db.freight_payments[idx];
+    }
+    throw new Error("Pagamento não encontrado");
+  }
+
+  public static async deletePayment(id: string, operatorId: string, operatorName: string) {
+    if (isSupabaseServerConfigured) {
+      const { data: oldValArray } = await supabaseServer.from('freight_payments').select('*').eq('id', id).limit(1);
+      const oldVal = (oldValArray && oldValArray[0]) || null;
+
+      const { error } = await supabaseServer.from('freight_payments').delete().eq('id', id);
+      if (!error) {
+        await this.addAuditLog(operatorId, operatorName, "Excluir Pagamento", "Pagamentos do Frete", id, oldVal, null);
+        return true;
+      }
+    }
+
+    const db = this.load();
+    const idx = db.freight_payments.findIndex(p => p.id === id);
+    if (idx !== -1) {
+      const oldVal = db.freight_payments[idx];
+      db.freight_payments.splice(idx, 1);
+      await this.addAuditLog(operatorId, operatorName, "Excluir Pagamento", "Pagamentos do Frete", id, oldVal, null);
+      this.save(db);
+      return true;
+    }
+    return false;
+  }
+
+  // File Attachments
+  public static async getAttachmentsByOrderId(orderId: string) {
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseServer.from('freight_order_attachments').select('*').eq('freight_order_id', orderId);
+      if (!error && data) return data as FreightOrderAttachment[];
+    }
+    return this.load().freight_order_attachments.filter(a => a.freight_order_id === orderId);
+  }
+
+  public static async createAttachment(orderId: string, name: string, url: string, type: string, operatorName: string) {
+    const newId = `att_${Date.now()}`;
+    const cleanPayload = {
+      id: newId,
+      freight_order_id: orderId,
+      file_name: name,
+      file_url: url,
+      file_type: type,
+      uploaded_by: operatorName,
+      created_at: new Date().toISOString()
+    };
+
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseServer
+        .from('freight_order_attachments')
+        .insert(cleanPayload)
+        .select()
+        .single();
+      if (!error && data) return data as FreightOrderAttachment;
+    }
+
+    const db = this.load();
+    const newAtt: FreightOrderAttachment = cleanPayload;
+    db.freight_order_attachments.push(newAtt);
+    this.save(db);
+    return newAtt;
+  }
+
+  public static async deleteAttachment(id: string) {
+    if (isSupabaseServerConfigured) {
+      const { error } = await supabaseServer.from('freight_order_attachments').delete().eq('id', id);
+      if (!error) return true;
+    }
+
+    const db = this.load();
+    const idx = db.freight_order_attachments.findIndex(a => a.id === id);
+    if (idx !== -1) {
+      db.freight_order_attachments.splice(idx, 1);
+      this.save(db);
+      return true;
+    }
+    return false;
+  }
+
+  // Audit Logs Getter
+  public static async getAuditLogs() {
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseServer.from('audit_logs').select('*').order('created_at', { ascending: false });
+      if (!error && data) return data as AuditLog[];
+    }
+    return this.load().audit_logs;
+  }
+}
