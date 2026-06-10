@@ -16,6 +16,19 @@ const MESES = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
 
+function PrintedCheckbox({ checked, onClick }: { checked: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`h-4 w-4 md:h-5 md:w-5 shrink-0 border-2 border-slate-900 rounded-[3px] flex items-center justify-center ${checked ? 'bg-slate-900' : 'bg-white'}`}
+      aria-pressed={checked}
+    >
+      {checked && <span className="text-white text-[10px] md:text-xs font-black leading-none">✕</span>}
+    </button>
+  );
+}
+
 export default function FreightOrderForm({ initialData }: Props) {
   const router = useRouter();
   const isEdit = !!initialData;
@@ -68,9 +81,9 @@ export default function FreightOrderForm({ initialData }: Props) {
 
   // Emission date (ficha física: "__ DE ____ 20__")
   const now = new Date();
-  const [emissionDay, setEmissionDay] = useState(String(now.getDate()).padStart(2, '0'));
-  const [emissionMonth, setEmissionMonth] = useState(MESES[now.getMonth()]);
-  const [emissionYear, setEmissionYear] = useState(String(now.getFullYear()).slice(-2));
+  const [emissionDay, setEmissionDay] = useState(initialData?.emission_day || String(now.getDate()).padStart(2, '0'));
+  const [emissionMonth, setEmissionMonth] = useState(initialData?.emission_month || MESES[now.getMonth()]);
+  const [emissionYear, setEmissionYear] = useState(initialData?.emission_year || String(now.getFullYear()).slice(-2));
 
   // Double validations
   const [confirmNegativeBalance, setConfirmNegativeBalance] = useState(false);
@@ -237,6 +250,9 @@ export default function FreightOrderForm({ initialData }: Props) {
       shipment_release_limit: shipmentReleaseLimit,
       responsible_name: responsibleName,
       buonny_responsible: buonnyResponsible,
+      emission_day: emissionDay.trim(),
+      emission_month: emissionMonth.trim(),
+      emission_year: emissionYear.trim(),
       signature_url: signatureText ? 'Assinado Digitalmente' : ''
     };
 
@@ -280,18 +296,6 @@ export default function FreightOrderForm({ initialData }: Props) {
   const selectField = field + " cursor-pointer";
   const divider = "border-l-2 border-slate-900";
   const canEnterBuonnyCode = buonnyStatus === 'Aprovado' && shipmentReleaseStatus === 'Liberado';
-
-  // Square checkbox styled like the printed form
-  const Box = ({ checked, onClick }: { checked: boolean; onClick: () => void }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`h-4 w-4 md:h-5 md:w-5 shrink-0 border-2 border-slate-900 rounded-[3px] flex items-center justify-center ${checked ? 'bg-slate-900' : 'bg-white'}`}
-      aria-pressed={checked}
-    >
-      {checked && <span className="text-white text-[10px] md:text-xs font-black leading-none">✕</span>}
-    </button>
-  );
 
   return (
     <div className="space-y-6">
@@ -457,11 +461,11 @@ export default function FreightOrderForm({ initialData }: Props) {
               <div className="flex items-center">
                 <span className={label}>Consulta Buonny:</span>
                 <label className="flex items-center gap-1.5 px-2 cursor-pointer select-none">
-                  <Box checked={buonnyStatus === 'Aprovado'} onClick={() => { setBuonnyStatus('Aprovado'); setShipmentReleaseStatus('Liberado'); }} />
+                  <PrintedCheckbox checked={buonnyStatus === 'Aprovado'} onClick={() => { setBuonnyStatus('Aprovado'); setShipmentReleaseStatus('Liberado'); }} />
                   <span className="text-[10px] md:text-[11px] font-bold uppercase text-slate-900">Aprovado</span>
                 </label>
                 <label className="flex items-center gap-1.5 px-2 cursor-pointer select-none">
-                  <Box checked={buonnyStatus === 'Renovar'} onClick={() => setBuonnyStatus('Renovar')} />
+                  <PrintedCheckbox checked={buonnyStatus === 'Renovar'} onClick={() => setBuonnyStatus('Renovar')} />
                   <span className="text-[10px] md:text-[11px] font-bold uppercase text-slate-900">Renovar</span>
                 </label>
               </div>
@@ -554,7 +558,7 @@ export default function FreightOrderForm({ initialData }: Props) {
               ['Até 500.000', 'Até 500.000,00'],
             ] as const).map(([val, lbl]) => (
               <label key={val} className="flex items-center gap-1.5 px-1.5 cursor-pointer select-none">
-                <Box checked={shipmentReleaseLimit === val} onClick={() => setShipmentReleaseLimit(val as any)} />
+                <PrintedCheckbox checked={shipmentReleaseLimit === val} onClick={() => setShipmentReleaseLimit(val as any)} />
                 <span className="text-[10px] md:text-[11px] font-extrabold uppercase text-slate-900">{lbl}</span>
               </label>
             ))}

@@ -94,6 +94,9 @@ export interface FreightOrder {
   origin: string;
   destination: string;
   delivery_date: string;
+  emission_day: string;
+  emission_month: string;
+  emission_year: string;
   responsible_name: string;
   buonny_responsible: string;
   signature_url: string;
@@ -209,6 +212,15 @@ const nextFreightOrderSequence = (orders: Pick<FreightOrder, 'order_number'>[]) 
 
   return maxSequence + 1;
 };
+
+const withFreightOrderDefaults = (order: any): FreightOrder => ({
+  buonny_code: '',
+  buonny_responsible: '',
+  emission_day: '',
+  emission_month: '',
+  emission_year: '',
+  ...order
+});
 
 // Initial seed data
 const initialDB: Database = {
@@ -442,6 +454,9 @@ const initialDB: Database = {
       origin: "Jundiaí - SP",
       destination: "Cajamar - SP",
       delivery_date: "2026-06-03",
+      emission_day: "30",
+      emission_month: "Maio",
+      emission_year: "26",
       responsible_name: "Ana Costa",
       buonny_responsible: "Morgan Ribeiro (Admin)",
       signature_url: "Assinado Digitalmente por Ana Costa",
@@ -485,6 +500,9 @@ const initialDB: Database = {
       origin: "Telêmaco Borba - PR",
       destination: "Mogi das Cruzes - SP",
       delivery_date: "2026-06-05",
+      emission_day: "31",
+      emission_month: "Maio",
+      emission_year: "26",
       responsible_name: "Ana Costa",
       buonny_responsible: "Ana Costa",
       signature_url: "",
@@ -1026,11 +1044,7 @@ export class RBADatabase {
     if (isSupabaseServerConfigured) {
       const { data, error } = await supabaseServer.from('freight_orders').select('*');
       if (!error && data) {
-        return data.map(order => ({
-          buonny_code: '',
-          buonny_responsible: '',
-          ...order
-        })) as FreightOrder[];
+        return data.map(withFreightOrderDefaults);
       }
     }
     return this.load().freight_orders;
@@ -1040,11 +1054,7 @@ export class RBADatabase {
     if (isSupabaseServerConfigured) {
       const { data, error } = await supabaseServer.from('freight_orders').select('*').eq('id', id).limit(1);
       if (!error && data && data.length > 0) {
-        return {
-          buonny_code: '',
-          buonny_responsible: '',
-          ...data[0]
-        } as FreightOrder;
+        return withFreightOrderDefaults(data[0]);
       }
     }
     return this.load().freight_orders.find(o => o.id === id);

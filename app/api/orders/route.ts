@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
       ...body,
       bank_data_snapshot: bankSnapshot,
       created_by: session.user.name,
-      responsible_name: session.user.name,
+      responsible_name: body.responsible_name || session.user.name,
       status: body.status || 'Rascunho'
     }, session.user.id, session.user.name);
 

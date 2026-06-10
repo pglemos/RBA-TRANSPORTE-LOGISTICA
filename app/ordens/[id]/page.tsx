@@ -111,6 +111,9 @@ export default function OrderDetailsPage() {
       const res = await fetch(`/api/orders/${id}`);
       if (res.ok) {
         const data = await res.json();
+        setCteValueEdit(Number(data.cte_value) || 0);
+        setCteDiscountEdit(data.cte_discount_percent ?? 10);
+        setStatusEdit(data.status || 'Rascunho');
         setOrder(data);
       } else {
         setErrorMsg("Você não possui permissão para ver esta ficha, ou o registro não existe.");
@@ -121,15 +124,6 @@ export default function OrderDetailsPage() {
       setLoading(false);
     }
   }, [id]);
-
-  // Sincroniza os campos editáveis de faturamento sempre que a ordem é (re)carregada
-  useEffect(() => {
-    if (order) {
-      setCteValueEdit(Number(order.cte_value) || 0);
-      setCteDiscountEdit(order.cte_discount_percent ?? 10);
-      setStatusEdit(order.status || 'Rascunho');
-    }
-  }, [order]);
 
   const handleSaveStatus = async () => {
     setSavingStatus(true);
@@ -654,7 +648,7 @@ export default function OrderDetailsPage() {
                   <span className="absolute -left-1.5 top-1 h-3 w-3 rounded-full bg-yellow-500" />
                   <span className="text-[9px] text-slate-500 block">Hoje • Carimbo Oficial</span>
                   <span className="text-white font-bold block">{order.responsible_name}</span>
-                  <span className="text-slate-400">Ação: Gerou a Ficha Securitária Nº {order.order_number}</span>
+                  <span className="text-slate-400">Ação: Gerou a Ficha Securitária CTE {order.cte_number || order.order_number}</span>
                 </div>
 
                 <div className="border-l-2 border-slate-800 pl-3 relative">

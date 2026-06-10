@@ -44,7 +44,8 @@ INSERT INTO public.freight_orders (
     loading_expense, unloading_expense, other_expenses, total_expenses, net_value,
     bank_data_snapshot, buonny_status, buonny_code, cte_number,
     shipment_release_status, shipment_release_limit, origin, destination, 
-    delivery_date, responsible_name, buonny_responsible, signature_url, status, notes, 
+    delivery_date, emission_day, emission_month, emission_year,
+    responsible_name, buonny_responsible, signature_url, status, notes, 
     created_by, approved_by, approved_at, created_at, updated_at
 ) VALUES 
 ('ord_1', 'RBA-2026-0001', 'drv_1', 'vhc_1', 'cli_1', 
@@ -52,16 +53,16 @@ INSERT INTO public.freight_orders (
  150.00, 200.00, 50.00, 400.00, 11600.00, 
  '{"bank_name": "Banco do Brasil", "bank_agency": "1234", "bank_account": "54321-0", "pix_key": "12345678909", "beneficiary_name": "José Roberto de Almeida"}'::jsonb, 
  'Aprovado', 'BNY0000000000000001', 'CTE-10293',
- 'Liberado', 'Até 100.000', 'Jundiaí - SP', 'Cajamar - SP', 
- '2026-06-03', 'Ana Costa', 'Morgan Ribeiro (Admin)', 'Assinado Digitalmente por Ana Costa', 'Liberado para Embarque', 'Carregamento de bebidas Ambev. Liberação autorizada Buonny ativa.', 
+     'Liberado', 'Até 100.000', 'Jundiaí - SP', 'Cajamar - SP', 
+    '2026-06-03', '30', 'Maio', '26', 'Ana Costa', 'Morgan Ribeiro (Admin)', 'Assinado Digitalmente por Ana Costa', 'Liberado para Embarque', 'Carregamento de bebidas Ambev. Liberação autorizada Buonny ativa.', 
  'Ana Costa', 'Morgan Ribeiro (Admin)', now(), now(), now()),
 ('ord_2', 'RBA-2026-0002', 'drv_2', 'vhc_2', 'cli_2', 
  8500.00, 4000.00, 1000.00, 3500.00, 
  100.00, 150.00, 0.00, 250.00, 8250.00, 
  '{"bank_name": "Banco Itaú", "bank_agency": "0432", "bank_account": "10987-6", "pix_key": "marcos@gmail.com", "beneficiary_name": "Marcos Vinicius Santos"}'::jsonb, 
  'Aprovado', 'BNY0000000000000002', 'CTE-12831',
- 'Pendente', 'Até 200.000', 'Telêmaco Borba - PR', 'Mogi das Cruzes - SP', 
- '2026-06-05', 'Ana Costa', 'Ana Costa', NULL, 'Em Análise', 'Aguardando liberação do sinistro.',
+     'Pendente', 'Até 200.000', 'Telêmaco Borba - PR', 'Mogi das Cruzes - SP', 
+    '2026-06-05', '31', 'Maio', '26', 'Ana Costa', 'Ana Costa', NULL, 'Em Análise', 'Aguardando liberação do sinistro.',
  'Ana Costa', NULL, NULL, now(), now())
 ON CONFLICT (order_number) DO NOTHING;
 

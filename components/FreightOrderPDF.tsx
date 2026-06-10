@@ -37,6 +37,9 @@ interface Props {
     notes: string;
     responsible_name: string;
     signature_url: string;
+    emission_day?: string;
+    emission_month?: string;
+    emission_year?: string;
     created_at: string;
     bank_data_snapshot: {
       bank_name: string;
@@ -55,8 +58,13 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
   };
 
   const getQRSeed = () => {
-    return `RBA_SECURE_TOKEN:${order.order_number}:${order.net_value}`;
+    return `RBA_SECURE_TOKEN:${order.cte_number || order.order_number}:${order.net_value}`;
   };
+
+  const emissionLabel =
+    order.emission_day && order.emission_month && order.emission_year
+      ? `${order.emission_day} de ${order.emission_month} de 20${order.emission_year}`
+      : `${new Date(order.created_at).toLocaleDateString('pt-BR')} ${new Date(order.created_at).toLocaleTimeString('pt-BR')}`;
 
   return (
     <div id="pdf-modal-overlay" className="fixed inset-0 bg-slate-900/70 py-6 px-4 z-50 overflow-y-auto flex items-start justify-center backdrop-blur-xs">
@@ -103,11 +111,11 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
 
             <div className="text-right flex flex-col items-end gap-1.5 md:self-stretch justify-between">
               <div className="bg-slate-100 p-2.5 rounded-xl border border-slate-300 text-center min-w-[200px]">
-                <span className="text-[9px] uppercase font-mono tracking-wider font-extrabold text-slate-400 block">ORDEM DE FRETE Nº</span>
-                <span className="text-md font-black text-slate-950">{order.order_number}</span>
+                <span className="text-[9px] uppercase font-mono tracking-wider font-extrabold text-slate-400 block">CTE</span>
+                <span className="text-md font-black text-slate-950">{order.cte_number || order.order_number}</span>
               </div>
               <span className="text-[9px] font-mono p-1 bg-yellow-500/10 text-yellow-800 rounded border border-yellow-500/20 uppercase font-extrabold tracking-wider">
-                Emissão: {new Date(order.created_at).toLocaleDateString('pt-BR')} {new Date(order.created_at).toLocaleTimeString('pt-BR')}
+                Emissão: {emissionLabel}
               </span>
             </div>
           </div>

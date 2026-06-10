@@ -69,8 +69,15 @@ export const FreightOrderSchema = z.object({
   cte_discount_percent: z.number().min(0).max(100).optional().default(10),
   buonny_status: z.enum(['Aprovado', 'Renovar']).optional().default('Renovar'),
   buonny_code: z.string().max(20, "Código Buonny deve ter no máximo 20 caracteres").optional().default(''),
+  buonny_responsible: z.string().optional().default(''),
   shipment_release_status: z.enum(['Liberado', 'Pendente', 'Bloqueado']).optional().default('Pendente'),
   shipment_release_limit: z.enum(['Até 100.000', 'Até 200.000', 'Até 300.000', 'Até 400.000', 'Até 500.000']).optional().default('Até 100.000'),
+  responsible_name: z.string().optional().default(''),
+  emission_day: z.string().max(2).optional().default(''),
+  emission_month: z.string().optional().default(''),
+  emission_year: z.string().max(2).optional().default(''),
+  signature_url: z.string().optional().default(''),
+  status: z.enum(['Rascunho', 'Em Análise', 'Aprovado', 'Liberado para Embarque', 'Carregando', 'Em Viagem', 'Entregue', 'Pago', 'Cancelado']).optional().default('Rascunho'),
   notes: z.string().optional(),
 });
 
