@@ -376,6 +376,7 @@ export default function FreightOrderForm({ initialData }: Props) {
               <span className={label}>Valor de Frete:</span>
               <input
                 id="ip-freight"
+                name="freight_value"
                 type="number" step="0.01" min="0"
                 value={freightValue || ''}
                 onChange={(e) => setFreightValue(Number(e.target.value))}
@@ -384,11 +385,11 @@ export default function FreightOrderForm({ initialData }: Props) {
             </div>
             <div className={`flex items-stretch w-[18%] ${divider}`}>
               <span className={label}>AD.:</span>
-              <input type="number" step="0.01" min="0" value={advanceValue || ''} onChange={(e) => setAdvanceValue(Number(e.target.value))} className={field} />
+              <input id="ip-advance" name="advance_value" type="number" step="0.01" min="0" value={advanceValue || ''} onChange={(e) => setAdvanceValue(Number(e.target.value))} className={field} />
             </div>
             <div className={`flex items-stretch w-[22%] ${divider}`}>
               <span className={label}>A Vista:</span>
-              <input type="number" step="0.01" min="0" value={cashValue || ''} onChange={(e) => setCashValue(Number(e.target.value))} className={field} />
+              <input id="ip-cash" name="cash_value" type="number" step="0.01" min="0" value={cashValue || ''} onChange={(e) => setCashValue(Number(e.target.value))} className={field} />
             </div>
             <div className={`flex items-stretch w-[24%] ${divider}`}>
               <span className={label}>Saldo:</span>
@@ -402,7 +403,7 @@ export default function FreightOrderForm({ initialData }: Props) {
           {balanceValue < 0 && (
             <div className="border-b-2 border-slate-900 bg-red-50 px-2 py-1.5">
               <label className="flex items-center gap-2 text-[11px] font-bold text-red-800 cursor-pointer select-none">
-                <input id="chk-negative-balance" type="checkbox" checked={confirmNegativeBalance} onChange={(e) => setConfirmNegativeBalance(e.target.checked)} className="h-4 w-4" />
+                <input id="chk-negative-balance" name="confirm_negative_balance" type="checkbox" checked={confirmNegativeBalance} onChange={(e) => setConfirmNegativeBalance(e.target.checked)} className="h-4 w-4" />
                 Saldo negativo — confirmo e assumo override operacional desta ficha.
               </label>
             </div>
@@ -413,15 +414,15 @@ export default function FreightOrderForm({ initialData }: Props) {
             <span className={label}>Despesas Adicionais:</span>
             <div className="flex items-stretch flex-1 min-w-0">
               <span className={label}>Carga:</span>
-              <input type="number" step="0.01" min="0" value={loadingExpense || ''} onChange={(e) => setLoadingExpense(Number(e.target.value))} className={field} />
+              <input id="ip-loading-expense" name="loading_expense" type="number" step="0.01" min="0" value={loadingExpense || ''} onChange={(e) => setLoadingExpense(Number(e.target.value))} className={field} />
             </div>
             <div className={`flex items-stretch flex-1 min-w-0 ${divider}`}>
               <span className={label}>Descarga:</span>
-              <input type="number" step="0.01" min="0" value={unloadingExpense || ''} onChange={(e) => setUnloadingExpense(Number(e.target.value))} className={field} />
+              <input id="ip-unloading-expense" name="unloading_expense" type="number" step="0.01" min="0" value={unloadingExpense || ''} onChange={(e) => setUnloadingExpense(Number(e.target.value))} className={field} />
             </div>
             <div className={`flex items-stretch flex-1 min-w-0 ${divider}`}>
               <span className={label}>Outros:</span>
-              <input type="number" step="0.01" min="0" value={otherExpenses || ''} onChange={(e) => setOtherExpenses(Number(e.target.value))} className={field} />
+              <input id="ip-other-expenses" name="other_expenses" type="number" step="0.01" min="0" value={otherExpenses || ''} onChange={(e) => setOtherExpenses(Number(e.target.value))} className={field} />
             </div>
           </div>
 
@@ -475,6 +476,7 @@ export default function FreightOrderForm({ initialData }: Props) {
               <span className={`${label} border-b-2 border-slate-900 justify-center`}>CTE:</span>
               <input
                 id="ip-cte"
+                name="cte_number"
                 type="text"
                 value={cteNumber}
                 onChange={(e) => setCteNumber(e.target.value)}
@@ -484,6 +486,7 @@ export default function FreightOrderForm({ initialData }: Props) {
               <span className={`${label} border-t-2 border-slate-900 justify-center`}>Valor do CTE:</span>
               <input
                 id="ip-cte-value"
+                name="cte_value"
                 type="number" step="0.01" min="0"
                 value={cteValue || ''}
                 onChange={(e) => setCteValue(Number(e.target.value))}
@@ -500,6 +503,7 @@ export default function FreightOrderForm({ initialData }: Props) {
               <div className="flex flex-1 min-w-0 items-stretch">
                 <select
                   id="ip-shipment-status"
+                  name="shipment_release_status"
                   value={shipmentReleaseStatus}
                   onChange={(e) => setShipmentReleaseStatus(e.target.value as any)}
                   className={selectField}
@@ -511,6 +515,7 @@ export default function FreightOrderForm({ initialData }: Props) {
                 {canEnterBuonnyCode && (
                   <input
                     id="ip-buonny-code"
+                    name="buonny_code"
                     type="text"
                     value={buonnyCode}
                     onChange={(e) => setBuonnyCode(e.target.value.slice(0, 20))}
@@ -525,6 +530,8 @@ export default function FreightOrderForm({ initialData }: Props) {
             <div className={`flex items-stretch w-[42%] ${divider}`}>
               <span className={label} title="Responsável pela consulta Buonny">Resp.:</span>
               <input
+                id="ip-buonny-responsible"
+                name="buonny_responsible"
                 type="text"
                 value={buonnyResponsible}
                 onChange={(e) => setBuonnyResponsible(e.target.value)}
@@ -539,6 +546,7 @@ export default function FreightOrderForm({ initialData }: Props) {
             <div className="border-b-2 border-slate-900 bg-amber-50 px-2 py-1.5">
               <input
                 id="ip-justification"
+                name="release_justification"
                 type="text"
                 value={releaseJustification}
                 onChange={(e) => setReleaseJustification(e.target.value)}
@@ -621,7 +629,7 @@ export default function FreightOrderForm({ initialData }: Props) {
           <div className={cell}>
             <div className="flex items-stretch flex-1 min-w-0">
               <span className={label}>Cliente:</span>
-              <select id="ip-client-select" value={clientId} onChange={(e) => setClientId(e.target.value)} className={selectField}>
+              <select id="ip-client-select" name="client_id" value={clientId} onChange={(e) => setClientId(e.target.value)} className={selectField}>
                 <option value="">— selecione o cliente —</option>
                 {clients.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
@@ -630,7 +638,7 @@ export default function FreightOrderForm({ initialData }: Props) {
             </div>
             <div className={`flex items-stretch w-[42%] ${divider}`}>
               <span className={label}>Data de Entrega:</span>
-              <input id="ip-delivery-date" type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} className={field} />
+              <input id="ip-delivery-date" name="delivery_date" type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} className={field} />
             </div>
           </div>
 
@@ -638,11 +646,11 @@ export default function FreightOrderForm({ initialData }: Props) {
           <div className={cell}>
             <div className="flex items-stretch flex-1 min-w-0">
               <span className={label}>Origem:</span>
-              <input id="ip-origin" type="text" value={origin} onChange={(e) => setOrigin(e.target.value)} placeholder="Cidade - UF" className={field} />
+              <input id="ip-origin" name="origin" type="text" value={origin} onChange={(e) => setOrigin(e.target.value)} placeholder="Cidade - UF" className={field} />
             </div>
             <div className={`flex items-stretch w-[42%] ${divider}`}>
               <span className={label}>Destino:</span>
-              <input id="ip-dest" type="text" value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Cidade - UF" className={field} />
+              <input id="ip-dest" name="destination" type="text" value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Cidade - UF" className={field} />
             </div>
           </div>
 
@@ -684,14 +692,16 @@ export default function FreightOrderForm({ initialData }: Props) {
           {/* DATA DE EMISSÃO + RESPONSÁVEL */}
           <div className={cell}>
             <div className="flex items-center gap-1 flex-1 min-w-0 px-2 py-2">
-              <input value={emissionDay} onChange={(e) => setEmissionDay(e.target.value)} className="w-10 bg-transparent outline-none text-center text-sm font-bold text-blue-800 border-b border-slate-400" />
+              <input id="ip-emission-day" name="emission_day" value={emissionDay} onChange={(e) => setEmissionDay(e.target.value)} className="w-10 bg-transparent outline-none text-center text-sm font-bold text-blue-800 border-b border-slate-400" />
               <span className="text-[11px] font-extrabold uppercase text-slate-900">de</span>
-              <input value={emissionMonth} onChange={(e) => setEmissionMonth(e.target.value)} className="w-24 bg-transparent outline-none text-center text-sm font-bold text-blue-800 border-b border-slate-400" />
+              <input id="ip-emission-month" name="emission_month" value={emissionMonth} onChange={(e) => setEmissionMonth(e.target.value)} className="w-24 bg-transparent outline-none text-center text-sm font-bold text-blue-800 border-b border-slate-400" />
               <span className="text-[11px] font-extrabold uppercase text-slate-900">20</span>
-              <input value={emissionYear} onChange={(e) => setEmissionYear(e.target.value)} className="w-10 bg-transparent outline-none text-center text-sm font-bold text-blue-800 border-b border-slate-400" />
+              <input id="ip-emission-year" name="emission_year" value={emissionYear} onChange={(e) => setEmissionYear(e.target.value)} className="w-10 bg-transparent outline-none text-center text-sm font-bold text-blue-800 border-b border-slate-400" />
             </div>
             <div className={`flex flex-col items-center justify-center w-[42%] px-2 py-1 ${divider}`}>
               <input
+                id="ip-responsible-name"
+                name="responsible_name"
                 type="text"
                 value={responsibleName}
                 onChange={(e) => setResponsibleName(e.target.value)}
@@ -745,7 +755,7 @@ export default function FreightOrderForm({ initialData }: Props) {
           {/* Assinatura + Salvar */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white border border-slate-200 rounded-2xl p-4">
             <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer select-none">
-              <input id="ip-signature-check" type="checkbox" checked={!!signatureText}
+              <input id="ip-signature-check" name="signature_confirmed" type="checkbox" checked={!!signatureText}
                 onChange={(e) => setSignatureText(e.target.checked ? 'Confirmada' : '')} className="h-4 w-4" />
               Confirmar assinatura digital do operador
             </label>
@@ -808,6 +818,7 @@ function DriverCombobox({
     <div className="relative flex-1 min-w-0">
       <input
         id={inputId}
+        name={inputId}
         type="text"
         autoComplete="off"
         value={shownValue}
@@ -898,6 +909,7 @@ function VehicleCombobox({
     <div className="relative flex-1 min-w-0">
       <input
         id={inputId}
+        name={inputId}
         type="text"
         autoComplete="off"
         value={shownValue}
