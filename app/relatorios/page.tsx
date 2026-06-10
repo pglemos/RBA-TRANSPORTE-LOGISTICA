@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
+import RBALogo from '@/components/RBALogo';
 import { Search, Printer, DollarSign, BarChart3, Filter, ShieldCheck, FileCheck, ArrowDownToLine } from 'lucide-react';
 
 export default function ReportsPage() {
@@ -118,8 +119,9 @@ export default function ReportsPage() {
                 <option value="">Todos os Status</option>
                 <option value="Rascunho">Rascunho</option>
                 <option value="Em Análise">Em Análise de Crédito</option>
-                <option value="Aprovado">Aprovado Buonny/Pancary</option>
+                <option value="Aprovado">Aprovado Buonny</option>
                 <option value="Liberado para Embarque">Liberado para Embarque</option>
+                <option value="Carregando">Carregando</option>
                 <option value="Em Viagem">Em Viagem</option>
                 <option value="Entregue">Entregue</option>
                 <option value="Pago">Pago / Liquidado</option>
@@ -150,6 +152,7 @@ export default function ReportsPage() {
             
             {/* PRINT-ONLY HEADER EMBLEM */}
             <div className="hidden print:block border-b-2 border-slate-900 pb-4 mb-6">
+              <RBALogo className="mb-3 h-20 w-40" />
               <h1 className="text-lg font-black tracking-tight">RBA TRANSPORTE & LOGÍSTICA S.A.</h1>
               <p className="text-xs uppercase font-bold text-slate-500">Relatório Consolidado de Contratos de Fretes e Custos Fiscais</p>
               <p className="text-[10px] text-slate-450">Filtro Cliente: {selectedClient ? 'Filtro Ativo' : 'Todos'} | Status: {statusFilter || 'Todos'}</p>

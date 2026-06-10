@@ -2,23 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Building2, 
-  MapPin, 
-  User, 
-  Truck, 
-  DollarSign, 
-  ShieldAlert, 
-  FileCheck2, 
-  Paperclip, 
-  NotebookPen, 
-  Save, 
-  ArrowLeft,
-  ChevronRight,
-  Info,
-  Calendar,
-  AlertCircle
-} from 'lucide-react';
+import { Save, AlertCircle, Paperclip } from 'lucide-react';
 import { Driver, Vehicle, Client, FreightOrder } from '@/lib/db';
 
 interface Props {
@@ -27,12 +11,14 @@ interface Props {
   };
 }
 
+const MESES = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+];
+
 export default function FreightOrderForm({ initialData }: Props) {
   const router = useRouter();
   const isEdit = !!initialData;
-
-  // Active Tab
-  const [activeTab, setActiveTab] = useState<'viagem' | 'motorista' | 'veiculo' | 'financeiro' | 'consultas' | 'documentos'>('viagem');
 
   // Load selection tables from APIs
   const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -60,10 +46,9 @@ export default function FreightOrderForm({ initialData }: Props) {
   const [unloadingExpense, setUnloadingExpense] = useState(initialData?.unloading_expense || 0);
   const [otherExpenses, setOtherExpenses] = useState(initialData?.other_expenses || 0);
 
-  // Security Clearances (Buonny & Pancary)
-  const [buonnyStatus, setBuonnyStatus] = useState<FreightOrder['buonny_status']>(initialData?.buonny_status || 'Em Análise');
-  const [pancaryStatus, setPancaryStatus] = useState<FreightOrder['pancary_status']>(initialData?.pancary_status || 'Em Análise');
-  const [analysisNotes, setAnalysisNotes] = useState(initialData?.notes || '');
+  // Security Clearances (Buonny)
+  const [buonnyStatus, setBuonnyStatus] = useState<FreightOrder['buonny_status']>(initialData?.buonny_status || 'Renovar');
+  const [buonnyCode, setBuonnyCode] = useState(initialData?.buonny_code || '');
 
   // Shipment Release
   const [shipmentReleaseStatus, setShipmentReleaseStatus] = useState<FreightOrder['shipment_release_status']>(initialData?.shipment_release_status || 'Pendente');
@@ -72,10 +57,20 @@ export default function FreightOrderForm({ initialData }: Props) {
 
   // Documents
   const [cteNumber, setCteNumber] = useState(initialData?.cte_number || '');
+  const [cteValue, setCteValue] = useState(initialData?.cte_value || 0);
 
-  // Signatures
+  // Responsáveis (dois papéis distintos)
+  // 1) Resp. (ao lado de Liberação) = quem fez a CONSULTA BUONNY
+  const [buonnyResponsible, setBuonnyResponsible] = useState((initialData as any)?.buonny_responsible || '');
+  // 2) Responsável (rodapé) = quem CONTRATOU o motorista para o frete
   const [responsibleName, setResponsibleName] = useState(initialData?.responsible_name || '');
   const [signatureText, setSignatureText] = useState(initialData?.signature_url ? 'Confirmada' : '');
+
+  // Emission date (ficha física: "__ DE ____ 20__")
+  const now = new Date();
+  const [emissionDay, setEmissionDay] = useState(String(now.getDate()).padStart(2, '0'));
+  const [emissionMonth, setEmissionMonth] = useState(MESES[now.getMonth()]);
+  const [emissionYear, setEmissionYear] = useState(String(now.getFullYear()).slice(-2));
 
   // Double validations
   const [confirmNegativeBalance, setConfirmNegativeBalance] = useState(false);
@@ -83,7 +78,7 @@ export default function FreightOrderForm({ initialData }: Props) {
   const [successMessage, setSuccessMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Temporary attachment upload simulations
+  // Attachments (only on edit)
   const [attachments, setAttachments] = useState<any[]>(initialData?.attachments || []);
   const [uploadingDemo, setUploadingDemo] = useState(false);
 
@@ -99,7 +94,7 @@ export default function FreightOrderForm({ initialData }: Props) {
         const drvData = await drvRes.json();
         const vhcData = await vhcRes.json();
         const cliData = await cliRes.json();
-        
+
         setDrivers(drvData);
         setVehicles(vhcData);
         setClients(cliData);
@@ -112,33 +107,33 @@ export default function FreightOrderForm({ initialData }: Props) {
     loadResources();
   }, []);
 
-  // Autofill current user name as operator on startup if empty
+  // Autofill: o operador logado é o responsável padrão pela consulta Buonny
   useEffect(() => {
-    if (!responsibleName) {
+    if (!buonnyResponsible) {
       fetch('/api/auth/me')
         .then(r => r.json())
         .then(d => {
           if (d?.user) {
-            setResponsibleName(d.user.name);
+            setBuonnyResponsible(d.user.name);
           }
         });
     }
-  }, [responsibleName]);
+  }, [buonnyResponsible]);
 
-  // DERIVED/CALCULATED VALUES (Calculated cleanly on render)
+  // DERIVED/CALCULATED VALUES
   const balanceValue = freightValue - advanceValue - cashValue;
-  const totalExpenses = loadingExpense + unloadingExpense + otherExpenses;
-  const netValue = freightValue - totalExpenses;
 
   // Selected details display objects
   const activeDriver = drivers.find(d => d.id === driverId);
   const activeVehicle = vehicles.find(v => v.id === vehicleId);
   const activeClient = clients.find(c => c.id === clientId);
 
-  // Quick helper to upload mock files to order
+  const fmt = (n: number) => n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  // Upload mock files to order (edit only)
   const handleUploadMockFile = async (type: 'cte' | 'outros' | 'comprovante') => {
     if (!isEdit) {
-      alert("Por favor, submeta a Ordem de Frete (Rascunho) primeiro, e então anexe quantos documentos desejar na edição!");
+      alert("Por favor, submeta a Ficha de Frete (Rascunho) primeiro, e então anexe quantos documentos desejar na edição!");
       return;
     }
     setUploadingDemo(true);
@@ -146,10 +141,7 @@ export default function FreightOrderForm({ initialData }: Props) {
       const fd = new FormData();
       fd.append('order_id', initialData!.id);
       fd.append('file_type', type);
-      const res = await fetch('/api/attachments', {
-        method: 'POST',
-        body: fd
-      });
+      const res = await fetch('/api/attachments', { method: 'POST', body: fd });
       const data = await res.json();
       if (data && data.success) {
         setAttachments(prev => [...prev, data.attachment]);
@@ -165,9 +157,7 @@ export default function FreightOrderForm({ initialData }: Props) {
 
   const handleRemoveAttachment = async (id: string) => {
     try {
-      const res = await fetch(`/api/attachments?id=${id}`, {
-        method: 'DELETE'
-      });
+      const res = await fetch(`/api/attachments?id=${id}`, { method: 'DELETE' });
       if (res.ok) {
         setAttachments(attachments.filter(a => a.id !== id));
       }
@@ -182,51 +172,48 @@ export default function FreightOrderForm({ initialData }: Props) {
     setErrorMessage('');
     setSuccessMessage('');
 
-    // --- Core Validações (PRD Gatekeeping Rules) ---
     if (!driverId) {
       setErrorMessage("Identificação do motorista é obrigatória.");
-      setActiveTab('motorista');
       return;
     }
     if (!vehicleId) {
       setErrorMessage("O cadastro do veículo conjugado (cavalo e carreta) é obrigatório.");
-      setActiveTab('veiculo');
       return;
     }
     if (!clientId) {
-      setErrorMessage("O cliente destinatário do frete é obrigatório.");
-      setActiveTab('viagem');
+      setErrorMessage("O cliente do frete é obrigatório.");
       return;
     }
     if (!origin || !destination) {
       setErrorMessage("Origem e Destino do frete são obrigatórios.");
-      setActiveTab('viagem');
       return;
     }
     if (freightValue <= 0) {
-      setErrorMessage("O valor bruto do frete é obrigatório e deve ser maior que zero.");
-      setActiveTab('financeiro');
+      setErrorMessage("O valor do frete é obrigatório e deve ser maior que zero.");
       return;
     }
-
-    // Checking 1: Negative Balance confirmations
     if (balanceValue < 0 && !confirmNegativeBalance) {
-      setErrorMessage("⚠️ ATENÇÃO: O saldo do frete restou negativo! Por favor, role até o final da aba Financeiro e marque a Caixa de Confirmação operacional.");
-      setActiveTab('financeiro');
+      setErrorMessage("⚠️ ATENÇÃO: O saldo do frete restou negativo! Marque a confirmação de override no campo SALDO.");
       return;
     }
 
-    // Checking 2: Shipment release criteria (Sem consulta aprovada exige justificativa!)
-    const prechecksOk = buonnyStatus === 'Aprovado' && pancaryStatus === 'Aprovado';
+    const prechecksOk = buonnyStatus === 'Aprovado';
     if (shipmentReleaseStatus === 'Liberado' && !prechecksOk && !releaseJustification.trim()) {
-      setErrorMessage("⚠️ VIOLAÇÃO DE LIBERAÇÃO: Não é permitido liberar embarque sem consultas aprovadas por Buonny/Pancary sem uma Justificativa de Override Excepcional preenchida na aba Consultas.");
-      setActiveTab('consultas');
+      setErrorMessage("⚠️ Não é permitido liberar embarque sem a consulta Buonny aprovada sem uma justificativa de override.");
+      return;
+    }
+    if (buonnyCode.trim().length > 20) {
+      setErrorMessage("O código da consulta Buonny deve ter no máximo 20 caracteres.");
       return;
     }
 
     setSubmitting(true);
-    
-    // Formulate package
+
+    const orderStatus =
+      status === 'Rascunho' && shipmentReleaseStatus === 'Liberado'
+        ? 'Liberado para Embarque'
+        : status;
+
     const payload = {
       driver_id: driverId,
       vehicle_id: vehicleId,
@@ -240,14 +227,16 @@ export default function FreightOrderForm({ initialData }: Props) {
       origin,
       destination,
       delivery_date: deliveryDate,
-      status,
+      status: orderStatus,
       cte_number: cteNumber,
+      cte_value: cteValue,
       notes: `${tripNotes}. ${releaseJustification ? 'Override da liberação: ' + releaseJustification : ''}`.trim(),
       buonny_status: buonnyStatus,
-      pancary_status: pancaryStatus,
+      buonny_code: canEnterBuonnyCode ? buonnyCode.trim() : '',
       shipment_release_status: shipmentReleaseStatus,
       shipment_release_limit: shipmentReleaseLimit,
       responsible_name: responsibleName,
+      buonny_responsible: buonnyResponsible,
       signature_url: signatureText ? 'Assinado Digitalmente' : ''
     };
 
@@ -261,12 +250,10 @@ export default function FreightOrderForm({ initialData }: Props) {
         body: JSON.stringify(payload)
       });
       const data = await res.json();
-      
+
       if (data && data.success) {
-        setSuccessMessage(isEdit ? "Ficha de Frete atualizada com sucesso!" : "Ficha de Frete Digital gerada com sucesso!");
-        setTimeout(() => {
-          router.push('/ordens');
-        }, 1500);
+        setSuccessMessage(isEdit ? "Ficha de Frete atualizada com sucesso!" : "Ficha de Frete gerada com sucesso!");
+        setTimeout(() => { router.push('/ordens'); }, 1500);
       } else {
         setErrorMessage(data.error || "Algo deu errado durante a gravação.");
       }
@@ -279,16 +266,36 @@ export default function FreightOrderForm({ initialData }: Props) {
 
   if (loadingSelections) {
     return (
-      <div className="bg-white p-8 rounded-xl border border-slate-250 shadow-sm text-center py-16">
+      <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm text-center py-16">
         <div className="h-10 w-10 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
         <p className="text-sm font-semibold text-slate-500">Conectando ao banco de dados e sincronizando frotas...</p>
       </div>
     );
   }
 
+  // ---- Shared style tokens to mimic the printed sheet ----
+  const cell = "flex items-stretch border-b-2 border-slate-900 last:border-b-0";
+  const label = "flex items-center px-2 py-1.5 text-[10px] md:text-[11px] font-extrabold uppercase tracking-tight text-slate-900 whitespace-nowrap shrink-0";
+  const field = "flex-1 min-w-0 bg-transparent outline-none px-2 py-1.5 text-xs md:text-sm font-semibold text-blue-800";
+  const selectField = field + " cursor-pointer";
+  const divider = "border-l-2 border-slate-900";
+  const canEnterBuonnyCode = buonnyStatus === 'Aprovado' && shipmentReleaseStatus === 'Liberado';
+
+  // Square checkbox styled like the printed form
+  const Box = ({ checked, onClick }: { checked: boolean; onClick: () => void }) => (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`h-4 w-4 md:h-5 md:w-5 shrink-0 border-2 border-slate-900 rounded-[3px] flex items-center justify-center ${checked ? 'bg-slate-900' : 'bg-white'}`}
+      aria-pressed={checked}
+    >
+      {checked && <span className="text-white text-[10px] md:text-xs font-black leading-none">✕</span>}
+    </button>
+  );
+
   return (
     <div className="space-y-6">
-      
+
       {/* Messages */}
       {errorMessage && (
         <div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl flex items-start gap-3">
@@ -307,765 +314,617 @@ export default function FreightOrderForm({ initialData }: Props) {
         </div>
       )}
 
-      {/* Main Grid Wrapper */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <form id="freight-order-master-form" onSubmit={handleSaveOrder}>
 
-        {/* TAB LIST SIDEBAR PANEL */}
-        <div className="lg:col-span-1 space-y-2 bg-slate-900/5 p-3 rounded-2xl border border-slate-200 h-fit">
-          <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest px-3 block mb-2">Seções da Ficha</span>
-          <button
-            type="button"
-            onClick={() => setActiveTab('viagem')}
-            className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold flex items-center justify-between transition-all ${
-              activeTab === 'viagem' ? 'bg-slate-900 border border-slate-900 text-white shadow' : 'hover:bg-slate-200 text-slate-600'
-            }`}
-          >
-            <span className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 shrink-0" />
-              1. Viagem & Cliente
-            </span>
-            <ChevronRight className="h-3.5 w-3.5" />
-          </button>
+        {/* ===================== FICHA DE FRETE (réplica do papel) ===================== */}
+        <div className="mx-auto max-w-3xl bg-white border-2 border-slate-900 shadow-lg">
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('motorista')}
-            className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold flex items-center justify-between transition-all ${
-              activeTab === 'motorista' ? 'bg-slate-900 border border-slate-900 text-white shadow' : 'hover:bg-slate-200 text-slate-600'
-            }`}
-          >
-            <span className="flex items-center gap-2">
-              <User className="h-4 w-4 shrink-0" />
-              2. Motorista & Pix
-            </span>
-            <ChevronRight className="h-3.5 w-3.5" />
-          </button>
+          {/* TÍTULO */}
+          <div className="border-b-2 border-slate-900 px-3 py-2.5">
+            <h2 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900 uppercase text-center leading-none">
+              RBA Transporte e Logística
+            </h2>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('veiculo')}
-            className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold flex items-center justify-between transition-all ${
-              activeTab === 'veiculo' ? 'bg-slate-900 border border-slate-900 text-white shadow' : 'hover:bg-slate-200 text-slate-600'
-            }`}
-          >
-            <span className="flex items-center gap-2">
-              <Truck className="h-4 w-4 shrink-0" />
-              3. Veículo Conjugado
-            </span>
-            <ChevronRight className="h-3.5 w-3.5" />
-          </button>
+          {/* MOTORISTA + CPF (ambos buscáveis — selecionam o mesmo condutor) */}
+          <div className={cell}>
+            <div className="flex items-stretch flex-1 min-w-0">
+              <span className={label}>Motorista:</span>
+              <DriverCombobox
+                drivers={drivers}
+                value={driverId}
+                onChange={setDriverId}
+                display="name"
+                inputId="ip-driver-select"
+                inputClass={field}
+                placeholder="— buscar por nome —"
+              />
+            </div>
+            <div className={`flex items-stretch w-[42%] ${divider}`}>
+              <span className={label}>CPF:</span>
+              <DriverCombobox
+                drivers={drivers}
+                value={driverId}
+                onChange={setDriverId}
+                display="cpf"
+                inputId="ip-driver-cpf"
+                inputClass={field + ' font-mono'}
+                placeholder="— buscar por CPF —"
+              />
+            </div>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('financeiro')}
-            className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold flex items-center justify-between transition-all ${
-              activeTab === 'financeiro' ? 'bg-slate-900 border border-slate-900 text-white shadow' : 'hover:bg-slate-200 text-slate-600'
-            }`}
-          >
-            <span className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 shrink-0" />
-              4. Valores & Saldo
-            </span>
-            <ChevronRight className="h-3.5 w-3.5" />
-          </button>
+          {/* FONES + RG */}
+          <div className={cell}>
+            <div className="flex items-stretch flex-1 min-w-0">
+              <span className={label}>Fones:</span>
+              <span className={field + ' flex items-center'}>{activeDriver?.phone || ''}</span>
+            </div>
+            <div className={`flex items-stretch w-[42%] ${divider}`}>
+              <span className={label}>RG:</span>
+              <span className={field + ' flex items-center'}>{activeDriver?.rg || ''}</span>
+            </div>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('consultas')}
-            className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold flex items-center justify-between transition-all ${
-              activeTab === 'consultas' ? 'bg-slate-900 border border-slate-900 text-white shadow' : 'hover:bg-slate-200 text-slate-600'
-            }`}
-          >
-            <span className="flex items-center gap-2">
-              <ShieldAlert className="h-4 w-4 shrink-0" />
-              5. Consultas & Liberação
-            </span>
-            <ChevronRight className="h-3.5 w-3.5" />
-          </button>
+          {/* VALOR DE FRETE / AD. / A VISTA / SALDO */}
+          <div className={cell}>
+            <div className="flex items-stretch flex-1 min-w-0">
+              <span className={label}>Valor de Frete:</span>
+              <input
+                id="ip-freight"
+                type="number" step="0.01" min="0"
+                value={freightValue || ''}
+                onChange={(e) => setFreightValue(Number(e.target.value))}
+                className={field}
+              />
+            </div>
+            <div className={`flex items-stretch w-[18%] ${divider}`}>
+              <span className={label}>AD.:</span>
+              <input type="number" step="0.01" min="0" value={advanceValue || ''} onChange={(e) => setAdvanceValue(Number(e.target.value))} className={field} />
+            </div>
+            <div className={`flex items-stretch w-[22%] ${divider}`}>
+              <span className={label}>A Vista:</span>
+              <input type="number" step="0.01" min="0" value={cashValue || ''} onChange={(e) => setCashValue(Number(e.target.value))} className={field} />
+            </div>
+            <div className={`flex items-stretch w-[24%] ${divider}`}>
+              <span className={label}>Saldo:</span>
+              <span className={`${field} flex items-center font-black ${balanceValue < 0 ? 'text-red-600' : 'text-blue-800'}`}>
+                {fmt(balanceValue)}
+              </span>
+            </div>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('documentos')}
-            className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold flex items-center justify-between transition-all ${
-              activeTab === 'documentos' ? 'bg-slate-900 border border-slate-900 text-white shadow' : 'hover:bg-slate-200 text-slate-600'
-            }`}
-          >
-            <span className="flex items-center gap-2">
-              <NotebookPen className="h-4 w-4 shrink-0" />
-              6. CTE & Assinatura
-            </span>
-            <ChevronRight className="h-3.5 w-3.5" />
-          </button>
-        </div>
+          {/* Override saldo negativo */}
+          {balanceValue < 0 && (
+            <div className="border-b-2 border-slate-900 bg-red-50 px-2 py-1.5">
+              <label className="flex items-center gap-2 text-[11px] font-bold text-red-800 cursor-pointer select-none">
+                <input id="chk-negative-balance" type="checkbox" checked={confirmNegativeBalance} onChange={(e) => setConfirmNegativeBalance(e.target.checked)} className="h-4 w-4" />
+                Saldo negativo — confirmo e assumo override operacional desta ficha.
+              </label>
+            </div>
+          )}
 
-        {/* ACTIVE FORM BODY GROUP PANEL */}
-        <div className="lg:col-span-3 bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm">
-          <form id="freight-order-master-form" onSubmit={handleSaveOrder}>
-            
-            {/* T-1: VIAGEM & CLIENTE DADOS */}
-            {activeTab === 'viagem' && (
-              <div id="section-trip" className="space-y-6">
-                <div className="border-b border-slate-100 pb-4">
-                  <h3 className="text-sm font-black text-slate-900">1. Cadastro da Viagem e Cliente Pagador</h3>
-                  <p className="text-[11px] text-slate-450 mt-1">Insira as rotas, os prazos de entrega e selecione um cliente ativo do banco de dados.</p>
-                </div>
+          {/* DESPESAS ADICIONAIS: CARGA / DESCARGA / OUTROS */}
+          <div className={cell}>
+            <span className={label}>Despesas Adicionais:</span>
+            <div className="flex items-stretch flex-1 min-w-0">
+              <span className={label}>Carga:</span>
+              <input type="number" step="0.01" min="0" value={loadingExpense || ''} onChange={(e) => setLoadingExpense(Number(e.target.value))} className={field} />
+            </div>
+            <div className={`flex items-stretch flex-1 min-w-0 ${divider}`}>
+              <span className={label}>Descarga:</span>
+              <input type="number" step="0.01" min="0" value={unloadingExpense || ''} onChange={(e) => setUnloadingExpense(Number(e.target.value))} className={field} />
+            </div>
+            <div className={`flex items-stretch flex-1 min-w-0 ${divider}`}>
+              <span className={label}>Outros:</span>
+              <input type="number" step="0.01" min="0" value={otherExpenses || ''} onChange={(e) => setOtherExpenses(Number(e.target.value))} className={field} />
+            </div>
+          </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label id="lbl-viagem-cliente" className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Cliente Tomador do Frete *</label>
-                    <select
-                      id="ip-client-select"
-                      value={clientId}
-                      onChange={(e) => setClientId(e.target.value)}
-                      className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-50 border border-slate-250 rounded-lg outline-none focus:border-yellow-500 transition-colors"
-                    >
-                      <option value="">Selecione o Cliente</option>
-                      {clients.map(c => (
-                        <option key={c.id} value={c.id}>{c.name} - CNPJ: {c.document}</option>
-                      ))}
-                    </select>
-                  </div>
+          {/* DADOS BANCÁRIOS: BANCO / AG. / CONTA */}
+          <div className={cell}>
+            <span className={label}>Dados Bancários:</span>
+            <div className="flex items-stretch flex-1 min-w-0">
+              <span className={label}>Banco:</span>
+              <span className={field + ' flex items-center'}>{activeDriver?.bank_name || ''}</span>
+            </div>
+            <div className={`flex items-stretch w-[26%] ${divider}`}>
+              <span className={label}>AG.:</span>
+              <span className={field + ' flex items-center'}>{activeDriver?.bank_agency || ''}</span>
+            </div>
+            <div className={`flex items-stretch w-[26%] ${divider}`}>
+              <span className={label}>Conta:</span>
+              <span className={field + ' flex items-center'}>{activeDriver?.bank_account || ''}</span>
+            </div>
+          </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Data Limite de Entrega *</label>
-                    <input
-                      id="ip-delivery-date"
-                      type="date"
-                      value={deliveryDate}
-                      onChange={(e) => setDeliveryDate(e.target.value)}
-                      className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-50 border border-slate-250 rounded-lg outline-none focus:border-yellow-500 transition-colors"
-                    />
-                  </div>
-                </div>
+          {/* FAVORECIDO / CPF-CNPJ */}
+          <div className={cell}>
+            <div className="flex items-stretch flex-1 min-w-0">
+              <span className={label}>Favorecido:</span>
+              <span className={field + ' flex items-center'}>{activeDriver?.beneficiary_name || ''}</span>
+            </div>
+            <div className={`flex items-stretch w-[42%] ${divider}`}>
+              <span className={label}>CPF/CNPJ:</span>
+              <span className={field + ' flex items-center'}>{activeDriver?.beneficiary_document || ''}</span>
+            </div>
+          </div>
 
-                {activeClient && (
-                  <div className="p-4 bg-slate-55 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-medium">
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-bold">DETALHES DO CLIENTE:</span>
-                      <p className="text-slate-800 font-bold mt-1">{activeClient.name}</p>
-                      <p className="text-slate-500">Documento: {activeClient.document}</p>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-bold">CANAL DE CONTATO:</span>
-                      <p className="text-slate-500 mt-1">Email: {activeClient.email}</p>
-                      <p className="text-slate-500">Telefone: {activeClient.phone}</p>
-                    </div>
-                  </div>
+          {/* CONSULTA BUONNY + CTE */}
+          <div className={cell}>
+            <div className="flex-1 min-w-0">
+              {/* Buonny */}
+              <div className="flex items-center">
+                <span className={label}>Consulta Buonny:</span>
+                <label className="flex items-center gap-1.5 px-2 cursor-pointer select-none">
+                  <Box checked={buonnyStatus === 'Aprovado'} onClick={() => { setBuonnyStatus('Aprovado'); setShipmentReleaseStatus('Liberado'); }} />
+                  <span className="text-[10px] md:text-[11px] font-bold uppercase text-slate-900">Aprovado</span>
+                </label>
+                <label className="flex items-center gap-1.5 px-2 cursor-pointer select-none">
+                  <Box checked={buonnyStatus === 'Renovar'} onClick={() => setBuonnyStatus('Renovar')} />
+                  <span className="text-[10px] md:text-[11px] font-bold uppercase text-slate-900">Renovar</span>
+                </label>
+              </div>
+            </div>
+            {/* CTE */}
+            <div className={`flex flex-col w-[34%] ${divider}`}>
+              <span className={`${label} border-b-2 border-slate-900 justify-center`}>CTE:</span>
+              <input
+                id="ip-cte"
+                type="text"
+                value={cteNumber}
+                onChange={(e) => setCteNumber(e.target.value)}
+                placeholder="0000 / 0000"
+                className={field + ' text-center text-base font-bold'}
+              />
+              <span className={`${label} border-t-2 border-slate-900 justify-center`}>Valor do CTE:</span>
+              <input
+                id="ip-cte-value"
+                type="number" step="0.01" min="0"
+                value={cteValue || ''}
+                onChange={(e) => setCteValue(Number(e.target.value))}
+                placeholder="0,00"
+                className={field + ' flex-1 text-center text-base font-black text-blue-800'}
+              />
+            </div>
+          </div>
+
+          {/* LIBERAÇÃO DE EMBARQUE / RESP. */}
+          <div className={cell}>
+            <div className="flex items-stretch flex-1 min-w-0">
+              <span className={label}>Liberação de Embarque:</span>
+              <div className="flex flex-1 min-w-0 items-stretch">
+                <select
+                  id="ip-shipment-status"
+                  value={shipmentReleaseStatus}
+                  onChange={(e) => setShipmentReleaseStatus(e.target.value as any)}
+                  className={selectField}
+                >
+                  <option value="Pendente">Pendente</option>
+                  <option value="Liberado">Liberado</option>
+                  <option value="Bloqueado">Bloqueado</option>
+                </select>
+                {canEnterBuonnyCode && (
+                  <input
+                    id="ip-buonny-code"
+                    type="text"
+                    value={buonnyCode}
+                    onChange={(e) => setBuonnyCode(e.target.value.slice(0, 20))}
+                    maxLength={20}
+                    placeholder="Código Buonny"
+                    aria-label="Código da consulta Buonny"
+                    className={`${field} w-[45%] flex-none border-l-2 border-slate-900 font-mono tracking-wide placeholder:font-semibold placeholder:tracking-normal placeholder:text-slate-400`}
+                  />
                 )}
+              </div>
+            </div>
+            <div className={`flex items-stretch w-[42%] ${divider}`}>
+              <span className={label} title="Responsável pela consulta Buonny">Resp.:</span>
+              <input
+                type="text"
+                value={buonnyResponsible}
+                onChange={(e) => setBuonnyResponsible(e.target.value)}
+                placeholder="resp. da consulta Buonny"
+                className={field}
+              />
+            </div>
+          </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Cidade Origem (UF) *</label>
-                    <input
-                      id="ip-origin"
-                      type="text"
-                      placeholder="Ex: Santos - SP"
-                      value={origin}
-                      onChange={(e) => setOrigin(e.target.value)}
-                      className="w-full text-xs font-bold px-3 py-2.5 bg-slate-50 border border-slate-250 rounded-lg outline-none focus:border-yellow-500 transition-colors"
-                    />
-                  </div>
+          {/* Justificativa override liberação */}
+          {shipmentReleaseStatus === 'Liberado' && buonnyStatus !== 'Aprovado' && (
+            <div className="border-b-2 border-slate-900 bg-amber-50 px-2 py-1.5">
+              <input
+                id="ip-justification"
+                type="text"
+                value={releaseJustification}
+                onChange={(e) => setReleaseJustification(e.target.value)}
+                placeholder="Justificativa de override: liberação sem consulta aprovada..."
+                className="w-full bg-transparent outline-none text-[11px] font-semibold text-amber-900 placeholder:text-amber-500"
+              />
+            </div>
+          )}
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Cidade Destino (UF) *</label>
-                    <input
-                      id="ip-dest"
-                      type="text"
-                      placeholder="Ex: Rio de Janeiro - RJ"
-                      value={destination}
-                      onChange={(e) => setDestination(e.target.value)}
-                      className="w-full text-xs font-bold px-3 py-2.5 bg-slate-50 border border-slate-250 rounded-lg outline-none focus:border-yellow-500 transition-colors"
-                    />
-                  </div>
-                </div>
+          {/* LIMITES DE VALOR (checkboxes) */}
+          <div className={`${cell} flex-wrap gap-y-1 px-1 py-2`}>
+            {([
+              ['Até 100.000', 'Até 100.000,00'],
+              ['Até 200.000', 'Até 200.000,00'],
+              ['Até 300.000', 'Até 300.000,00'],
+              ['Até 400.000', 'Até 400.000,00'],
+              ['Até 500.000', 'Até 500.000,00'],
+            ] as const).map(([val, lbl]) => (
+              <label key={val} className="flex items-center gap-1.5 px-1.5 cursor-pointer select-none">
+                <Box checked={shipmentReleaseLimit === val} onClick={() => setShipmentReleaseLimit(val as any)} />
+                <span className="text-[10px] md:text-[11px] font-extrabold uppercase text-slate-900">{lbl}</span>
+              </label>
+            ))}
+          </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Status Operacional da Viagem</label>
-                    <select
-                      id="ip-status"
-                      value={status}
-                      onChange={(e) => setStatus(e.target.value as any)}
-                      className="w-full text-xs font-bold bg-yellow-500/10 border border-yellow-500/20 text-yellow-800 rounded-lg px-3 py-2.5 outline-none"
-                    >
-                      <option value="Rascunho">🟡 Rascunho Operacional</option>
-                      <option value="Em Análise">🔵 Em Análise de Crédito</option>
-                      <option value="Aprovado">🟢 Aprovado Buonny/Pancary</option>
-                      <option value="Liberado para Embarque">🚛 Liberado para Embarcar</option>
-                      <option value="Em Viagem">🛣️ Em Viagem</option>
-                      <option value="Entregue">✅ Entregue ao Cliente</option>
-                      <option value="Pago">💵 Liquidado / Pago</option>
-                      <option value="Cancelado">❌ Ordem Cancelada</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Observações de Logística</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Lacre balança, horário preferencial, orientações adicionais da RBA..."
-                    value={tripNotes}
-                    onChange={(e) => setTripNotes(e.target.value)}
-                    className="w-full text-xs font-bold p-3 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+          {/* TIPO DE VEÍCULO (2 linhas) */}
+          <div className={cell}>
+            <div className="flex items-center px-2 w-[28%] shrink-0 border-r-2 border-slate-900">
+              <span className="text-[10px] md:text-[11px] font-extrabold uppercase tracking-tight text-slate-900 leading-tight">
+                Tipo de Veículo:
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              {/* busca do conjunto */}
+              <div className="flex items-stretch border-b-2 border-slate-900">
+                <VehicleCombobox
+                  vehicles={vehicles}
+                  value={vehicleId}
+                  onChange={setVehicleId}
+                  display="summary"
+                  inputId="ip-vhc-select"
+                  inputClass={selectField}
+                  placeholder="— buscar por placa cavalo —"
+                />
+              </div>
+              {/* PLACA CAV / CARR */}
+              <div className="flex items-stretch border-b-2 border-slate-900">
+                <div className="flex items-stretch flex-1 min-w-0">
+                  <span className={label}>Placa Cav.:</span>
+                  <VehicleCombobox
+                    vehicles={vehicles}
+                    value={vehicleId}
+                    onChange={setVehicleId}
+                    display="tractor"
+                    inputId="ip-vhc-tractor-search"
+                    inputClass={field + ' font-mono uppercase'}
+                    placeholder="— buscar placa cav. —"
                   />
                 </div>
-
-                <div className="flex justify-end pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('motorista')}
-                    className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-lg flex items-center gap-1 cursor-pointer select-none"
-                  >
-                    Próxima Seção
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
+                <div className={`flex items-stretch w-[42%] ${divider}`}>
+                  <span className={label}>Carr.:</span>
+                  <span className={field + ' flex items-center font-mono'}>{activeVehicle?.trailer_plate || ''}</span>
                 </div>
               </div>
-            )}
-
-            {/* T-2: MOTORISTA & DADOS BANCÁRIOS */}
-            {activeTab === 'motorista' && (
-              <div id="section-driver" className="space-y-6">
-                <div className="border-b border-slate-100 pb-4">
-                  <h3 className="text-sm font-black text-slate-900">2. Motorista Vinculado e Snapshot Bancário</h3>
-                  <p className="text-[11px] text-slate-450 mt-1">Selecione o motorista para puxar seu CPF, RG, celular, dados PIX e dados de favorecido para liquidação direta.</p>
+              {/* ANO VEÍCULO / MOD */}
+              <div className="flex items-stretch">
+                <div className="flex items-stretch flex-1 min-w-0">
+                  <span className={label}>Ano Veículo:</span>
+                  <span className={field + ' flex items-center'}>{activeVehicle?.year || ''}</span>
                 </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Selecione o Motorista Ativo *</label>
-                  <select
-                    id="ip-driver-select"
-                    value={driverId}
-                    onChange={(e) => setDriverId(e.target.value)}
-                    className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-50 border border-slate-250 rounded-lg outline-none"
-                  >
-                    <option value="">Selecione o Condutor</option>
-                    {drivers.map(d => (
-                      <option key={d.id} value={d.id}>{d.name} {d.status === 'Bloqueado' ? '(⚠️ BLOQUEADO NO CADASTRO)' : ''}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {activeDriver && (
-                  <div className="space-y-6">
-                    {activeDriver.status === 'Bloqueado' && (
-                      <div className="p-3 bg-red-100 border border-red-200 rounded-lg text-red-800 text-xs font-bold flex items-center gap-2">
-                        <AlertCircle className="h-4 w-4 shrink-0" />
-                        <span>AVISO REGULATÓRIO: Este piloto possui Status BLOQUEADO por sinistros ou pendências de cadastro. Descarregue a ordem somente se possuir override de diretoria!</span>
-                      </div>
-                    )}
-
-                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-medium">
-                      <div>
-                        <span className="text-[10px] text-slate-450 block font-bold">DOCUMENTOS DO CONDUTOR</span>
-                        <p className="font-bold text-slate-800 mt-1">{activeDriver.name}</p>
-                        <p className="text-slate-500">CPF: {activeDriver.cpf}</p>
-                        <p className="text-slate-500">RG: {activeDriver.rg}</p>
-                        <p className="text-slate-500">Telefone: {activeDriver.phone}</p>
-                      </div>
-                      
-                      <div>
-                        <span className="text-[10px] text-slate-455 block font-bold">CONTA BANCÁRIA VINCULADA</span>
-                        <p className="font-bold text-slate-800 mt-1">Banco: {activeDriver.bank_name}</p>
-                        <p className="text-slate-500">Agência: {activeDriver.bank_agency}</p>
-                        <p className="text-slate-500">Conta: {activeDriver.bank_account}</p>
-                        <p className="text-emerald-700 font-bold">Chave Pix: {activeDriver.pix_key}</p>
-                      </div>
-
-                      <div>
-                        <span className="text-[10px] text-slate-455 block font-bold">FAVORECIDO / PIX ALTERNATIVO</span>
-                        <p className="font-bold mt-1 text-slate-800">Nome: {activeDriver.beneficiary_name}</p>
-                        <p className="text-slate-500">Documento: {activeDriver.beneficiary_document}</p>
-                        <span className="text-[8px] bg-sky-200/55 text-sky-800 block px-1 mt-2 rounded font-mono">
-                          REGISTRO AUDITÁVEL EM LIQUIDAÇÕES
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex justify-between pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('viagem')}
-                    className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-lg flex items-center gap-1"
-                  >
-                    Voltar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('veiculo')}
-                    className="px-5 py-2.5 bg-slate-900 text-white hover:bg-slate-800 font-extrabold text-xs rounded-lg flex items-center gap-1"
-                  >
-                    Próxima Seção
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
+                <div className={`flex items-stretch w-[42%] ${divider}`}>
+                  <span className={label}>Mod.:</span>
+                  <span className={field + ' flex items-center'}>{activeVehicle?.model || ''}</span>
                 </div>
               </div>
-            )}
+            </div>
+          </div>
 
-            {/* T-3: VEÍCULO CONJUGADO */}
-            {activeTab === 'veiculo' && (
-              <div id="section-vehicle" className="space-y-6">
-                <div className="border-b border-slate-100 pb-4">
-                  <h3 className="text-sm font-black text-slate-900">3. Veículo Conjugado (Cavalo & Carreta)</h3>
-                  <p className="text-[11px] text-slate-450 mt-1">Associe o chassi e placas (cavalo e carretas graneleiras, baú ou tanque) com cadastro fiscal ANTT e Renavam ativos.</p>
-                </div>
+          {/* CLIENTE / DATA DE ENTREGA */}
+          <div className={cell}>
+            <div className="flex items-stretch flex-1 min-w-0">
+              <span className={label}>Cliente:</span>
+              <select id="ip-client-select" value={clientId} onChange={(e) => setClientId(e.target.value)} className={selectField}>
+                <option value="">— selecione o cliente —</option>
+                {clients.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className={`flex items-stretch w-[42%] ${divider}`}>
+              <span className={label}>Data de Entrega:</span>
+              <input id="ip-delivery-date" type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} className={field} />
+            </div>
+          </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Selecione o Conjunto Conjugado *</label>
-                  <select
-                    id="ip-vhc-select"
-                    value={vehicleId}
-                    onChange={(e) => setVehicleId(e.target.value)}
-                    className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-50 border border-slate-250 rounded-lg outline-none"
-                  >
-                    <option value="">Selecione o Veículo</option>
-                    {vehicles.map(v => (
-                      <option key={v.id} value={v.id}>{v.model} - Cavalo: {v.tractor_plate} | Carreta: {v.trailer_plate} ({v.uf})</option>
-                    ))}
-                  </select>
-                </div>
+          {/* ORIGEM / DESTINO */}
+          <div className={cell}>
+            <div className="flex items-stretch flex-1 min-w-0">
+              <span className={label}>Origem:</span>
+              <input id="ip-origin" type="text" value={origin} onChange={(e) => setOrigin(e.target.value)} placeholder="Cidade - UF" className={field} />
+            </div>
+            <div className={`flex items-stretch w-[42%] ${divider}`}>
+              <span className={label}>Destino:</span>
+              <input id="ip-dest" type="text" value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Cidade - UF" className={field} />
+            </div>
+          </div>
 
-                {activeVehicle && (
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl grid grid-cols-1 md:grid-cols-3 gap-6 text-xs font-medium">
-                    <div className="space-y-1">
-                      <span className="text-[10px] text-slate-450 block font-bold">INFO DO EQUIPAMENTO</span>
-                      <p className="font-bold text-slate-933 mt-1">{activeVehicle.model} ({activeVehicle.year})</p>
-                      <p className="text-slate-600 font-mono">Trator Placa: {activeVehicle.tractor_plate}</p>
-                      <p className="text-slate-600 font-mono">Semi-Reboque: {activeVehicle.trailer_plate}</p>
-                      <p className="text-slate-600">Estado UF de Registro: {activeVehicle.uf}</p>
-                    </div>
+          {/* DADOS ADICIONAIS VEÍCULO (cabeçalho) */}
+          <div className="border-b-2 border-slate-900 px-2 py-1.5">
+            <span className="text-[11px] md:text-xs font-black uppercase tracking-tight text-slate-900">Dados Adicionais Veículo</span>
+          </div>
 
-                    <div className="space-y-1">
-                      <span className="text-[10px] text-slate-455 block font-bold">PROPRIETÁRIO CADASTRO</span>
-                      <p className="font-bold mt-1 text-slate-800">{activeVehicle.owner_name}</p>
-                      <p className="text-slate-500">CPF/CNPJ: {activeVehicle.owner_document}</p>
-                    </div>
+          {/* PROPRIETÁRIO */}
+          <div className={cell}>
+            <span className={label}>Proprietário:</span>
+            <span className={field + ' flex items-center'}>{activeVehicle?.owner_name || ''}</span>
+          </div>
 
-                    <div className="space-y-1">
-                      <span className="text-[10px] text-slate-455 block font-bold">REGISTROS FISCAIS</span>
-                      <p className="text-slate-655 mt-1">ANTT: {activeVehicle.antt}</p>
-                      <p className="text-slate-655">RENAVAM ID: {activeVehicle.renavam}</p>
-                    </div>
-                  </div>
-                )}
+          {/* CPF/CNPJ + UF */}
+          <div className={cell}>
+            <div className="flex items-stretch flex-1 min-w-0">
+              <span className={label}>CPF/CNPJ:</span>
+              <span className={field + ' flex items-center'}>{activeVehicle?.owner_document || ''}</span>
+            </div>
+            <div className={`flex items-stretch w-[22%] ${divider}`}>
+              <span className={label}>UF:</span>
+              <span className={field + ' flex items-center'}>{activeVehicle?.uf || ''}</span>
+            </div>
+          </div>
 
-                <div className="flex justify-between pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('motorista')}
-                    className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-lg"
-                  >
-                    Voltar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('financeiro')}
-                    className="px-5 py-2.5 bg-slate-900 text-white hover:bg-slate-800 font-extrabold text-xs rounded-lg flex items-center gap-1"
-                  >
-                    Próxima Seção
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            )}
+          {/* ANTT + REN. */}
+          <div className={cell}>
+            <div className="flex items-stretch flex-1 min-w-0">
+              <span className={label}>ANTT:</span>
+              <span className={field + ' flex items-center'}>{activeVehicle?.antt || ''}</span>
+            </div>
+            <div className={`flex items-stretch w-[50%] ${divider}`}>
+              <span className={label}>REN.:</span>
+              <span className={field + ' flex items-center'}>{activeVehicle?.renavam || ''}</span>
+            </div>
+          </div>
 
-            {/* T-4: VALORES & FINANCEIRO */}
-            {activeTab === 'financeiro' && (
-              <div id="section-finance" className="space-y-6">
-                <div className="border-b border-slate-100 pb-4">
-                  <h3 className="text-sm font-black text-slate-900">4. Controle de Valores do Frete (Adiantamento, Despesas e Saldo)</h3>
-                  <p className="text-[11px] text-slate-450 mt-1">Preencha os valores do frete. O saldo, despesas e margens líquidas são calculados em tempo real na tela.</p>
-                </div>
+          {/* DATA DE EMISSÃO + RESPONSÁVEL */}
+          <div className={cell}>
+            <div className="flex items-center gap-1 flex-1 min-w-0 px-2 py-2">
+              <input value={emissionDay} onChange={(e) => setEmissionDay(e.target.value)} className="w-10 bg-transparent outline-none text-center text-sm font-bold text-blue-800 border-b border-slate-400" />
+              <span className="text-[11px] font-extrabold uppercase text-slate-900">de</span>
+              <input value={emissionMonth} onChange={(e) => setEmissionMonth(e.target.value)} className="w-24 bg-transparent outline-none text-center text-sm font-bold text-blue-800 border-b border-slate-400" />
+              <span className="text-[11px] font-extrabold uppercase text-slate-900">20</span>
+              <input value={emissionYear} onChange={(e) => setEmissionYear(e.target.value)} className="w-10 bg-transparent outline-none text-center text-sm font-bold text-blue-800 border-b border-slate-400" />
+            </div>
+            <div className={`flex flex-col items-center justify-center w-[42%] px-2 py-1 ${divider}`}>
+              <input
+                type="text"
+                value={responsibleName}
+                onChange={(e) => setResponsibleName(e.target.value)}
+                placeholder="quem contratou o motorista"
+                className="w-full bg-transparent outline-none text-center text-sm font-bold text-blue-800 placeholder:text-slate-400 placeholder:font-normal placeholder:text-[11px]"
+              />
+              <span className="text-[10px] font-extrabold uppercase text-slate-900 tracking-wide">Responsável</span>
+            </div>
+          </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500 text-emerald-800">Valor Bruto do Frete (R$) *</label>
-                    <input
-                      id="ip-freight"
-                      type="number"
-                      step="0.01"
-                      value={freightValue}
-                      onChange={(e) => setFreightValue(Number(e.target.value))}
-                      className="w-full text-xs font-black px-3 py-2.5 bg-emerald-50 border border-emerald-250 text-emerald-950 rounded-lg outline-none"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500 text-sky-800">Adiantamento de Frete (R$)</label>
-                    <input
-                      id="ip-advance"
-                      type="number"
-                      step="0.01"
-                      value={advanceValue}
-                      onChange={(e) => setAdvanceValue(Number(e.target.value))}
-                      className="w-full text-xs font-bold px-3 py-2.5 bg-sky-50 border border-sky-200 text-sky-950 rounded-lg outline-none"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Valor Pago à Vista / Pedágio (R$)</label>
-                    <input
-                      id="ip-cash"
-                      type="number"
-                      step="0.01"
-                      value={cashValue}
-                      onChange={(e) => setCashValue(Number(e.target.value))}
-                      className="w-full text-xs font-bold px-3 py-2.5 bg-slate-50 border border-slate-250 rounded-lg outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Real-time Ledger calculations banner */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-900 text-white rounded-2xl p-5 border border-slate-800">
-                  <div className="space-y-1">
-                    <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest block">SALDO DO FRETE RESTANTE</span>
-                    <span className={`text-lg font-black tracking-wider block ${balanceValue < 0 ? 'text-red-400' : 'text-yellow-400'}`}>
-                      R$ {balanceValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </span>
-                    <span className="text-[8px] text-slate-400 block font-mono">FRETE - ADIANTAMENTO - PAGO À VISTA</span>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest block">TOTAL DESPESAS ADICIONAIS</span>
-                    <span className="text-lg font-black tracking-wider block text-slate-150">
-                      R$ {totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </span>
-                    <span className="text-[8px] text-slate-400 block font-mono">SOMA DO AJUSTE DE CARGA/DESCARGA</span>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest block">VALOR LÍQUIDO DO FRETE (MARGEM RBA)</span>
-                    <span className="text-lg font-black tracking-wider block text-emerald-400">
-                      R$ {netValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </span>
-                    <span className="text-[8px] text-slate-400 block font-mono">FRETE BRUTO - TOTAL DESPESAS</span>
-                  </div>
-                </div>
-
-                {balanceValue < 0 && (
-                  <div className="p-4 bg-red-100/70 border border-red-200 text-red-950 rounded-xl space-y-3">
-                    <div className="flex items-center gap-2.5 text-xs font-bold">
-                      <ShieldAlert className="h-5 w-5 text-red-700 shrink-0 animate-bounce" />
-                      <span>AVISO CRÍTICO: O saldo desta ficha deu NEGATIVO!</span>
-                    </div>
-                    <p className="text-xs font-medium">As adiantas e taxas à vista excederam o frete bruto contratado. Para prosseguir com o lançamento, exige confirmação excepcional do override:</p>
-                    <label className="flex items-center gap-2 text-xs font-bold shrink-0 bg-white p-3 rounded-lg border border-red-300 w-fit cursor-pointer select-none">
-                      <input
-                        id="chk-negative-balance"
-                        type="checkbox"
-                        checked={confirmNegativeBalance}
-                        onChange={(e) => setConfirmNegativeBalance(e.target.checked)}
-                        className="h-4 w-4 text-slate-900 border-slate-350 focus:ring-0 cursor-pointer"
-                      />
-                      <span>Declaro confirmar e assumir saldo de frete negativo para esta viagem.</span>
-                    </label>
-                  </div>
-                )}
-
-                <div className="border-t border-slate-100 pt-4">
-                  <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-wider mb-3">Custos Operacionais Excepcionais de Campo</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Adicional de Ajuda de Carga (R$)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={loadingExpense}
-                        onChange={(e) => setLoadingExpense(Number(e.target.value))}
-                        className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Adicional Descarrego (R$)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={unloadingExpense}
-                        onChange={(e) => setUnloadingExpense(Number(e.target.value))}
-                        className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Outras Despesas de Campo (R$)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={otherExpenses}
-                        onChange={(e) => setOtherExpenses(Number(e.target.value))}
-                        className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-between pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('veiculo')}
-                    className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-lg"
-                  >
-                    Voltar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('consultas')}
-                    className="px-5 py-2.5 bg-slate-900 text-white hover:bg-slate-800 font-extrabold text-xs rounded-lg flex items-center gap-1"
-                  >
-                    Próxima Seção
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* T-5: CONSULTAS & LIBERAÇÃO */}
-            {activeTab === 'consultas' && (
-              <div id="section-checks" className="space-y-6">
-                <div className="border-b border-slate-100 pb-4">
-                  <h3 className="text-sm font-black text-slate-900">5. Consultas Regulatórias de Risco e Liberação de Embarque</h3>
-                  <p className="text-[11px] text-slate-450 mt-1">Aprovação cadastral de seguro (Pancary e Buonny). Se alguma consulta estiver reprovada ou pendente, exige override com justificativa.</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Consulta Cadastral Buonny *</label>
-                    <select
-                      id="ip-buonny"
-                      value={buonnyStatus}
-                      onChange={(e) => setBuonnyStatus(e.target.value as any)}
-                      className="w-full text-xs font-extrabold px-3 py-2.5 bg-slate-50 border border-slate-250 rounded-lg outline-none"
-                    >
-                      <option value="Aprovado">🟢 Aprovado / Cadastro Ativo</option>
-                      <option value="Em Análise">🔵 Em Análise de Risco</option>
-                      <option value="Reprovado">🔴 Reprovado por Sinistro</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Consulta Cadastral Pancary *</label>
-                    <select
-                      id="ip-pancary"
-                      value={pancaryStatus}
-                      onChange={(e) => setPancaryStatus(e.target.value as any)}
-                      className="w-full text-xs font-extrabold px-3 py-2.5 bg-slate-50 border border-slate-250 rounded-lg outline-none"
-                    >
-                      <option value="Aprovado">🟢 Aprovado / Cobertura Ativa</option>
-                      <option value="Em Análise">🔵 Em Triagem e Sindicância</option>
-                      <option value="Reprovado">🔴 Reprovado por Pendência</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-yellow-500/10 border border-yellow-500/10 rounded-2xl grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Status da Liberação do Embarque</label>
-                    <select
-                      id="ip-shipment-status"
-                      value={shipmentReleaseStatus}
-                      onChange={(e) => setShipmentReleaseStatus(e.target.value as any)}
-                      className="w-full text-xs font-black bg-white border border-slate-250 rounded-lg px-3 py-2.5 outline-none"
-                    >
-                      <option value="Pendente">🟡 Pendente de Varredura</option>
-                      <option value="Liberado">🟢 Liberado de Embarque</option>
-                      <option value="Bloqueado">🔴 Bloqueado Operacionalmente</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Limite Seguro de Valor Carga</label>
-                    <select
-                      value={shipmentReleaseLimit}
-                      onChange={(e) => setShipmentReleaseLimit(e.target.value as any)}
-                      className="w-full text-xs font-bold bg-white border border-slate-250 rounded-lg px-3 py-2.5 outline-none"
-                    >
-                      <option value="Até 100.000">Até R$ 100.000 (Padrão)</option>
-                      <option value="Até 200.000">Até R$ 200.000</option>
-                      <option value="Até 300.000">Até R$ 300.000</option>
-                      <option value="Até 400.000">Até R$ 400.000</option>
-                      <option value="Até 500.000">Até R$ 500.000 (Teto Máximo)</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Exception Handling Justifications (Sem consulta aprovada exige justificativa!) */}
-                {shipmentReleaseStatus === 'Liberado' && (buonnyStatus !== 'Aprovado' || pancaryStatus !== 'Aprovado') && (
-                  <div className="p-4 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl space-y-2">
-                    <div className="flex items-center gap-2 text-xs font-bold">
-                      <AlertCircle className="h-4.5 w-4.5 text-amber-700 shrink-0" />
-                      <span>REGRA CRÍTICA: Liberação Autorizada Excepcionalmente</span>
-                    </div>
-                    <p className="text-[11px] font-medium text-amber-855">
-                      Você marcou o embarque como <strong>Liberado</strong>, porém a checagem da Buonny ou Pancary está pendente de aprovação total. Insira um despacho justificando formalmente a liberação sob responsabilidade operacional:
-                    </p>
-                    <textarea
-                      id="ip-justification"
-                      rows={2}
-                      placeholder="Ex: Autorizado liberação por termo de seguro especial assinado com a diretoria do cliente..."
-                      value={releaseJustification}
-                      onChange={(e) => setReleaseJustification(e.target.value)}
-                      className="w-full text-xs font-semibold p-2.5 bg-white border border-amber-300 rounded-lg outline-none focus:border-amber-500"
-                    />
-                  </div>
-                )}
-
-                <div className="flex justify-between pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('financeiro')}
-                    className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-lg"
-                  >
-                    Voltar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('documentos')}
-                    className="px-5 py-2.5 bg-slate-900 text-white hover:bg-slate-800 font-extrabold text-xs rounded-lg flex items-center gap-1"
-                  >
-                    Próxima Seção
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* T-6: DOCUMENTOS, ANEXOS & ASSINATURA */}
-            {activeTab === 'documentos' && (
-              <div id="section-docs" className="space-y-6">
-                <div className="border-b border-slate-100 pb-4">
-                  <h3 className="text-sm font-black text-slate-900">6. CTE Emitido, Anexos Digitais e Assinatura Interna</h3>
-                  <p className="text-[11px] text-slate-450 mt-1">Vincule o CTE emitido, faça upload dos relatórios em PDF e confirme a assinatura eletrônica para auditorias rápidas.</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Número do CTE (Conhecimento de Transporte Eletrônico)</label>
-                    <input
-                      id="ip-cte"
-                      type="text"
-                      placeholder="Ex: CTE-90231"
-                      value={cteNumber}
-                      onChange={(e) => setCteNumber(e.target.value)}
-                      className="w-full text-xs font-bold px-3 py-2.5 bg-slate-50 border border-slate-250 rounded-lg outline-none"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Responsável Interno da Liberação</label>
-                    <input
-                      id="ip-operator"
-                      type="text"
-                      readOnly
-                      value={responsibleName}
-                      className="w-full text-xs font-extrabold px-3 py-2.5 bg-slate-100 border border-slate-200 text-slate-500 rounded-lg outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Drag-and-drop Attachments simulations */}
-                <div className="space-y-3">
-                  <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Arquivos e Anexos (Armazenados no Supabase Storage)</label>
-                  
-                  {isEdit ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => handleUploadMockFile('cte')}
-                        disabled={uploadingDemo}
-                        className="py-4 border border-dashed border-slate-300 hover:border-yellow-500 hover:bg-slate-50 rounded-2xl flex flex-col items-center justify-center gap-1 cursor-pointer select-none"
-                      >
-                        <Paperclip className="h-5 w-5 text-slate-400" />
-                        <span className="text-xs font-bold text-slate-700">Simular Upload de CTE / Xml</span>
-                        <span className="text-[9px] text-slate-400">Gera um PDF e salva o arquivo</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleUploadMockFile('comprovante')}
-                        disabled={uploadingDemo}
-                        className="py-4 border border-dashed border-slate-300 hover:border-yellow-500 hover:bg-slate-50 rounded-2xl flex flex-col items-center justify-center gap-1 cursor-pointer select-none"
-                      >
-                        <Paperclip className="h-5 w-5 text-emerald-450" />
-                        <span className="text-xs font-bold text-slate-700">Anexar Comprovante do Adiantamento</span>
-                        <span className="text-[9px] text-slate-400">Envia para a pasta do financeiro</span>
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="p-4 bg-slate-50 border rounded-2xl text-center text-xs text-slate-500">
-                      ℹ️ O Upload de arquivos digitais estará disponível imediatamente após clicar em <strong>Salvar Ordem</strong> abaixo.
-                    </div>
-                  )}
-
-                  {/* Render present attachments */}
-                  {attachments.length > 0 && (
-                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1.5">
-                      <span className="text-[9px] text-slate-450 font-black block uppercase mb-1">Arquivos Carregados nesta Ficha ({attachments.length})</span>
-                      {attachments.map((file) => (
-                        <div key={file.id} className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-150 text-xs">
-                          <span className="font-semibold text-slate-700 truncate max-w-xs">{file.file_name}</span>
-                          <div className="flex items-center gap-2">
-                            <a href={file.file_url} target="_blank" rel="noreferrer" className="text-yellow-600 font-bold hover:underline">Ver</a>
-                            <button type="button" onClick={() => handleRemoveAttachment(file.id)} className="text-red-500 hover:text-red-700 text-[10px] font-bold">Excluir</button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Digital Signature box */}
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Assinatura Eletrônica do Operador RBA</label>
-                  <div className="p-4 bg-slate-900 text-slate-100 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-white">Confirmação Digital da Ordem de Frete</p>
-                      <p className="text-[10px] text-slate-400 mt-1">Ao marcar a autorização, o sistema carimba seu IP, data, hora e o token de liberação digital único.</p>
-                    </div>
-
-                    <div className="shrink-0 flex items-center gap-2">
-                      <label className="flex items-center gap-2 bg-yellow-500 text-black px-4 py-2 rounded-xl text-xs font-extrabold cursor-pointer select-none">
-                        <input
-                          id="ip-signature-check"
-                          type="checkbox"
-                          checked={!!signatureText}
-                          onChange={(e) => setSignatureText(e.target.checked ? 'Confirmada' : '')}
-                          className="h-4 w-4 bg-white text-black border-none focus:ring-0 cursor-pointer"
-                        />
-                        <span>CONFIRMAR ASSINATURA DIGITAL</span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-between pt-4 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('consultas')}
-                    className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-lg"
-                  >
-                    Voltar
-                  </button>
-                  
-                  <button
-                    id="submit-order-form-btn"
-                    type="submit"
-                    disabled={submitting}
-                    className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-lg shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer select-none"
-                  >
-                    <Save className="h-4.5 w-4.5" />
-                    {submitting ? 'Salvando...' : isEdit ? 'Salvar Alterações da Ordem' : 'Emitir Ficha de Frete Digital'}
-                  </button>
-                </div>
-              </div>
-            )}
-
-          </form>
+          {/* RODAPÉ – versículos */}
+          <div className="flex items-center justify-between gap-2 px-3 py-2 italic text-[9px] md:text-[10px] text-slate-700">
+            <span>Deus é por nós, quem será contra nós? Rm 8:31</span>
+            <span>Agindo Deus, quem impedirá? Is 43:31</span>
+          </div>
         </div>
-      </div>
+
+        {/* ===================== AÇÕES + ANEXOS ===================== */}
+        <div className="mx-auto max-w-3xl mt-5 space-y-4">
+
+          {/* Anexos (apenas em edição) */}
+          {isEdit && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Anexos da Ficha (Supabase Storage)</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <button type="button" onClick={() => handleUploadMockFile('cte')} disabled={uploadingDemo}
+                  className="py-3 border border-dashed border-slate-300 hover:border-yellow-500 hover:bg-slate-50 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-700">
+                  <Paperclip className="h-4 w-4 text-slate-400" /> Anexar CTE / XML
+                </button>
+                <button type="button" onClick={() => handleUploadMockFile('comprovante')} disabled={uploadingDemo}
+                  className="py-3 border border-dashed border-slate-300 hover:border-yellow-500 hover:bg-slate-50 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-700">
+                  <Paperclip className="h-4 w-4 text-emerald-500" /> Anexar Comprovante
+                </button>
+              </div>
+              {attachments.length > 0 && (
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1.5">
+                  {attachments.map((file) => (
+                    <div key={file.id} className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-150 text-xs">
+                      <span className="font-semibold text-slate-700 truncate max-w-xs">{file.file_name}</span>
+                      <div className="flex items-center gap-2">
+                        <a href={file.file_url} target="_blank" rel="noreferrer" className="text-yellow-600 font-bold hover:underline">Ver</a>
+                        <button type="button" onClick={() => handleRemoveAttachment(file.id)} className="text-red-500 hover:text-red-700 text-[10px] font-bold">Excluir</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Assinatura + Salvar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white border border-slate-200 rounded-2xl p-4">
+            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer select-none">
+              <input id="ip-signature-check" type="checkbox" checked={!!signatureText}
+                onChange={(e) => setSignatureText(e.target.checked ? 'Confirmada' : '')} className="h-4 w-4" />
+              Confirmar assinatura digital do operador
+            </label>
+            <button id="submit-order-form-btn" type="submit" disabled={submitting}
+              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-lg shadow-md flex items-center gap-2 disabled:opacity-60">
+              <Save className="h-4 w-4" />
+              {submitting ? 'Salvando...' : isEdit ? 'Salvar Alterações da Ficha' : 'Emitir Ficha de Frete'}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+/**
+ * Combobox de motorista com busca por NOME ou CPF.
+ * Tanto o campo "Motorista" quanto o campo "CPF" usam este componente e
+ * controlam o mesmo driverId — selecionar em um reflete no outro.
+ */
+function DriverCombobox({
+  drivers,
+  value,
+  onChange,
+  display,
+  inputClass,
+  inputId,
+  placeholder,
+}: {
+  drivers: Driver[];
+  value: string;
+  onChange: (id: string) => void;
+  display: 'name' | 'cpf';
+  inputClass: string;
+  inputId?: string;
+  placeholder?: string;
+}) {
+  const selected = drivers.find(d => d.id === value);
+  const [query, setQuery] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const shownValue = editing
+    ? query
+    : selected
+      ? (display === 'cpf' ? (selected.cpf || '') : selected.name)
+      : '';
+
+  const onlyDigits = (s: string) => (s || '').replace(/\D/g, '');
+  const q = query.trim();
+  const qDigits = onlyDigits(q);
+  const filtered = !q
+    ? drivers
+    : drivers.filter(d =>
+        d.name.toLowerCase().includes(q.toLowerCase()) ||
+        (qDigits.length > 0 && onlyDigits(d.cpf).includes(qDigits))
+      );
+
+  return (
+    <div className="relative flex-1 min-w-0">
+      <input
+        id={inputId}
+        type="text"
+        autoComplete="off"
+        value={shownValue}
+        placeholder={placeholder}
+        onFocus={() => { setEditing(true); setOpen(true); setQuery(''); }}
+        onChange={(e) => { setQuery(e.target.value); setEditing(true); setOpen(true); }}
+        onBlur={() => { window.setTimeout(() => { setOpen(false); setEditing(false); }, 150); }}
+        className={inputClass}
+      />
+      {open && (
+        <div className="absolute z-30 left-0 right-0 top-full mt-0.5 max-h-60 overflow-auto bg-white border-2 border-slate-900 rounded-md shadow-xl">
+          {filtered.length === 0 ? (
+            <div className="px-3 py-2 text-xs text-slate-500">Nenhum motorista encontrado.</div>
+          ) : (
+            filtered.map(d => (
+              <button
+                key={d.id}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => { onChange(d.id); setEditing(false); setOpen(false); setQuery(''); }}
+                className={`w-full text-left px-3 py-2 border-b border-slate-100 last:border-b-0 hover:bg-yellow-50 ${d.id === value ? 'bg-yellow-100' : ''}`}
+              >
+                <span className="block text-xs font-bold text-slate-900">
+                  {d.name}{d.status === 'Bloqueado' ? ' ⚠ (BLOQUEADO)' : ''}
+                </span>
+                <span className="block text-[11px] font-mono text-blue-700">CPF: {d.cpf || '—'}</span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Combobox de veículo com busca por placa do cavalo.
+ * O campo "Tipo de Veículo" e "Placa Cav." controlam o mesmo vehicleId,
+ * então selecionar pela placa preenche automaticamente o conjunto da ficha.
+ */
+function VehicleCombobox({
+  vehicles,
+  value,
+  onChange,
+  display,
+  inputClass,
+  inputId,
+  placeholder,
+}: {
+  vehicles: Vehicle[];
+  value: string;
+  onChange: (id: string) => void;
+  display: 'summary' | 'tractor';
+  inputClass: string;
+  inputId?: string;
+  placeholder?: string;
+}) {
+  const selected = vehicles.find(v => v.id === value);
+  const [query, setQuery] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const formatSummary = (vehicle: Vehicle) =>
+    `${vehicle.model || 'Veículo'} — ${vehicle.tractor_plate || '—'} / ${vehicle.trailer_plate || '—'}`;
+
+  const shownValue = editing
+    ? query
+    : selected
+      ? (display === 'tractor' ? (selected.tractor_plate || '') : formatSummary(selected))
+      : '';
+
+  const normalizePlate = (plate: string) => (plate || '').replace(/[^a-z0-9]/gi, '').toUpperCase();
+  const q = query.trim();
+  const qLower = q.toLowerCase();
+  const qPlate = normalizePlate(q);
+  const filtered = !q
+    ? vehicles
+    : vehicles.filter(v =>
+        v.model?.toLowerCase().includes(qLower) ||
+        v.owner_name?.toLowerCase().includes(qLower) ||
+        v.tractor_plate?.toLowerCase().includes(qLower) ||
+        v.trailer_plate?.toLowerCase().includes(qLower) ||
+        (qPlate.length > 0 && normalizePlate(v.tractor_plate).includes(qPlate)) ||
+        (qPlate.length > 0 && normalizePlate(v.trailer_plate).includes(qPlate))
+      );
+
+  return (
+    <div className="relative flex-1 min-w-0">
+      <input
+        id={inputId}
+        type="text"
+        autoComplete="off"
+        value={shownValue}
+        placeholder={placeholder}
+        onFocus={() => { setEditing(true); setOpen(true); setQuery(''); }}
+        onChange={(e) => { setQuery(e.target.value.toUpperCase()); setEditing(true); setOpen(true); }}
+        onBlur={() => { window.setTimeout(() => { setOpen(false); setEditing(false); }, 150); }}
+        className={inputClass}
+      />
+      {open && (
+        <div className="absolute z-30 left-0 right-0 top-full mt-0.5 max-h-60 overflow-auto bg-white border-2 border-slate-900 rounded-md shadow-xl">
+          {filtered.length === 0 ? (
+            <div className="px-3 py-2 text-xs text-slate-500">Nenhum veículo encontrado.</div>
+          ) : (
+            filtered.map(v => (
+              <button
+                key={v.id}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => { onChange(v.id); setEditing(false); setOpen(false); setQuery(''); }}
+                className={`w-full text-left px-3 py-2 border-b border-slate-100 last:border-b-0 hover:bg-yellow-50 ${v.id === value ? 'bg-yellow-100' : ''}`}
+              >
+                <span className="block text-xs font-bold text-slate-900">
+                  {v.tractor_plate || '—'} / {v.trailer_plate || '—'}{v.status === 'Bloqueado' ? ' ⚠ (BLOQUEADO)' : ''}
+                </span>
+                <span className="block text-[11px] text-blue-700">{v.model || 'Modelo não informado'} · {v.owner_name || 'Proprietário não informado'}</span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }

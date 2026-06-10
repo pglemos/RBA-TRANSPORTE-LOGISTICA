@@ -84,17 +84,20 @@ export interface FreightOrder {
     pix_key: string;
     beneficiary_name: string;
   };
-  buonny_status: 'Aprovado' | 'Em Análise' | 'Reprovado';
-  pancary_status: 'Aprovado' | 'Em Análise' | 'Reprovado';
+  buonny_status: 'Aprovado' | 'Renovar';
+  buonny_code: string;
   cte_number: string;
+  cte_value: number;
+  cte_discount_percent: number;
   shipment_release_status: 'Liberado' | 'Pendente' | 'Bloqueado';
   shipment_release_limit: 'Até 100.000' | 'Até 200.000' | 'Até 300.000' | 'Até 400.000' | 'Até 500.000';
   origin: string;
   destination: string;
   delivery_date: string;
   responsible_name: string;
+  buonny_responsible: string;
   signature_url: string;
-  status: 'Rascunho' | 'Em Análise' | 'Aprovado' | 'Liberado para Embarque' | 'Em Viagem' | 'Entregue' | 'Pago' | 'Cancelado';
+  status: 'Rascunho' | 'Em Análise' | 'Aprovado' | 'Liberado para Embarque' | 'Carregando' | 'Em Viagem' | 'Entregue' | 'Pago' | 'Cancelado';
   notes: string;
   created_by: string;
   approved_by: string;
@@ -160,6 +163,52 @@ interface Database {
 }
 
 const DB_PATH = path.join(process.cwd(), 'rba_database.json');
+
+type SupabaseMutationResult<T> = {
+  data: T | null;
+  error: {
+    message?: string;
+    details?: string | null;
+    hint?: string | null;
+    code?: string;
+  } | null;
+};
+
+const parseMissingSupabaseColumn = (message?: string) => {
+  const match = message?.match(/Could not find the '([^']+)' column/);
+  return match?.[1] || null;
+};
+
+const withFreightOrderSchemaFallback = async <T>(
+  payload: Record<string, any>,
+  mutate: (cleanPayload: Record<string, any>) => PromiseLike<SupabaseMutationResult<T>>
+) => {
+  const cleanPayload = { ...payload };
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const result = await mutate(cleanPayload);
+    if (!result.error) return result;
+
+    const missingColumn = parseMissingSupabaseColumn(result.error.message);
+    if (!missingColumn || !(missingColumn in cleanPayload)) {
+      return result;
+    }
+
+    delete cleanPayload[missingColumn];
+  }
+
+  return mutate(cleanPayload);
+};
+
+const nextFreightOrderSequence = (orders: Pick<FreightOrder, 'order_number'>[]) => {
+  const maxSequence = orders.reduce((max, order) => {
+    const match = order.order_number?.match(/RBA-\d{4}-(\d+)$/);
+    const sequence = match ? Number(match[1]) : 0;
+    return Number.isFinite(sequence) && sequence > max ? sequence : max;
+  }, 0);
+
+  return maxSequence + 1;
+};
 
 // Initial seed data
 const initialDB: Database = {
@@ -333,7 +382,7 @@ const initialDB: Database = {
       phone: "1130001000",
       email: "logistica@ambev.com.br",
       address: "Av. Renato Paes de Barros, 1017 - Itaim Bibi, São Paulo - SP",
-      notes: "Faturamento quinzenal. Exige seguro pancary cadastrado.",
+      notes: "Faturamento quinzenal.",
       created_at: "2026-05-20T11:10:00Z",
       updated_at: "2026-05-20T11:10:00Z"
     },
@@ -384,14 +433,17 @@ const initialDB: Database = {
         beneficiary_name: "José Roberto de Almeida"
       },
       buonny_status: "Aprovado",
-      pancary_status: "Aprovado",
+      buonny_code: "BNY0000000000000001",
       cte_number: "CTE-10293",
+      cte_value: 18500.00,
+      cte_discount_percent: 10,
       shipment_release_status: "Liberado",
       shipment_release_limit: "Até 100.000",
       origin: "Jundiaí - SP",
       destination: "Cajamar - SP",
       delivery_date: "2026-06-03",
       responsible_name: "Ana Costa",
+      buonny_responsible: "Morgan Ribeiro (Admin)",
       signature_url: "Assinado Digitalmente por Ana Costa",
       status: "Liberado para Embarque",
       notes: "Carregamento de bebidas Ambev. Liberação autorizada Buonny ativa.",
@@ -424,17 +476,20 @@ const initialDB: Database = {
         beneficiary_name: "Marcos Vinicius Santos"
       },
       buonny_status: "Aprovado",
-      pancary_status: "Em Análise",
+      buonny_code: "BNY0000000000000002",
       cte_number: "CTE-12831",
+      cte_value: 24300.00,
+      cte_discount_percent: 10,
       shipment_release_status: "Pendente",
       shipment_release_limit: "Até 200.000",
       origin: "Telêmaco Borba - PR",
       destination: "Mogi das Cruzes - SP",
       delivery_date: "2026-06-05",
       responsible_name: "Ana Costa",
+      buonny_responsible: "Ana Costa",
       signature_url: "",
       status: "Em Análise",
-      notes: "Pancary em análise, aguardando liberação do sinistro.",
+      notes: "Aguardando liberação do sinistro.",
       created_by: "Ana Costa",
       approved_by: "",
       approved_at: "",
@@ -533,20 +588,32 @@ const initialDB: Database = {
 export class RBADatabase {
   private static load(): Database {
     if (!fs.existsSync(DB_PATH)) {
-      this.save(initialDB);
+      try {
+        this.save(initialDB);
+      } catch (e) {
+        console.warn("Could not save initial database file, using in-memory:", e);
+      }
       return initialDB;
     }
     try {
       const content = fs.readFileSync(DB_PATH, 'utf-8');
       return JSON.parse(content);
     } catch (e) {
-      this.save(initialDB);
+      try {
+        this.save(initialDB);
+      } catch (saveErr) {
+        console.warn("Could not save fallback database file:", saveErr);
+      }
       return initialDB;
     }
   }
 
   private static save(db: Database) {
-    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf-8');
+    try {
+      fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf-8');
+    } catch (e) {
+      console.warn("Could not write to local database file (likely read-only environment):", e);
+    }
   }
 
   // Auditing Helper
@@ -958,7 +1025,13 @@ export class RBADatabase {
   public static async getFreightOrders() {
     if (isSupabaseServerConfigured) {
       const { data, error } = await supabaseServer.from('freight_orders').select('*');
-      if (!error && data) return data as FreightOrder[];
+      if (!error && data) {
+        return data.map(order => ({
+          buonny_code: '',
+          buonny_responsible: '',
+          ...order
+        })) as FreightOrder[];
+      }
     }
     return this.load().freight_orders;
   }
@@ -966,7 +1039,13 @@ export class RBADatabase {
   public static async getFreightOrderById(id: string) {
     if (isSupabaseServerConfigured) {
       const { data, error } = await supabaseServer.from('freight_orders').select('*').eq('id', id).limit(1);
-      if (!error && data && data.length > 0) return data[0] as FreightOrder;
+      if (!error && data && data.length > 0) {
+        return {
+          buonny_code: '',
+          buonny_responsible: '',
+          ...data[0]
+        } as FreightOrder;
+      }
     }
     return this.load().freight_orders.find(o => o.id === id);
   }
@@ -985,9 +1064,21 @@ export class RBADatabase {
     const netVal = fVal - totExp;
     const newId = `ord_${Date.now()}`;
 
-    // Get counter
-    const dbLocal = this.load();
-    const sequence = dbLocal.freight_orders.length + 1;
+    // Get counter from the active datastore to avoid duplicate order numbers.
+    let existingOrders: Pick<FreightOrder, 'order_number'>[];
+    if (isSupabaseServerConfigured) {
+      const { data: orderNumbers, error: orderNumbersError } = await supabaseServer
+        .from('freight_orders')
+        .select('order_number');
+
+      if (orderNumbersError) {
+        throw new Error(`Erro ao gerar número da ordem no Supabase: ${orderNumbersError.message}`);
+      }
+      existingOrders = orderNumbers || [];
+    } else {
+      existingOrders = this.load().freight_orders;
+    }
+    const sequence = nextFreightOrderSequence(existingOrders);
     const orderNumber = `RBA-2026-${String(sequence).padStart(4, '0')}`;
 
     const cleanPayload = {
@@ -1008,11 +1099,13 @@ export class RBADatabase {
     };
 
     if (isSupabaseServerConfigured) {
-      const { data, error } = await supabaseServer
-        .from('freight_orders')
-        .insert(cleanPayload)
-        .select()
-        .single();
+      const { data, error } = await withFreightOrderSchemaFallback(cleanPayload, (payload) =>
+        supabaseServer
+          .from('freight_orders')
+          .insert(payload)
+          .select()
+          .single()
+      );
       if (!error && data) {
         // Auto-create initial advance payments if specified
         if (advVal > 0) {
@@ -1034,6 +1127,7 @@ export class RBADatabase {
         await this.addAuditLog(operatorId, operatorName, "Criar Ordem Frete", "Ordem de Frete", newId, null, data);
         return data as FreightOrder;
       }
+      throw new Error(`Erro ao salvar ordem no Supabase: ${error?.message || 'erro desconhecido'}`);
     }
 
     const db = this.load();
@@ -1080,16 +1174,14 @@ export class RBADatabase {
 
       const netVal = fVal - totExp;
 
-      let approvedBy = baseObj.approved_by || '';
-      let approvedAt = baseObj.approved_at || '';
+      let approvedBy = baseObj.approved_by || null;
+      let approvedAt = baseObj.approved_at || null;
       if (orderData.status === 'Aprovado' && oldVal?.status !== 'Aprovado') {
         approvedBy = operatorName;
         approvedAt = new Date().toISOString();
       }
 
-      const { data, error } = await supabaseServer
-        .from('freight_orders')
-        .update({
+      const updatePayload = {
           ...orderData,
           balance_value: balVal,
           total_expenses: totExp,
@@ -1103,15 +1195,22 @@ export class RBADatabase {
           approved_by: approvedBy,
           approved_at: approvedAt,
           updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
+        };
+
+      const { data, error } = await withFreightOrderSchemaFallback(updatePayload, (payload) =>
+        supabaseServer
+          .from('freight_orders')
+          .update(payload)
+          .eq('id', id)
+          .select()
+          .single()
+      );
 
       if (!error && data) {
         await this.addAuditLog(operatorId, operatorName, "Editar Ordem Frete", "Ordem de Frete", id, oldVal, data);
         return data as FreightOrder;
       }
+      throw new Error(`Erro ao atualizar ordem no Supabase: ${error?.message || 'erro desconhecido'}`);
     }
 
     const db = this.load();

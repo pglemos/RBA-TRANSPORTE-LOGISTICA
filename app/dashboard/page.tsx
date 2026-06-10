@@ -1,29 +1,30 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  LineChart, 
-  Line 
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts';
-import { 
-  DollarSign, 
-  TrendingUp, 
-  Activity, 
-  AlertTriangle, 
-  Plus, 
-  ArrowUpRight, 
-  CheckCircle, 
-  Clock, 
-  UserPlus 
+import {
+  Activity,
+  AlertTriangle,
+  ArrowUpRight,
+  CheckCircle,
+  Clock,
+  DollarSign,
+  Plus,
+  Sparkles,
+  TrendingUp,
+  UserPlus,
 } from 'lucide-react';
 
 interface SummaryData {
@@ -36,54 +37,53 @@ interface SummaryData {
   ordersByStatus: Record<string, number>;
 }
 
+const emptySummary: SummaryData = {
+  totalOrders: 0,
+  totalFreight: 0,
+  totalAdvance: 0,
+  totalBalanceToPay: 0,
+  totalExpenses: 0,
+  totalNet: 0,
+  ordersByStatus: {},
+};
+
 export default function DashboardPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState<SummaryData>({
-    totalOrders: 0,
-    totalFreight: 0,
-    totalAdvance: 0,
-    totalBalanceToPay: 0,
-    totalExpenses: 0,
-    totalNet: 0,
-    ordersByStatus: {}
-  });
+  const [summary, setSummary] = useState<SummaryData>(emptySummary);
 
   const loadData = async () => {
     try {
       const res = await fetch('/api/orders');
       const data = await res.json();
-      if (Array.isArray(data)) {
-        setOrders(data);
-        
-        // Calculate dynamic summary counters
-        let freight = 0;
-        let advance = 0;
-        let balance = 0;
-        let expenses = 0;
-        let net = 0;
-        const statusMap: Record<string, number> = {};
+      if (!Array.isArray(data)) return;
 
-        data.forEach(o => {
-          freight += Number(o.freight_value) || 0;
-          advance += Number(o.advance_value) || 0;
-          balance += Number(o.balance_value) || 0;
-          expenses += Number(o.total_expenses) || 0;
-          net += Number(o.net_value) || 0;
+      let freight = 0;
+      let advance = 0;
+      let balance = 0;
+      let expenses = 0;
+      let net = 0;
+      const statusMap: Record<string, number> = {};
 
-          statusMap[o.status] = (statusMap[o.status] || 0) + 1;
-        });
+      data.forEach((order) => {
+        freight += Number(order.freight_value) || 0;
+        advance += Number(order.advance_value) || 0;
+        balance += Number(order.balance_value) || 0;
+        expenses += Number(order.total_expenses) || 0;
+        net += Number(order.net_value) || 0;
+        statusMap[order.status] = (statusMap[order.status] || 0) + 1;
+      });
 
-        setSummary({
-          totalOrders: data.length,
-          totalFreight: freight,
-          totalAdvance: advance,
-          totalBalanceToPay: balance,
-          totalExpenses: expenses,
-          totalNet: net,
-          ordersByStatus: statusMap
-        });
-      }
+      setOrders(data);
+      setSummary({
+        totalOrders: data.length,
+        totalFreight: freight,
+        totalAdvance: advance,
+        totalBalanceToPay: balance,
+        totalExpenses: expenses,
+        totalNet: net,
+        ordersByStatus: statusMap,
+      });
     } catch (e) {
       console.error(e);
     } finally {
@@ -92,10 +92,7 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadData();
-    }, 0);
-    // Refresh if simulation role changes
+    const timer = setTimeout(loadData, 0);
     window.addEventListener('rba-auth-switch', loadData);
     return () => {
       clearTimeout(timer);
@@ -103,249 +100,347 @@ export default function DashboardPage() {
     };
   }, []);
 
-  // Quick simulated analytics dataset based on active listings
+  const formatCurrency = (value: number) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
   const chartData = [
-    { name: 'Jan', Fretes: (summary.totalFreight * 0.4) || 20000, Margem: (summary.totalNet * 0.4) || 18000 },
-    { name: 'Fev', Fretes: (summary.totalFreight * 0.6) || 35000, Margem: (summary.totalNet * 0.6) || 31000 },
-    { name: 'Mar', Fretes: (summary.totalFreight * 0.5) || 28000, Margem: (summary.totalNet * 0.5) || 26000 },
-    { name: 'Abr', Fretes: (summary.totalFreight * 0.8) || 45000, Margem: (summary.totalNet * 0.8) || 41000 },
-    { name: 'Mai', Fretes: summary.totalFreight || 62000, Margem: summary.totalNet || 57000 },
-    { name: 'Jun', Fretes: (summary.totalFreight * 1.1) || 68000, Margem: (summary.totalNet * 1.15) || 64000 }
+    { name: 'Jan', Fretes: summary.totalFreight * 0.38 || 20000, Margem: summary.totalNet * 0.34 || 12000 },
+    { name: 'Fev', Fretes: summary.totalFreight * 0.52 || 32000, Margem: summary.totalNet * 0.45 || 22000 },
+    { name: 'Mar', Fretes: summary.totalFreight * 0.48 || 28000, Margem: summary.totalNet * 0.42 || 19000 },
+    { name: 'Abr', Fretes: summary.totalFreight * 0.72 || 45000, Margem: summary.totalNet * 0.64 || 35000 },
+    { name: 'Mai', Fretes: summary.totalFreight || 62000, Margem: summary.totalNet || 47000 },
+    { name: 'Jun', Fretes: summary.totalFreight * 1.08 || 68000, Margem: summary.totalNet * 1.12 || 52000 },
+  ];
+
+  const statusData = [
+    { name: 'Rascunho', value: summary.ordersByStatus.Rascunho || 0 },
+    { name: 'Análise', value: summary.ordersByStatus['Em Análise'] || 0 },
+    { name: 'Liberado', value: summary.ordersByStatus['Liberado para Embarque'] || 0 },
+    { name: 'Carregando', value: summary.ordersByStatus.Carregando || 0 },
+    { name: 'Pago', value: summary.ordersByStatus.Pago || 0 },
   ];
 
   return (
     <HeaderAndSidebar>
-      <div className="space-y-6" id="dashboard-container">
-        
-        {/* Banner Welcome */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-xs">
-          <div>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">RBA Fretes Digital • Painel Geral</h1>
-            <p className="text-xs text-slate-500 mt-1">Bem-vindo à central operacional integrada de logística e monitoramento de riscos.</p>
+      <div id="dashboard-container" className="space-y-8">
+        <section className="rounded-lg border border-slate-200 bg-[oklch(98.5%_0.006_83)] p-6 shadow-sm md:p-8">
+          <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+            <div className="max-w-[72ch]">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[#d8b45d]/35 bg-[#fff7df] px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[#8a6725]">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Painel operacional
+                </span>
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-emerald-700">
+                  Operação online
+                </span>
+              </div>
+              <h1 className="mt-5 max-w-[14ch] text-3xl font-black leading-[1.05] tracking-tight text-slate-950 md:text-[2.75rem]">
+                Fretes, caixa e risco sob controle.
+              </h1>
+              <p className="mt-4 max-w-[68ch] text-base leading-7 text-slate-600">
+                Acompanhe prioridades do dia, pagamentos pendentes, margem e ordens recentes sem perder contexto operacional.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row xl:justify-end">
+              <Link
+                id="dash-add-order-btn"
+                href="/ordens/nova"
+                className="inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-slate-950 px-5 text-xs font-black uppercase tracking-[0.12em] text-white transition hover:bg-slate-800"
+              >
+                <Plus className="h-4.5 w-4.5" />
+                Nova ordem
+              </Link>
+              <Link
+                href="/relatorios"
+                className="inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-slate-200 bg-[oklch(98%_0.006_83)] px-5 text-xs font-black uppercase tracking-[0.12em] text-slate-700 transition hover:border-[#d8b45d] hover:text-slate-950"
+              >
+                Relatórios
+                <ArrowUpRight className="h-4.5 w-4.5" />
+              </Link>
+            </div>
           </div>
-          <div className="flex gap-2 shrink-0">
-            <Link
-              id="dash-add-order-btn"
-              href="/ordens/nova"
-              className="px-4 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-extrabold text-xs tracking-wider uppercase rounded-xl shadow transition-all flex items-center gap-1.5 cursor-pointer"
-            >
-              <Plus className="h-4.5 w-4.5" />
-              Nova Ordem de Frete
-            </Link>
+
+          <div className="mt-8 grid gap-3 border-t border-slate-200 pt-5 sm:grid-cols-2 xl:grid-cols-4">
+            <SummaryLine label="Ordens abertas" value={summary.totalOrders.toString()} />
+            <SummaryLine label="Margem líquida" value={formatCurrency(summary.totalNet)} />
+            <SummaryLine label="Saldo a liquidar" value={formatCurrency(summary.totalBalanceToPay)} />
+            <SummaryLine label="Despesas" value={formatCurrency(summary.totalExpenses)} />
           </div>
-        </div>
+        </section>
 
         {loading ? (
-          <div className="py-24 text-center">
-            <div className="h-10 w-10 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-slate-500 font-bold text-xs">Carregando métricas e consolidados de viagem...</p>
+          <div className="rounded-lg border border-slate-200 bg-[oklch(98.5%_0.006_83)] py-24 text-center shadow-sm">
+            <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-[#d8b45d] border-t-transparent" />
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Carregando métricas...</p>
           </div>
         ) : (
           <>
-            {/* KPI METRIC CONTAINER */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              
-              <div className="bg-white border border-slate-200 rounded-2xl p-5 hover:shadow-md transition-shadow relative overflow-hidden">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-slate-450 uppercase font-black tracking-wider">Volume Faturamento Bruto</span>
-                  <div className="h-8 w-8 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-700">
-                    <DollarSign className="h-4.5 w-4.5" />
+            <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <KpiCard
+                label="Faturamento bruto"
+                value={formatCurrency(summary.totalFreight)}
+                detail={`Margem liquida: ${formatCurrency(summary.totalNet)}`}
+                icon={DollarSign}
+                tone="emerald"
+              />
+              <KpiCard
+                label="Adiantamentos"
+                value={formatCurrency(summary.totalAdvance)}
+                detail={`Despesas: ${formatCurrency(summary.totalExpenses)}`}
+                icon={Activity}
+                tone="blue"
+              />
+              <KpiCard
+                label="Saldos pendentes"
+                value={formatCurrency(summary.totalBalanceToPay)}
+                detail="A liquidar na entrega do CTE"
+                icon={Clock}
+                tone="gold"
+              />
+              <KpiCard
+                label="Fretes ativos"
+                value={`${summary.totalOrders} emissões`}
+                detail={`Liberados: ${summary.ordersByStatus['Liberado para Embarque'] || 0}`}
+                icon={TrendingUp}
+                tone="slate"
+              />
+            </section>
+
+            <section className="grid grid-cols-1 gap-6 xl:grid-cols-[0.85fr_1.15fr]">
+              <div className="rounded-lg border border-slate-200 bg-[oklch(98.5%_0.006_83)] p-6 shadow-sm">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Pendências críticas</p>
+                    <h2 className="mt-2 text-xl font-black text-slate-950">Alertas operacionais</h2>
                   </div>
+                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-rose-50 text-rose-600">
+                    <AlertTriangle className="h-5 w-5" />
+                  </span>
                 </div>
-                <h4 className="text-lg font-black tracking-wider text-slate-900 mt-3">
-                  R$ {summary.totalFreight.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </h4>
-                <p className="text-[10px] text-slate-450 mt-1.5 flex items-center gap-1">
-                  <TrendingUp className="h-3 w-3 text-emerald-600" />
-                  Margem Líquida RBA: R$ {summary.totalNet.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
-                <span className="absolute bottom-0 right-0 h-1.5 w-24 bg-emerald-500 rounded-tl" />
-              </div>
 
-              <div className="bg-white border border-slate-200 rounded-2xl p-5 hover:shadow-md transition-shadow relative overflow-hidden">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-slate-450 uppercase font-black tracking-wider">Adiantamentos Desembolsados</span>
-                  <div className="h-8 w-8 bg-sky-100 rounded-lg flex items-center justify-center text-sky-700">
-                    <Activity className="h-4.5 w-4.5" />
-                  </div>
-                </div>
-                <h4 className="text-lg font-black tracking-wider text-slate-900 mt-3">
-                  R$ {summary.totalAdvance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </h4>
-                <p className="text-[10px] text-slate-450 mt-1.5">
-                  Despesas acessórias campo: R$ {summary.totalExpenses.toLocaleString('pt-BR')}
-                </p>
-                <span className="absolute bottom-0 right-0 h-1.5 w-24 bg-sky-500 rounded-tl" />
-              </div>
-
-              <div className="bg-white border border-slate-200 rounded-2xl p-5 hover:shadow-md transition-shadow relative overflow-hidden">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-slate-450 uppercase font-black tracking-wider">Saldos Finais Pendentes</span>
-                  <div className="h-8 w-8 bg-yellow-100 rounded-lg flex items-center justify-center text-yellow-700">
-                    <DollarSign className="h-4.5 w-4.5" />
-                  </div>
-                </div>
-                <h4 className="text-lg font-black tracking-wider text-slate-900 mt-3">
-                  R$ {summary.totalBalanceToPay.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </h4>
-                <p className="text-[10px] text-yellow-700 font-bold bg-yellow-400/10 px-2.5 py-0.5 rounded mt-3 block w-fit">
-                  A liquidar na entrega do CTE
-                </p>
-                <span className="absolute bottom-0 right-0 h-1.5 w-24 bg-yellow-500 rounded-tl" />
-              </div>
-
-              <div className="bg-white border border-slate-200 rounded-2xl p-5 hover:shadow-md transition-shadow relative overflow-hidden">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-slate-450 uppercase font-black tracking-wider">Fichas de Fretes Ativas</span>
-                  <div className="h-8 w-8 bg-purple-100 rounded-lg flex items-center justify-center text-purple-700">
-                    <TrendingUp className="h-4.5 w-4.5" />
-                  </div>
-                </div>
-                <h4 className="text-lg font-black tracking-wider text-slate-900 mt-3">
-                  {summary.totalOrders} Emissão(ões)
-                </h4>
-                <p className="text-[10px] text-slate-450 mt-1.5">
-                  Rascunhos: {summary.ordersByStatus['Rascunho'] || 0} | Liberados: {summary.ordersByStatus['Liberado para Embarque'] || 0}
-                </p>
-                <span className="absolute bottom-0 right-0 h-1.5 w-24 bg-purple-500 rounded-tl" />
-              </div>
-
-            </div>
-
-            {/* QUICK ALERTS & AUDITING BLOCKS */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              
-              {/* ALERTS MODULE */}
-              <div className="lg:col-span-1 bg-white border border-slate-200 rounded-3xl p-5 space-y-4">
-                <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest block">Alertas de Pendências Críticas</span>
-                
-                <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-xs flex gap-2.5">
-                    <AlertTriangle className="h-4.5 w-4.5 text-red-600 shrink-0 mt-0.5 animate-bounce" />
-                    <div>
-                      <h5 className="font-bold text-red-955 truncate">Motorista Bloqueado Ativo!</h5>
-                      <span className="text-[10px] text-red-650 block mt-0.5">Claudio de Souza possui restrição do seguro no cadastro geral.</span>
-                    </div>
-                  </div>
-
-                  <div className="p-3 bg-yellow-50 border border-yellow-100 rounded-xl text-xs flex gap-2.5">
-                    <Clock className="h-4.5 w-4.5 text-yellow-600 shrink-0 mt-0.5" />
-                    <div>
-                      <h5 className="font-bold text-yellow-955">Pancary em Análise!</h5>
-                      <span className="text-[10px] text-yellow-650 block mt-0.5">Condução de Marcos Vinicius Santos aguardando liberação na cabine.</span>
-                    </div>
-                  </div>
-
-                  {summary.ordersByStatus['Pago'] === 0 && (
-                    <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl text-xs flex gap-2.5">
-                      <CheckCircle className="h-4.5 w-4.5 text-blue-600 shrink-0 mt-0.5" />
-                      <div>
-                        <h5 className="font-bold text-blue-955 text-xs">Fechamento do Mês Saudável</h5>
-                        <span className="text-[10px] text-slate-500 block mt-0.5">Nenhum desvio financeiro encontrado nas auditorias de pátio hoje.</span>
-                      </div>
-                    </div>
-                  )}
+                <div className="mt-6">
+                  <AlertItem
+                    title="Motorista bloqueado ativo"
+                    text="Claudio de Souza possui restrição cadastral ativa de seguro no sistema."
+                    icon={AlertTriangle}
+                    tone="rose"
+                  />
+                  <AlertItem
+                    title="Buonny a renovar"
+                    text="Condução de Marcos Vinicius Santos com consulta Buonny pendente de renovação."
+                    icon={Clock}
+                    tone="amber"
+                  />
+                  <AlertItem
+                    title="Fechamento mensal"
+                    text="Nenhum desvio financeiro encontrado nas auditorias de pátio hoje."
+                    icon={CheckCircle}
+                    tone="blue"
+                  />
                 </div>
               </div>
 
-              {/* INTEGRATED GRAPH (Recharts) */}
-              <div className="lg:col-span-2 bg-white border border-slate-200 rounded-3xl p-5">
-                <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest block mb-4">Evolução Mensal de Emissão de Fretes</span>
-                <div className="h-64 w-full">
+              <div className="rounded-lg border border-slate-200 bg-[oklch(98.5%_0.006_83)] p-6 shadow-sm">
+                <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Evolução mensal</p>
+                    <h2 className="mt-2 text-xl font-black text-slate-950">Fretes e margem líquida</h2>
+                  </div>
+                  <span className="text-xs font-semibold text-slate-500">Valores consolidados por competência</span>
+                </div>
+
+                <div className="mt-6 h-72 w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                      <XAxis dataKey="name" stroke="#94A3B8" fontSize={11} tickLine={false} />
-                      <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} />
-                      <Tooltip formatter={(value) => `R$ ${Number(value).toLocaleString('pt-BR')}`} />
-                      <Line type="monotone" dataKey="Fretes" name="Frete Bruto" stroke="#EAB308" strokeWidth={3} activeDot={{ r: 8 }} />
-                      <Line type="monotone" dataKey="Margem" name="Margem Líquida" stroke="#10B981" strokeWidth={2} />
-                    </LineChart>
+                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="fretesFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#d8b45d" stopOpacity={0.35} />
+                          <stop offset="95%" stopColor="#d8b45d" stopOpacity={0.02} />
+                        </linearGradient>
+                        <linearGradient id="margemFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.22} />
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0.02} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                      <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: 'oklch(98.5% 0.006 83)', borderColor: '#e2e8f0', borderRadius: '8px', boxShadow: '0 18px 45px rgba(15,23,42,0.12)' }}
+                        itemStyle={{ color: '#0f172a', fontSize: '12px', fontWeight: 800 }}
+                        labelStyle={{ color: '#64748b', fontSize: '11px', fontWeight: 900, textTransform: 'uppercase' }}
+                        formatter={(value) => formatCurrency(Number(value))}
+                      />
+                      <Area type="monotone" dataKey="Fretes" stroke="#b88a2c" strokeWidth={3} fill="url(#fretesFill)" />
+                      <Area type="monotone" dataKey="Margem" stroke="#10b981" strokeWidth={3} fill="url(#margemFill)" />
+                    </AreaChart>
                   </ResponsiveContainer>
                 </div>
               </div>
+            </section>
 
-            </div>
-
-            {/* SPREADSHEET ORDERS TABLE */}
-            <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xs">
-              <div className="p-5 border-b border-slate-200 flex items-center justify-between">
-                <div>
-                  <h3 className="font-black text-xs uppercase tracking-wider text-slate-900">Últimas Fichas de Frete Cadastradas</h3>
-                  <p className="text-[10px] text-slate-450 mt-1">Lista atualizada em tempo real com ações diretas sob ordens de frete.</p>
+            <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_0.42fr]">
+              <div className="overflow-hidden rounded-lg border border-slate-200 bg-[oklch(98.5%_0.006_83)] shadow-sm">
+                <div className="flex flex-col gap-3 border-b border-slate-100 p-6 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Operação recente</p>
+                    <h2 className="mt-2 text-xl font-black text-slate-950">Últimas fichas de frete</h2>
+                  </div>
+                  <Link href="/ordens" className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-[#8a6725] hover:text-slate-950">
+                    Ver todas
+                    <ArrowUpRight className="h-4 w-4" />
+                  </Link>
                 </div>
-                <Link href="/ordens" className="text-yellow-600 hover:text-yellow-700 font-bold text-xs flex items-center gap-1 cursor-pointer">
-                  Ver Todas as Ordens
-                  <ArrowUpRight className="h-4 w-4" />
-                </Link>
+
+                {orders.length === 0 ? (
+                  <div className="py-16 text-center text-xs font-black uppercase tracking-[0.14em] text-slate-400">
+                    Nenhuma ordem cadastrada ainda.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[920px] border-collapse text-left text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-100 bg-slate-50 text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
+                          <th className="p-4">Ficha</th>
+                          <th className="p-4">Motorista</th>
+                          <th className="p-4">Rota</th>
+                          <th className="p-4">Cliente</th>
+                          <th className="p-4">Valor bruto</th>
+                          <th className="p-4">Status</th>
+                          <th className="p-4 text-right">Ação</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {orders.slice(0, 6).map((order) => (
+                          <tr key={order.id} className="transition hover:bg-slate-50/80">
+                            <td className="p-4 font-black text-slate-950">{order.order_number}</td>
+                            <td className="p-4">
+                              <p className="font-bold text-slate-800">{order.driver_name}</p>
+                              <p className="mt-0.5 text-[11px] font-semibold text-slate-400">CPF: {order.driver_cpf}</p>
+                            </td>
+                            <td className="p-4">
+                              <p className="font-bold text-slate-800">{order.origin} {'->'} {order.destination}</p>
+                              <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">Entrega: {order.delivery_date}</p>
+                            </td>
+                            <td className="p-4 font-semibold text-slate-600">{order.client_name}</td>
+                            <td className="p-4 font-mono font-black text-slate-950">{formatCurrency(Number(order.freight_value) || 0)}</td>
+                            <td className="p-4">
+                              <StatusBadge status={order.status} />
+                            </td>
+                            <td className="p-4 text-right">
+                              <Link href={`/ordens/${order.id}`} className="inline-flex rounded-lg border border-slate-200 bg-[oklch(98%_0.006_83)] px-3 py-2 text-[11px] font-black uppercase tracking-[0.1em] text-slate-700 transition hover:border-[#d8b45d] hover:text-slate-950">
+                                Visualizar
+                              </Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
 
-              {orders.length === 0 ? (
-                <div className="py-16 text-center text-slate-400 text-xs font-semibold">
-                  Nenhuma ordem cadastrada no banco de dados ainda.
+              <div className="rounded-lg border border-slate-200 bg-[oklch(98.5%_0.006_83)] p-6 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Distribuição</p>
+                    <h2 className="mt-2 text-xl font-black text-slate-950">Status das ordens</h2>
+                  </div>
+                  <UserPlus className="h-5 w-5 text-[#8a6725]" />
                 </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 text-slate-400 font-semibold border-b border-slate-200 text-[10px]">
-                        <th className="p-4">Ficha Nº</th>
-                        <th className="p-4">Motorista</th>
-                        <th className="p-4">Rota / Rumo</th>
-                        <th className="p-4">Cliente</th>
-                        <th className="p-4">Valor Bruto</th>
-                        <th className="p-4">Saldo</th>
-                        <th className="p-4">Status</th>
-                        <th className="p-4 text-right">Ação</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-150 font-medium">
-                      {orders.slice(0, 5).map((o) => (
-                        <tr key={o.id} className="hover:bg-slate-50">
-                          <td className="p-4 font-bold text-slate-900">{o.order_number}</td>
-                          <td className="p-4">
-                            <div>
-                              <span>{o.driver_name}</span>
-                              <span className="text-[10px] text-slate-450 block font-mono">CPF: {o.driver_cpf}</span>
-                            </div>
-                          </td>
-                          <td className="p-4">
-                            <div>
-                              <span>{o.origin} ➔ {o.destination}</span>
-                              <span className="text-[10px] font-semibold text-slate-450 block">Entregar: {o.delivery_date}</span>
-                            </div>
-                          </td>
-                          <td className="p-4 text-slate-550">{o.client_name}</td>
-                          <td className="p-4 font-mono font-bold text-slate-900">R$ {o.freight_value.toLocaleString('pt-BR')}</td>
-                          <td className="p-4 font-mono font-bold text-orange-755">R$ {o.balance_value.toLocaleString('pt-BR')}</td>
-                          <td className="p-4">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              o.status === 'Pago' ? 'bg-emerald-100 text-emerald-800' :
-                              o.status === 'Liberado para Embarque' ? 'bg-sky-100 text-sky-800' :
-                              o.status === 'Em Análise' ? 'bg-blue-100 text-blue-800' :
-                              o.status === 'Cancelado' ? 'bg-red-100 text-red-800' :
-                              'bg-yellow-100 text-yellow-800'
-                            }`}>
-                              {o.status}
-                            </span>
-                          </td>
-                          <td className="p-4 text-right">
-                            <Link href={`/ordens/${o.id}`} className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[10px] font-black cursor-pointer">
-                              Visualizar
-                            </Link>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
 
+                <div className="mt-6 h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={statusData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                      <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                      <YAxis allowDecimals={false} stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                      <Tooltip
+                        cursor={{ fill: '#f8fafc' }}
+                        contentStyle={{ backgroundColor: 'oklch(98.5% 0.006 83)', borderColor: '#e2e8f0', borderRadius: '8px' }}
+                      />
+                      <Bar dataKey="value" fill="#d8b45d" radius={[8, 8, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </section>
           </>
         )}
-
       </div>
     </HeaderAndSidebar>
+  );
+}
+
+function SummaryLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">{label}</p>
+      <p className="mt-1 break-words text-lg font-black leading-tight text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+function KpiCard({ label, value, detail, icon: Icon, tone }: { label: string; value: string; detail: string; icon: React.ElementType; tone: 'emerald' | 'blue' | 'gold' | 'slate' }) {
+  const tones = {
+    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    blue: 'bg-blue-50 text-blue-700 border-blue-100',
+    gold: 'bg-[#fff7df] text-[#8a6725] border-[#ead18b]',
+    slate: 'bg-slate-100 text-slate-700 border-slate-200',
+  };
+
+  return (
+    <article className="rounded-lg border border-slate-200 bg-[oklch(98.5%_0.006_83)] p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex items-start justify-between gap-4">
+        <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">{label}</p>
+        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border ${tones[tone]}`}>
+          <Icon className="h-5 w-5" />
+        </span>
+      </div>
+      <p className="mt-5 text-2xl font-black tracking-tight text-slate-950">{value}</p>
+      <p className="mt-2 text-xs font-semibold leading-5 text-slate-500">{detail}</p>
+    </article>
+  );
+}
+
+function AlertItem({ title, text, icon: Icon, tone }: { title: string; text: string; icon: React.ElementType; tone: 'rose' | 'amber' | 'blue' }) {
+  const tones = {
+    rose: 'border-rose-100 bg-rose-50 text-rose-700',
+    amber: 'border-amber-100 bg-amber-50 text-amber-700',
+    blue: 'border-blue-100 bg-blue-50 text-blue-700',
+  };
+
+  return (
+    <div className="flex gap-3 border-t border-slate-200 py-4 first:border-t-0 first:pt-0 last:pb-0">
+      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${tones[tone]}`}>
+        <Icon className="h-5 w-5" />
+      </span>
+      <div>
+        <h3 className="text-sm font-black text-slate-950">{title}</h3>
+        <p className="mt-1 text-sm leading-6 text-slate-600">{text}</p>
+      </div>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const classes =
+    status === 'Pago'
+      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+      : status === 'Liberado para Embarque'
+        ? 'border-blue-200 bg-blue-50 text-blue-700'
+        : status === 'Carregando'
+          ? 'border-orange-200 bg-orange-50 text-orange-700'
+        : status === 'Em Análise'
+          ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
+          : status === 'Cancelado'
+            ? 'border-rose-200 bg-rose-50 text-rose-700'
+            : 'border-[#ead18b] bg-[#fff7df] text-[#8a6725]';
+
+  return (
+    <span className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${classes}`}>
+      {status}
+    </span>
   );
 }

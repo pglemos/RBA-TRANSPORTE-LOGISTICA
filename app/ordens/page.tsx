@@ -29,6 +29,11 @@ export default function OrdersListPage() {
   const [msg, setMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
+  const getCteSortValue = (cteNumber?: string) => {
+    const digits = cteNumber?.match(/\d+/g)?.join('');
+    return digits ? Number(digits) : -1;
+  };
+
   const loadOrders = async () => {
     try {
       setLoading(true);
@@ -84,13 +89,16 @@ export default function OrdersListPage() {
   const filteredOrders = orders.filter(o => {
     const matchesSearch = 
       o.driver_name?.toLowerCase().includes(search.toLowerCase()) ||
-      o.order_number?.toLowerCase().includes(search.toLowerCase()) ||
       o.client_name?.toLowerCase().includes(search.toLowerCase()) ||
       o.cte_number?.toLowerCase().includes(search.toLowerCase());
 
     const matchesStatus = statusFilter ? o.status === statusFilter : true;
 
     return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+    const cteDiff = getCteSortValue(b.cte_number) - getCteSortValue(a.cte_number);
+    if (cteDiff !== 0) return cteDiff;
+    return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
   });
 
   return (
@@ -135,7 +143,7 @@ export default function OrdersListPage() {
             <input
               id="search-input"
               type="text"
-              placeholder="Pesquisar motorista, CTE, nº ordem ou cliente..."
+              placeholder="Pesquisar motorista, CTE ou cliente..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full text-xs font-semibold pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-250 rounded-xl outline-none focus:border-yellow-500 transition-colors text-slate-800"
@@ -154,8 +162,9 @@ export default function OrdersListPage() {
                 <option value="">Todos os Status</option>
                 <option value="Rascunho">🟡 Rascunho</option>
                 <option value="Em Análise">🔵 Em Análise de Crédito</option>
-                <option value="Aprovado">🟢 Aprovado Buonny/Pancary</option>
+                <option value="Aprovado">🟢 Aprovado Buonny</option>
                 <option value="Liberado para Embarque">🚛 Liberado para Embarque</option>
+                <option value="Carregando">📦 Carregando</option>
                 <option value="Em Viagem">🛣️ Em Viagem</option>
                 <option value="Entregue">✅ Entregue</option>
                 <option value="Pago">💵 Pago / Liquidado</option>
@@ -183,7 +192,7 @@ export default function OrdersListPage() {
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-50 text-slate-400 font-bold border-b border-slate-200 text-[10px]">
-                    <th className="p-4">Ordem Nº</th>
+                    <th className="p-4">CTE</th>
                     <th className="p-4">Motorista Condutor</th>
                     <th className="p-4">Veículo Conjugado</th>
                     <th className="p-4">Origem ➔ Destino</th>
@@ -199,14 +208,11 @@ export default function OrdersListPage() {
                   {filteredOrders.map((o) => (
                     <tr key={o.id} className="hover:bg-slate-50">
                       
-                      {/* Order Number link */}
+                      {/* CTE link */}
                       <td className="p-4">
                         <Link href={`/ordens/${o.id}`} className="font-extrabold text-xs text-yellow-650 hover:underline">
-                          {o.order_number}
+                          {o.cte_number || 'CTE a emitir'}
                         </Link>
-                        {o.cte_number && (
-                          <span className="text-[9px] text-slate-400 font-mono block mt-0.5">CTE: {o.cte_number}</span>
-                        )}
                       </td>
 
                       {/* Driver mask dynamically rendered */}
@@ -249,6 +255,7 @@ export default function OrdersListPage() {
                         <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wide ${
                           o.status === 'Pago' ? 'bg-emerald-100 text-emerald-800' :
                           o.status === 'Liberado para Embarque' ? 'bg-sky-100 text-sky-800' :
+                          o.status === 'Carregando' ? 'bg-orange-100 text-orange-800' :
                           o.status === 'Em Análise' ? 'bg-blue-100 text-blue-800' :
                           o.status === 'Cancelado' ? 'bg-red-100 text-red-800' :
                           'bg-yellow-100 text-yellow-800'

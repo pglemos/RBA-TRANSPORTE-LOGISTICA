@@ -30,6 +30,10 @@ export async function GET(req: NextRequest) {
         driver_name: driver ? driver.name : "N/A",
         driver_cpf: driver ? RBAAuth.maskCPF(driver.cpf, role) : "N/A",
         vehicle_plate: vehicle ? `${vehicle.tractor_plate} / ${vehicle.trailer_plate}` : "N/A",
+        vehicle_tractor_plate: vehicle ? vehicle.tractor_plate : "N/A",
+        vehicle_trailer_plate: vehicle ? vehicle.trailer_plate : "N/A",
+        vehicle_model: vehicle ? vehicle.model : "N/A",
+        vehicle_year: vehicle ? vehicle.year : "N/A",
         client_name: client ? client.name : "N/A"
       };
     });
@@ -39,12 +43,13 @@ export async function GET(req: NextRequest) {
       if (driverId && ord.driver_id !== driverId) return false;
       if (clientId && ord.client_id !== clientId) return false;
       if (search) {
-        const matchNumber = ord.order_number.toLowerCase().includes(search);
+        const matchNumber = ord.order_number?.toLowerCase().includes(search);
         const matchDriver = ord.driver_name.toLowerCase().includes(search);
         const matchClient = ord.client_name.toLowerCase().includes(search);
-        const matchOrigin = ord.origin.toLowerCase().includes(search);
-        const matchDest = ord.destination.toLowerCase().includes(search);
-        return matchNumber || matchDriver || matchClient || matchOrigin || matchDest;
+        const matchOrigin = ord.origin?.toLowerCase().includes(search);
+        const matchDest = ord.destination?.toLowerCase().includes(search);
+        const matchVehicle = ord.vehicle_plate.toLowerCase().includes(search);
+        return matchNumber || matchDriver || matchClient || matchOrigin || matchDest || matchVehicle;
       }
       return true;
     });
@@ -81,6 +86,9 @@ export async function POST(req: NextRequest) {
     }
     if (Number(body.freight_value) <= 0) {
       return NextResponse.json({ success: false, error: "O valor bruto do frete deve ser maior que zero." }, { status: 400 });
+    }
+    if (String(body.buonny_code || '').length > 20) {
+      return NextResponse.json({ success: false, error: "O código da consulta Buonny deve ter no máximo 20 caracteres." }, { status: 400 });
     }
 
     // Capture driver snapshot bank information as requested by PRD "data_snapshot"

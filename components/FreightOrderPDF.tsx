@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Printer, ShieldCheck, XCircle, Share2, CornerDownRight } from 'lucide-react';
+import RBALogo from '@/components/RBALogo';
 
 interface Props {
   order: {
@@ -30,7 +31,6 @@ interface Props {
     total_expenses: number;
     net_value: number;
     buonny_status: string;
-    pancary_status: string;
     cte_number: string;
     shipment_release_status: string;
     shipment_release_limit: string;
@@ -93,9 +93,7 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
           {/* Header Grid */}
           <div className="flex flex-col md:flex-row justify-between items-start border-b-2 border-slate-900 pb-6 gap-6">
             <div className="flex items-center gap-4">
-              <div className="h-14 w-14 bg-slate-950 rounded-xl flex items-center justify-center font-black text-white text-xl border-2 border-yellow-400 shadow-md">
-                RBA
-              </div>
+              <RBALogo className="h-20 w-36" />
               <div>
                 <h1 className="font-black text-lg tracking-tight">RBA TRANSPORTE & LOGÍSTICA</h1>
                 <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Apoio Logístico, Transporte Rodoviário e Gerenciamento de Risco</p>
@@ -273,12 +271,6 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
                   <span>Buonny:</span>
                   <span className={`font-mono font-black ${order.buonny_status === 'Aprovado' ? 'text-emerald-700' : 'text-yellow-700'}`}>
                     {order.buonny_status}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between border-b pb-1">
-                  <span>Pancary:</span>
-                  <span className={`font-mono font-black ${order.pancary_status === 'Aprovado' ? 'text-emerald-700' : 'text-yellow-700'}`}>
-                    {order.pancary_status}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">

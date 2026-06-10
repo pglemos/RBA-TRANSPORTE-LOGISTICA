@@ -67,6 +67,9 @@ export async function PUT(
     }
 
     const body = await req.json();
+    if (String(body.buonny_code || '').length > 20) {
+      return NextResponse.json({ success: false, error: "O código da consulta Buonny deve ter no máximo 20 caracteres." }, { status: 400 });
+    }
 
     // Check specific constraint limits based on role
     if (session.user.role === 'Operacional') {

@@ -17,7 +17,7 @@ ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, role = EXCLUDED.role;
 
 -- 3. Inserir Clientes
 INSERT INTO public.clients (id, name, document, phone, email, address, notes, created_at, updated_at) VALUES 
-('cli_1', 'Ambev S.A.', '07.526.557/0001-85', '1130001000', 'logistica@ambev.com.br', 'Av. Renato Paes de Barros, 1017 - Itaim Bibi, São Paulo - SP', 'Faturamento quinzenal. Exige seguro pancary cadastrado.', now(), now()),
+('cli_1', 'Ambev S.A.', '07.526.557/0001-85', '1130001000', 'logistica@ambev.com.br', 'Av. Renato Paes de Barros, 1017 - Itaim Bibi, São Paulo - SP', 'Faturamento quinzenal.', now(), now()),
 ('cli_2', 'Klabin S.A.', '89.637.492/0001-10', '1138244000', 'fretes@klabin.com.br', 'Av. Brigadeiro Faria Lima, 4400 - São Paulo - SP', 'Cargas de bobina de papel. Exige lona limpa e cantoneiras.', now(), now()),
 ('cli_3', 'Cargill Alimentos', '60.498.706/0001-52', '1935431100', 'transportes@cargill.com', 'Rodovia Anhanguera, km 120 - Americana - SP', 'Grãos e cereais. Peso balança origem vs destino rigido.', now(), now())
 ON CONFLICT (document) DO NOTHING;
@@ -35,33 +35,33 @@ INSERT INTO public.vehicles (id, tractor_plate, trailer_plate, year, model, owne
 ('vhc_1', 'ABC1D23', 'XYZ9W87', 2021, 'Volvo FH 540', 'José Roberto de Almeida', '12345678909', '123456789', '01234567890', 'SP', 'Ativo', 'Cavalo e carreta em perfeito estado.', now(), now()),
 ('vhc_2', 'MNO4X56', 'PQR1A23', 2019, 'Scania R 450', 'RBA Transportes Ltda', '01.234.567/0001-89', '987654321', '09876543211', 'MG', 'Ativo', 'Frota própria RBA.', now(), now()),
 ('vhc_3', 'DEF5G67', 'JKL3M45', 2018, 'Mercedes-Benz Actros', 'Transportes Rapido Sul', '12.345.678/0001-90', '456123789', '44455566677', 'PR', 'Ativo', 'Agenciado fixo.', now(), now())
-ON CONFLICT (tractor_plate) DO NOTHING;
+ON CONFLICT (id) DO NOTHING;
 
 -- 6. Inserir Ordens de Fretes Ativas
 INSERT INTO public.freight_orders (
     id, order_number, driver_id, vehicle_id, client_id, 
     freight_value, advance_value, cash_value, balance_value, 
     loading_expense, unloading_expense, other_expenses, total_expenses, net_value,
-    bank_data_snapshot, buonny_status, pancary_status, cte_number, 
+    bank_data_snapshot, buonny_status, buonny_code, cte_number,
     shipment_release_status, shipment_release_limit, origin, destination, 
-    delivery_date, responsible_name, signature_url, status, notes, 
+    delivery_date, responsible_name, buonny_responsible, signature_url, status, notes, 
     created_by, approved_by, approved_at, created_at, updated_at
 ) VALUES 
 ('ord_1', 'RBA-2026-0001', 'drv_1', 'vhc_1', 'cli_1', 
  12000.00, 5000.00, 2000.00, 5000.00, 
  150.00, 200.00, 50.00, 400.00, 11600.00, 
  '{"bank_name": "Banco do Brasil", "bank_agency": "1234", "bank_account": "54321-0", "pix_key": "12345678909", "beneficiary_name": "José Roberto de Almeida"}'::jsonb, 
- 'Aprovado', 'Aprovado', 'CTE-10293', 
+ 'Aprovado', 'BNY0000000000000001', 'CTE-10293',
  'Liberado', 'Até 100.000', 'Jundiaí - SP', 'Cajamar - SP', 
- '2026-06-03', 'Ana Costa', 'Assinado Digitalmente por Ana Costa', 'Liberado para Embarque', 'Carregamento de bebidas Ambev. Liberação autorizada Buonny ativa.', 
+ '2026-06-03', 'Ana Costa', 'Morgan Ribeiro (Admin)', 'Assinado Digitalmente por Ana Costa', 'Liberado para Embarque', 'Carregamento de bebidas Ambev. Liberação autorizada Buonny ativa.', 
  'Ana Costa', 'Morgan Ribeiro (Admin)', now(), now(), now()),
 ('ord_2', 'RBA-2026-0002', 'drv_2', 'vhc_2', 'cli_2', 
  8500.00, 4000.00, 1000.00, 3500.00, 
  100.00, 150.00, 0.00, 250.00, 8250.00, 
  '{"bank_name": "Banco Itaú", "bank_agency": "0432", "bank_account": "10987-6", "pix_key": "marcos@gmail.com", "beneficiary_name": "Marcos Vinicius Santos"}'::jsonb, 
- 'Aprovado', 'Em Análise', 'CTE-12831', 
+ 'Aprovado', 'BNY0000000000000002', 'CTE-12831',
  'Pendente', 'Até 200.000', 'Telêmaco Borba - PR', 'Mogi das Cruzes - SP', 
- '2026-06-05', 'Ana Costa', NULL, 'Em Análise', 'Pancary em análise, aguardando liberação do sinistro.', 
+ '2026-06-05', 'Ana Costa', 'Ana Costa', NULL, 'Em Análise', 'Aguardando liberação do sinistro.',
  'Ana Costa', NULL, NULL, now(), now())
 ON CONFLICT (order_number) DO NOTHING;
 

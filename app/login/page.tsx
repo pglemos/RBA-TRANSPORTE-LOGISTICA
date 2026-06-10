@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Truck, Lock, User, Sparkles, HelpCircle } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
+import RBALogo from '@/components/RBALogo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -93,40 +94,39 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-slate-100 relative selection:bg-yellow-500 selection:text-black">
+    <div className="min-h-screen bg-[#070913] flex flex-col items-center justify-center p-6 text-slate-100 relative overflow-hidden font-sans selection:bg-amber-500 selection:text-black">
       
       {/* Decorative vector overlays */}
-      <div className="absolute top-1/4 left-1/4 h-64 w-64 bg-emerald-500/5 rounded-full blur-3xl -z-10" />
-      <div className="absolute bottom-1/4 right-1/4 h-64 w-64 bg-yellow-500/5 rounded-full blur-3xl -z-10" />
+      <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[120px] pointer-events-none -z-10" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none -z-10" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff02_1px,transparent_1px),linear-gradient(to_bottom,#ffffff02_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none -z-20" />
 
-      <div className="w-full max-w-md space-y-6">
+      <div className="w-full max-w-md space-y-6 z-10 relative">
         
         {/* Company Header */}
         <div className="text-center">
-          <div className="h-12 w-12 bg-yellow-500 rounded-xl flex items-center justify-center my-0 mx-auto font-black text-black text-xl shadow-lg border-2 border-yellow-400">
-            RBA
-          </div>
-          <h2 className="text-xl font-extrabold tracking-tight mt-3 text-white">RBA FRETES DIGITAL</h2>
-          <p className="text-xs text-slate-400 mt-1 uppercase tracking-wider font-semibold">Controle de Riscos e Fugas de Fretes</p>
+          <RBALogo className="mx-auto h-28 w-48 drop-shadow-[0_2px_1px_rgba(255,255,255,0.38)]" />
+          <h2 className="text-xl font-black tracking-wider mt-4 text-white uppercase heading-font">RBA FRETES DIGITAL</h2>
+          <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-extrabold">Controle de Riscos e Fugas de Fretes</p>
         </div>
 
         {/* Form Body card */}
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
+        <div className="glass-panel rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden border border-slate-900">
           
-          <span className="absolute top-0 right-0 h-10 w-28 bg-yellow-500/5 border-b border-l border-yellow-500/10 rounded-bl-3xl flex items-center justify-center text-[9px] text-yellow-500 font-bold uppercase tracking-wider">
+          <span className="absolute top-0 right-0 h-10 w-28 bg-amber-500/5 border-b border-l border-slate-900 rounded-bl-3xl flex items-center justify-center text-[9px] text-amber-500 font-extrabold uppercase tracking-widest">
             Acesso Restrito
           </span>
 
-          <form onSubmit={handleManualLogin} className="space-y-4">
+          <form onSubmit={handleManualLogin} className="space-y-5">
             
             {errorMsg && (
-              <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-xs font-semibold">
+              <div className="p-3.5 bg-red-950/40 border border-red-900/50 text-red-400 rounded-xl text-xs font-semibold backdrop-blur-md">
                 ⚠️ {errorMsg}
               </div>
             )}
 
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-semibold text-slate-400">Endereço de E-mail *</label>
+            <div className="space-y-2">
+              <label className="text-[9px] uppercase font-extrabold tracking-widest text-slate-400 block">Endereço de E-mail *</label>
               <div className="relative">
                 <input
                   id="ip-email"
@@ -134,13 +134,13 @@ export default function LoginPage() {
                   placeholder="Ex: admin@rba.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full text-xs font-semibold px-3.5 py-2.5 bg-slate-950 border border-slate-850 rounded-xl outline-none focus:border-yellow-500/50 text-white"
+                  className="w-full text-xs font-semibold px-4 py-3 bg-slate-950/80 border border-slate-900 rounded-xl outline-none focus:border-amber-500/30 text-white placeholder-slate-650 transition-colors"
                 />
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-semibold text-slate-400">Senha de Acesso RBA *</label>
+            <div className="space-y-2">
+              <label className="text-[9px] uppercase font-extrabold tracking-widest text-slate-400 block">Senha de Acesso RBA *</label>
               <div className="relative">
                 <input
                   id="ip-password"
@@ -148,7 +148,7 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full text-xs font-semibold px-3.5 py-2.5 bg-slate-950 border border-slate-850 rounded-xl outline-none focus:border-yellow-500/50 text-white"
+                  className="w-full text-xs font-semibold px-4 py-3 bg-slate-950/80 border border-slate-900 rounded-xl outline-none focus:border-amber-500/30 text-white placeholder-slate-650 transition-colors"
                 />
               </div>
             </div>
@@ -157,7 +157,7 @@ export default function LoginPage() {
               id="login-submit-btn"
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-black rounded-xl text-xs font-black uppercase tracking-wider shadow-md active:scale-98 transition-all cursor-pointer"
+              className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-yellow-450 hover:from-amber-400 hover:to-yellow-400 text-slate-950 rounded-xl text-xs font-black uppercase tracking-wider shadow-[0_0_15px_rgba(245,158,11,0.2)] hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:scale-102 transition-all duration-300 cursor-pointer"
             >
               {loading ? 'Autenticando...' : 'Entrar no Sistema'}
             </button>
@@ -165,51 +165,51 @@ export default function LoginPage() {
           </form>
 
           {/* Quick preset credentials buttons for sandbox review */}
-          <div className="border-t border-slate-850 mt-6 pt-5 space-y-3">
-            <span className="text-[10px] text-slate-450 uppercase font-bold tracking-widest flex items-center gap-1">
-              <Sparkles className="h-3 w-3 text-yellow-500 animate-spin" />
+          <div className="border-t border-slate-900 mt-6 pt-6 space-y-4">
+            <span className="text-[9px] text-slate-500 uppercase font-extrabold tracking-widest flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-amber-500 animate-spin" />
               Perfis de Demonstração (Clique Único):
             </span>
-            <div className="grid grid-cols-2 gap-2 text-[10px]">
+            <div className="grid grid-cols-2 gap-2.5 text-[10px]">
               
               <button
                 id="preset-login-admin"
                 type="button"
                 onClick={() => handlePresetLogin('user_admin', 'Morgan Ribeiro (Admin)', 'admin@rba.com', 'Administrador')}
-                className="p-2 bg-slate-950 border border-slate-850 hover:border-yellow-500 rounded-xl text-left hover:text-white transition-colors"
+                className="p-3 bg-slate-950/80 border border-slate-900 hover:border-amber-500/30 rounded-xl text-left hover:text-white transition-all hover:bg-slate-900 duration-200"
               >
-                <span className="font-bold text-white block">Administrador</span>
-                <span className="text-slate-500 font-mono">admin@rba.com</span>
+                <span className="font-extrabold text-white block">Administrador</span>
+                <span className="text-[9px] text-slate-500 font-mono mt-0.5 block">admin@rba.com</span>
               </button>
 
               <button
                 id="preset-login-operacional"
                 type="button"
                 onClick={() => handlePresetLogin('user_operacional', 'Ana Costa', 'operacional@rba.com', 'Operacional')}
-                className="p-2 bg-slate-950 border border-slate-850 hover:border-yellow-500 rounded-xl text-left hover:text-white transition-colors"
+                className="p-3 bg-slate-950/80 border border-slate-900 hover:border-amber-500/30 rounded-xl text-left hover:text-white transition-all hover:bg-slate-900 duration-200"
               >
-                <span className="font-bold text-white block">Operacional</span>
-                <span className="text-slate-500 font-mono">operacional@rba.com</span>
+                <span className="font-extrabold text-white block">Operacional</span>
+                <span className="text-[9px] text-slate-500 font-mono mt-0.5 block">operacional@rba.com</span>
               </button>
 
               <button
                 id="preset-login-financeiro"
                 type="button"
                 onClick={() => handlePresetLogin('user_financeiro', 'Bruno Silva', 'financeiro@rba.com', 'Financeiro')}
-                className="p-2 bg-slate-950 border border-slate-850 hover:border-yellow-500 rounded-xl text-left hover:text-white transition-colors"
+                className="p-3 bg-slate-950/80 border border-slate-900 hover:border-amber-500/30 rounded-xl text-left hover:text-white transition-all hover:bg-slate-900 duration-200"
               >
-                <span className="font-bold text-white block">Financeiro</span>
-                <span className="text-slate-500 font-mono">financeiro@rba.com</span>
+                <span className="font-extrabold text-white block">Financeiro</span>
+                <span className="text-[9px] text-slate-500 font-mono mt-0.5 block">financeiro@rba.com</span>
               </button>
 
               <button
                 id="preset-login-auditor"
                 type="button"
                 onClick={() => handlePresetLogin('user_auditor', 'Carlos Santos (Auditor)', 'auditor@rba.com', 'Consulta/Auditoria')}
-                className="p-2 bg-slate-950 border border-slate-850 hover:border-yellow-500 rounded-xl text-left hover:text-white transition-colors"
+                className="p-3 bg-slate-950/80 border border-slate-900 hover:border-amber-500/30 rounded-xl text-left hover:text-white transition-all hover:bg-slate-900 duration-200"
               >
-                <span className="font-bold text-white block">Consulta/Audit</span>
-                <span className="text-slate-500 font-mono">auditor@rba.com</span>
+                <span className="font-extrabold text-white block">Consulta/Audit</span>
+                <span className="text-[9px] text-slate-500 font-mono mt-0.5 block">auditor@rba.com</span>
               </button>
 
             </div>
@@ -217,7 +217,7 @@ export default function LoginPage() {
 
         </div>
 
-        <p className="text-center text-[10px] text-slate-500 font-mono">
+        <p className="text-center text-[9px] text-slate-600 font-mono uppercase tracking-widest">
           RBA Fretes Digital • Cajamar, SP • Brasil
         </p>
 

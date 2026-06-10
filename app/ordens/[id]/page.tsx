@@ -6,19 +6,40 @@ import Link from 'next/link';
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
 import FreightOrderPDF from '@/components/FreightOrderPDF';
 import { 
-  ArrowLeft, 
-  Printer, 
-  Paperclip, 
-  Edit3, 
-  Lock, 
-  ShieldCheck, 
-  User, 
-  Truck, 
-  FileCheck2, 
-  DollarSign, 
-  Clock, 
-  AlertCircle 
+  ArrowLeft,
+  Printer,
+  Paperclip,
+  Edit3,
+  Lock,
+  ShieldCheck,
+  User,
+  Truck,
+  FileCheck2,
+  DollarSign,
+  Clock,
+  AlertCircle,
+  Upload,
+  Receipt,
+  Camera,
+  FileText,
+  ClipboardList,
+  Trash2,
+  Loader2,
+  Eye,
+  Download
 } from 'lucide-react';
+
+const ORDER_STATUS_OPTIONS = [
+  'Rascunho',
+  'Em Análise',
+  'Aprovado',
+  'Liberado para Embarque',
+  'Carregando',
+  'Em Viagem',
+  'Entregue',
+  'Pago',
+  'Cancelado',
+] as const;
 
 export default function OrderDetailsPage() {
   const { id } = useParams();
@@ -30,6 +51,59 @@ export default function OrderDetailsPage() {
   
   // PDF Trigger
   const [showPDF, setShowPDF] = useState(false);
+
+  // Upload de documentos por categoria
+  const [uploadingCat, setUploadingCat] = useState<string>('');
+
+  // Faturamento (CTE) — edição inline na página de detalhes
+  const [cteValueEdit, setCteValueEdit] = useState<number>(0);
+  const [cteDiscountEdit, setCteDiscountEdit] = useState<number>(10);
+  const [savingFat, setSavingFat] = useState(false);
+  const [fatMsg, setFatMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+
+  // Status operacional — edição inline na página de detalhes
+  const [statusEdit, setStatusEdit] = useState('');
+  const [savingStatus, setSavingStatus] = useState(false);
+  const [statusMsg, setStatusMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+
+  const DOC_CATEGORIES = [
+    { key: 'comprovante_pagamento', label: 'Comprovante de Pagamento ao Motorista', hint: 'PIX / transferência paga ao condutor', icon: Receipt, accent: 'text-emerald-600' },
+    { key: 'auditoria_carga', label: 'Foto da Auditoria da Carga', hint: 'Registro do carregamento na origem', icon: Camera, accent: 'text-sky-600' },
+    { key: 'cte', label: 'Documento do CTE', hint: 'Conhecimento de Transporte Eletrônico', icon: FileText, accent: 'text-yellow-600' },
+    { key: 'manifesto', label: 'Documento do Manifesto', hint: 'MDF-e do transporte', icon: ClipboardList, accent: 'text-purple-600' },
+  ] as const;
+
+  const handleUploadDoc = async (category: string, file: File | null) => {
+    if (!file) return;
+    setUploadingCat(category);
+    try {
+      const fd = new FormData();
+      fd.append('order_id', String(id));
+      fd.append('file', file);
+      fd.append('category', category);
+      const res = await fetch('/api/attachments', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data?.success) {
+        await fetchOrderDetails();
+      } else {
+        alert(data?.error || 'Falha ao enviar o documento.');
+      }
+    } catch (e) {
+      alert('Erro de rede ao enviar o documento.');
+    } finally {
+      setUploadingCat('');
+    }
+  };
+
+  const handleDeleteDoc = async (attId: string) => {
+    if (!confirm('Excluir este documento anexado?')) return;
+    try {
+      const res = await fetch(`/api/attachments?id=${attId}`, { method: 'DELETE' });
+      if (res.ok) await fetchOrderDetails();
+    } catch (e) {
+      alert('Erro ao excluir o documento.');
+    }
+  };
 
   // Load order details
   const fetchOrderDetails = React.useCallback(async () => {
@@ -47,6 +121,64 @@ export default function OrderDetailsPage() {
       setLoading(false);
     }
   }, [id]);
+
+  // Sincroniza os campos editáveis de faturamento sempre que a ordem é (re)carregada
+  useEffect(() => {
+    if (order) {
+      setCteValueEdit(Number(order.cte_value) || 0);
+      setCteDiscountEdit(order.cte_discount_percent ?? 10);
+      setStatusEdit(order.status || 'Rascunho');
+    }
+  }, [order]);
+
+  const handleSaveStatus = async () => {
+    setSavingStatus(true);
+    setStatusMsg(null);
+    try {
+      const res = await fetch(`/api/orders/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: statusEdit }),
+      });
+      const data = await res.json();
+      if (data?.success) {
+        setStatusMsg({ type: 'ok', text: 'Status atualizado com sucesso.' });
+        await fetchOrderDetails();
+      } else {
+        setStatusMsg({ type: 'err', text: data?.error || 'Falha ao atualizar o status.' });
+      }
+    } catch {
+      setStatusMsg({ type: 'err', text: 'Erro de rede ao atualizar o status.' });
+    } finally {
+      setSavingStatus(false);
+    }
+  };
+
+  const handleSaveFaturamento = async () => {
+    setSavingFat(true);
+    setFatMsg(null);
+    try {
+      const res = await fetch(`/api/orders/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cte_value: Number(cteValueEdit) || 0,
+          cte_discount_percent: Number(cteDiscountEdit) || 0,
+        }),
+      });
+      const data = await res.json();
+      if (data?.success) {
+        setFatMsg({ type: 'ok', text: 'Faturamento atualizado com sucesso.' });
+        await fetchOrderDetails();
+      } else {
+        setFatMsg({ type: 'err', text: data?.error || 'Falha ao salvar o faturamento.' });
+      }
+    } catch {
+      setFatMsg({ type: 'err', text: 'Erro de rede ao salvar o faturamento.' });
+    } finally {
+      setSavingFat(false);
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -88,10 +220,21 @@ export default function OrderDetailsPage() {
     );
   }
 
+  // Memória de cálculo do faturamento (CTE) — derivada dos campos editáveis + custos da ordem
+  const fmtBR = (n: number) => (Number(n) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fatDespesas = Number(order.total_expenses) || 0;
+  const fatFrete = Number(order.freight_value) || 0;
+  const fatDescontoValor = (Number(cteValueEdit) || 0) * (Number(cteDiscountEdit) || 0) / 100;
+  const fatLiquido = (Number(cteValueEdit) || 0) - fatDescontoValor - fatFrete - fatDespesas;
+  const fatDirty =
+    (Number(cteValueEdit) || 0) !== (Number(order.cte_value) || 0) ||
+    (Number(cteDiscountEdit) || 0) !== (order.cte_discount_percent ?? 10);
+  const statusDirty = statusEdit !== (order.status || 'Rascunho');
+
   return (
     <HeaderAndSidebar>
       <div className="space-y-6">
-        
+
         {/* Navigation Breadcrumb & Toolbar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 border rounded-3xl border-slate-200">
           <div className="flex items-center gap-3">
@@ -260,10 +403,144 @@ export default function OrderDetailsPage() {
               </div>
             </div>
 
+            {/* 4. FATURAMENTO (CTE) — MEMÓRIA DE CÁLCULO EDITÁVEL */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4">
+              <div className="border-b pb-3 flex items-center justify-between">
+                <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <FileCheck2 className="h-4 w-4 text-emerald-600" />
+                  Faturamento (CTE) — Memória de Cálculo
+                </h2>
+                {order.cte_number && (
+                  <span className="text-[10px] bg-slate-100 p-1 px-2.5 rounded-full font-bold text-slate-600 font-mono">
+                    CTE {order.cte_number}
+                  </span>
+                )}
+              </div>
+
+              {/* Entradas editáveis */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label className="block">
+                  <span className="text-[9px] text-slate-450 font-bold uppercase block mb-1">Valor do CTE (Receita Bruta)</span>
+                  <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:border-emerald-500">
+                    <span className="px-3 text-xs font-bold text-slate-500 bg-slate-50 self-stretch flex items-center">R$</span>
+                    <input
+                      id="det-cte-value"
+                      type="number" step="0.01" min="0"
+                      value={cteValueEdit || ''}
+                      onChange={(e) => setCteValueEdit(Number(e.target.value))}
+                      placeholder="0,00"
+                      className="flex-1 min-w-0 px-3 py-2 text-sm font-bold text-slate-900 outline-none"
+                    />
+                  </div>
+                </label>
+                <label className="block">
+                  <span className="text-[9px] text-slate-450 font-bold uppercase block mb-1">Desconto sobre o CTE</span>
+                  <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:border-emerald-500">
+                    <input
+                      id="det-cte-discount"
+                      type="number" step="0.01" min="0" max="100"
+                      value={cteDiscountEdit}
+                      onChange={(e) => setCteDiscountEdit(Number(e.target.value))}
+                      placeholder="10"
+                      className="flex-1 min-w-0 px-3 py-2 text-sm font-bold text-slate-900 outline-none"
+                    />
+                    <span className="px-3 text-xs font-bold text-slate-500 bg-slate-50 self-stretch flex items-center">%</span>
+                  </div>
+                </label>
+              </div>
+
+              {/* Memória de cálculo (ao vivo) */}
+              <div className="bg-emerald-50/60 border border-emerald-200 rounded-xl p-4 space-y-1.5 text-xs font-medium">
+                <div className="flex justify-between text-slate-700">
+                  <span>Receita Bruta (CTE)</span>
+                  <strong className="font-mono text-blue-800">R$ {fmtBR(cteValueEdit)}</strong>
+                </div>
+                <div className="flex justify-between text-red-700">
+                  <span>(−) Desconto ({Number(cteDiscountEdit) || 0}%)</span>
+                  <strong className="font-mono">− R$ {fmtBR(fatDescontoValor)}</strong>
+                </div>
+                <div className="flex justify-between text-red-700">
+                  <span>(−) Valor de Frete <span className="text-slate-400">(motorista: AD. + saldo)</span></span>
+                  <strong className="font-mono">− R$ {fmtBR(fatFrete)}</strong>
+                </div>
+                <div className="flex justify-between text-red-700">
+                  <span>(−) Despesas <span className="text-slate-400">(carga / descarga / outros)</span></span>
+                  <strong className="font-mono">− R$ {fmtBR(fatDespesas)}</strong>
+                </div>
+                <div className={`flex justify-between font-black pt-2 mt-1 border-t border-emerald-200 ${fatLiquido < 0 ? 'text-red-600' : 'text-emerald-800'}`}>
+                  <span className="uppercase">Resultado Líquido RBA</span>
+                  <strong className="font-mono text-sm">R$ {fmtBR(fatLiquido)}</strong>
+                </div>
+              </div>
+
+              {/* Ações */}
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                {fatMsg ? (
+                  <span className={`text-[11px] font-bold ${fatMsg.type === 'ok' ? 'text-emerald-700' : 'text-red-600'}`}>
+                    {fatMsg.text}
+                  </span>
+                ) : <span />}
+                <button
+                  id="det-fat-save"
+                  onClick={handleSaveFaturamento}
+                  disabled={savingFat || !fatDirty}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 cursor-pointer"
+                >
+                  {savingFat ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
+                  {savingFat ? 'Salvando...' : 'Salvar Faturamento'}
+                </button>
+              </div>
+            </div>
+
           </div>
 
           {/* Right Column sidebar info: Clearances, Signatures and Audit events trail */}
           <div className="space-y-6">
+
+            {/* STATUS OPERACIONAL EDITÁVEL */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-5 space-y-4">
+              <div>
+                <span className="text-[10px] text-slate-450 font-black uppercase tracking-widest block">Status da Ordem</span>
+                <p className="text-[10px] text-slate-500 mt-1 leading-normal">Controle a etapa operacional da ficha sem abrir a edição completa.</p>
+              </div>
+
+              <label className="block">
+                <span className="text-[9px] text-slate-450 font-bold uppercase block mb-1">Status Geral</span>
+                <select
+                  id="det-order-status"
+                  value={statusEdit}
+                  onChange={(e) => {
+                    setStatusEdit(e.target.value);
+                    setStatusMsg(null);
+                  }}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-black text-slate-800 outline-none focus:border-yellow-500"
+                >
+                  {ORDER_STATUS_OPTIONS.map(statusOption => (
+                    <option key={statusOption} value={statusOption}>{statusOption}</option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="flex items-center justify-between gap-3">
+                {statusMsg ? (
+                  <span className={`text-[11px] font-bold ${statusMsg.type === 'ok' ? 'text-emerald-700' : 'text-red-600'}`}>
+                    {statusMsg.text}
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold text-slate-400">Atual: {order.status}</span>
+                )}
+                <button
+                  id="det-status-save"
+                  type="button"
+                  onClick={handleSaveStatus}
+                  disabled={savingStatus || !statusDirty}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 cursor-pointer"
+                >
+                  {savingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck2 className="h-4 w-4" />}
+                  {savingStatus ? 'Salvando...' : 'Salvar Status'}
+                </button>
+              </div>
+            </div>
             
             {/* COMPLIANCE CLEARANCES POOL */}
             <div className="bg-white border border-slate-200 rounded-3xl p-5 space-y-4">
@@ -277,13 +554,6 @@ export default function OrderDetailsPage() {
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-                  <span>Consulta Pancary:</span>
-                  <span className={`font-black uppercase text-[10px] ${order.pancary_status === 'Aprovado' ? 'text-emerald-700' : 'text-yellow-600'}`}>
-                    {order.pancary_status}
-                  </span>
-                </div>
-
                 <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl space-y-1">
                   <span className="text-[9px] text-slate-500 block uppercase font-bold">STATUS DE LIBERAÇÃO</span>
                   <p className="font-black text-slate-900">{order.shipment_release_status}</p>
@@ -292,22 +562,82 @@ export default function OrderDetailsPage() {
               </div>
             </div>
 
-            {/* INTEGRATED DIGITAL ATTACHMENTS FOR EDITING / REVIEWS */}
-            <div className="bg-white border border-slate-200 rounded-3xl p-5 space-y-3">
-              <span className="text-[10px] text-slate-450 font-black uppercase tracking-widest block">Anexos e Certidões ({order.attachments?.length || 0})</span>
-              
-              {order.attachments && order.attachments.length > 0 ? (
-                <div className="space-y-1.5 min-h-0">
-                  {order.attachments.map((file: any) => (
-                    <div key={file.id} className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs flex items-center justify-between font-semibold">
-                      <span className="truncate max-w-[140px]">{file.file_name}</span>
-                      <a href={file.file_url} target="_blank" rel="noreferrer" className="text-yellow-600 hover:underline">Ver Doc</a>
+            {/* DOCUMENTOS ANEXADOS POR CATEGORIA */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-slate-450 font-black uppercase tracking-widest block flex items-center gap-1.5">
+                  <Paperclip className="h-3.5 w-3.5" />
+                  Documentos da Ordem ({order.attachments?.length || 0})
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {DOC_CATEGORIES.map((cat) => {
+                  const files = (order.attachments || []).filter((f: any) => f.file_type === cat.key);
+                  const Icon = cat.icon;
+                  const isUploading = uploadingCat === cat.key;
+                  return (
+                    <div key={cat.key} className="border border-slate-200 rounded-2xl p-3 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <Icon className={`h-4 w-4 mt-0.5 shrink-0 ${cat.accent}`} />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] font-black text-slate-900 leading-tight">{cat.label}</p>
+                          <p className="text-[9px] text-slate-400 font-medium">{cat.hint}</p>
+                        </div>
+                      </div>
+
+                      {/* Lista de arquivos desta categoria */}
+                      {files.length > 0 && (
+                        <div className="space-y-1.5">
+                          {files.map((file: any) => (
+                            <DocFileRow key={file.id} file={file} onDelete={handleDeleteDoc} />
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Botão de upload */}
+                      <label className={`flex items-center justify-center gap-1.5 py-2 border border-dashed rounded-lg text-[10px] font-bold cursor-pointer select-none transition-colors ${isUploading ? 'border-slate-300 text-slate-400' : 'border-slate-300 text-slate-600 hover:border-yellow-500 hover:bg-yellow-50'}`}>
+                        {isUploading ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            Enviando...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-3.5 w-3.5" />
+                            {files.length > 0 ? 'Anexar outro' : 'Anexar documento'}
+                          </>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*,application/pdf"
+                          className="hidden"
+                          disabled={isUploading}
+                          onChange={(e) => {
+                            handleUploadDoc(cat.key, e.target.files?.[0] || null);
+                            e.target.value = '';
+                          }}
+                        />
+                      </label>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-slate-400">Nenhum arquivo digital ou CTE anexado a esta Ordem.</p>
-              )}
+                  );
+                })}
+              </div>
+
+              {/* Outros anexos sem categoria (CTE/comprovantes antigos) */}
+              {(() => {
+                const known = DOC_CATEGORIES.map(c => c.key);
+                const others = (order.attachments || []).filter((f: any) => !known.includes(f.file_type));
+                if (others.length === 0) return null;
+                return (
+                  <div className="border-t border-slate-100 pt-3 space-y-1.5">
+                    <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest block">Outros anexos</span>
+                    {others.map((file: any) => (
+                      <DocFileRow key={file.id} file={file} onDelete={handleDeleteDoc} />
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* AUDIT EVENTS TRAIL TIMELINE (LGPD Compliance) */}
@@ -350,5 +680,40 @@ export default function OrderDetailsPage() {
 
       </div>
     </HeaderAndSidebar>
+  );
+}
+
+/** Linha de um documento anexado, com ações: Visualizar, Baixar e Excluir (com texto). */
+function DocFileRow({ file, onDelete }: { file: any; onDelete: (id: string) => void }) {
+  return (
+    <div className="px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-semibold space-y-2">
+      <span className="block truncate" title={file.file_name}>{file.file_name}</span>
+      <div className="flex items-center flex-wrap gap-1.5">
+        <a
+          href={file.file_url}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-yellow-500 hover:text-yellow-700"
+        >
+          <Eye className="h-3.5 w-3.5" />
+          Visualizar
+        </a>
+        <a
+          href={file.file_url}
+          download={file.file_name}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-sky-500 hover:text-sky-700"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Baixar
+        </a>
+        <button
+          onClick={() => onDelete(file.id)}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white border border-slate-200 text-red-600 hover:border-red-400 hover:bg-red-50"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          Excluir
+        </button>
+      </div>
+    </div>
   );
 }

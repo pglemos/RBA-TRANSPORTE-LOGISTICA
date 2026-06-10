@@ -16,6 +16,8 @@ export async function POST(req: NextRequest) {
     const file = formData.get('file') as File | null;
     const orderId = formData.get('order_id') as string | null;
     const customType = formData.get('file_type') as string | null;
+    // Categoria do documento (comprovante_pagamento | auditoria_carga | cte | manifesto | outros)
+    const category = formData.get('category') as string | null;
 
     if (!orderId) {
       return NextResponse.json({ success: false, error: "Identificação da ordem (order_id) é obrigatória." }, { status: 400 });
@@ -31,7 +33,7 @@ export async function POST(req: NextRequest) {
         orderId,
         docName,
         mockUrl,
-        customType === 'cte' ? 'application/pdf' : 'image/png',
+        category || customType || (customType === 'cte' ? 'application/pdf' : 'image/png'),
         operatorName
       );
       
@@ -56,12 +58,13 @@ export async function POST(req: NextRequest) {
 
     const fileUrl = `/uploads/${uniqueName}`;
 
-    // Insert into DB
+    // Insert into DB — guardamos a CATEGORIA do documento em file_type
+    // (comprovante_pagamento, auditoria_carga, cte, manifesto...) para agrupamento.
     const newAtt = await RBADatabase.createAttachment(
       orderId,
       file.name,
       fileUrl,
-      file.type || 'application/octet-stream',
+      category || file.type || 'application/octet-stream',
       operatorName
     );
 

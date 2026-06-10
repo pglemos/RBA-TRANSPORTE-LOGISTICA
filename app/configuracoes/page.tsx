@@ -189,7 +189,7 @@ export default function SettingsPage() {
                   <div>
                     <span>Estrito Seguradora</span>
                     <span className="text-[9px] text-slate-450 block font-normal leading-normal mt-0.5">
-                      Bloquear liberação automática de pátio se Buonny/Pancary reprovados.
+                      Bloquear liberação automática de pátio se Buonny reprovado.
                     </span>
                   </div>
                 </label>
