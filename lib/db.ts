@@ -1209,6 +1209,7 @@ export class RBADatabase {
       ...orderData,
       id: newId,
       order_number: orderNumber,
+      approved_at: orderData.approved_at || null,
       balance_value: balVal,
       total_expenses: totExp,
       net_value: netVal,
