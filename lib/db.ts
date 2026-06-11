@@ -180,6 +180,12 @@ const nextFreightOrderSequence = (orders: Pick<FreightOrder, 'order_number'>[]) 
   return maxSequence + 1;
 };
 
+const getCteSortValue = (cteNumber?: string) => {
+  const match = cteNumber?.match(/\d+/g);
+  if (!match) return 0;
+  return Number(match.join('')) || 0;
+};
+
 const isUniqueViolation = (error: any) => error?.code === '23505' || /duplicate key|unique/i.test(error?.message || '');
 
 const withFreightOrderDefaults = (order: any): FreightOrder => ({
@@ -1128,6 +1134,7 @@ export class RBADatabase {
       let query = supabaseServer
         .from('freight_orders')
         .select('*')
+        .order('cte_number', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false });
 
       if (options.status) query = query.eq('status', options.status);
@@ -1148,7 +1155,11 @@ export class RBADatabase {
         return data.map(withFreightOrderDefaults);
       }
     }
-    let orders = [...this.load().freight_orders].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+    let orders = [...this.load().freight_orders].sort((a, b) => {
+      const cteDiff = getCteSortValue(b.cte_number) - getCteSortValue(a.cte_number);
+      if (cteDiff !== 0) return cteDiff;
+      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+    });
     if (options.status) orders = orders.filter(o => o.status === options.status);
     if (options.driverId) orders = orders.filter(o => o.driver_id === options.driverId);
     if (options.clientId) orders = orders.filter(o => o.client_id === options.clientId);
