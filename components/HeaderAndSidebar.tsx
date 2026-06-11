@@ -54,6 +54,7 @@ export default function HeaderAndSidebar({ children }: { children: React.ReactNo
   const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [headerError, setHeaderError] = useState('');
 
   const refreshUser = async () => {
     try {
@@ -61,7 +62,7 @@ export default function HeaderAndSidebar({ children }: { children: React.ReactNo
       const data = await res.json();
       if (data?.user) setCurrentUser(data.user);
     } catch (e) {
-      console.error(e);
+      setHeaderError('Erro ao carregar sessão.');
     } finally {
       setLoading(false);
     }
@@ -82,6 +83,7 @@ export default function HeaderAndSidebar({ children }: { children: React.ReactNo
       });
       const data = await res.json();
       if (data?.success) {
+        setHeaderError('');
         setCurrentUser(data.user);
         setTimeout(() => {
           router.refresh();
@@ -89,7 +91,7 @@ export default function HeaderAndSidebar({ children }: { children: React.ReactNo
         }, 100);
       }
     } catch (e) {
-      console.error(e);
+      setHeaderError('Erro ao alternar perfil.');
     } finally {
       setLoading(false);
     }
@@ -113,6 +115,7 @@ export default function HeaderAndSidebar({ children }: { children: React.ReactNo
               </span>
             )}
             <span className="hidden max-w-[220px] truncate font-semibold text-slate-500 lg:inline">{currentUser?.name}</span>
+            {headerError && <span className="font-bold text-red-600">{headerError}</span>}
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">

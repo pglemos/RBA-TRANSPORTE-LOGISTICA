@@ -51,12 +51,13 @@ export default function DashboardPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<SummaryData>(emptySummary);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const loadData = async () => {
     try {
       const res = await fetch('/api/orders');
       const data = await res.json();
-      if (!Array.isArray(data)) return;
+      if (!res.ok || !Array.isArray(data)) throw new Error(data?.error || 'Erro ao carregar dashboard.');
 
       let freight = 0;
       let advance = 0;
@@ -85,7 +86,7 @@ export default function DashboardPage() {
         ordersByStatus: statusMap,
       });
     } catch (e) {
-      console.error(e);
+      setErrorMsg(e instanceof Error ? e.message : 'Erro ao carregar dashboard.');
     } finally {
       setLoading(false);
     }
@@ -122,6 +123,11 @@ export default function DashboardPage() {
   return (
     <HeaderAndSidebar>
       <div id="dashboard-container" className="space-y-8">
+        {errorMsg && (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-bold text-red-800">
+            {errorMsg}
+          </div>
+        )}
         <section className="rounded-lg border border-slate-200 bg-[oklch(98.5%_0.006_83)] p-6 shadow-sm md:p-8">
           <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
             <div className="max-w-[72ch]">

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RBADatabase } from '@/lib/db';
 import { RBAAuth } from '@/lib/auth';
+import { FreightPaymentSchema } from '@/lib/validators';
 
 export async function GET(req: NextRequest) {
   try {
@@ -42,14 +43,25 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
 
-    if (!body.freight_order_id) {
-      return NextResponse.json({ success: false, error: "Vinculação de ordem de frete obrigatória." }, { status: 400 });
-    }
-    if (Number(body.amount) <= 0) {
-      return NextResponse.json({ success: false, error: "O valor de pagamento ou reembolso deve ser maior que zero." }, { status: 400 });
+    const payload = {
+      ...body,
+      amount: Number(body.amount) || 0
+    };
+    const parsed = FreightPaymentSchema.safeParse(payload);
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: parsed.error.issues[0]?.message || 'Dados do pagamento inválidos.' }, { status: 400 });
     }
 
-    const newPay = await RBADatabase.createPayment(body, session.user.id, session.user.name);
+    const order = await RBADatabase.getFreightOrderById(parsed.data.freight_order_id);
+    if (!order) {
+      return NextResponse.json({ success: false, error: "Ordem de frete vinculada não existe." }, { status: 400 });
+    }
+
+    const newPay = await RBADatabase.createPayment(
+      { ...parsed.data, proof_url: body.proof_url || '', notes: parsed.data.notes || '' },
+      session.user.id,
+      session.user.name
+    );
     return NextResponse.json({ success: true, payment: newPay });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RBADatabase } from '@/lib/db';
 import { RBAAuth } from '@/lib/auth';
+import { FreightOrderSchema } from '@/lib/validators';
+import { signFreightOrderProof } from '@/lib/proof';
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,8 +15,10 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status') || '';
     const driverId = searchParams.get('driver_id') || '';
     const clientId = searchParams.get('client_id') || '';
+    const page = Number(searchParams.get('page') || '1');
+    const pageSize = Number(searchParams.get('page_size') || '50');
 
-    const orders = await RBADatabase.getFreightOrders();
+    const orders = await RBADatabase.getFreightOrders({ search, status, driverId, clientId, page, pageSize });
     const drivers = await RBADatabase.getDrivers();
     const vehicles = await RBADatabase.getVehicles();
     const clients = await RBADatabase.getClients();
@@ -34,27 +38,12 @@ export async function GET(req: NextRequest) {
         vehicle_trailer_plate: vehicle ? vehicle.trailer_plate : "N/A",
         vehicle_model: vehicle ? vehicle.model : "N/A",
         vehicle_year: vehicle ? vehicle.year : "N/A",
-        client_name: client ? client.name : "N/A"
+        client_name: client ? client.name : "N/A",
+        pdf_proof_token: signFreightOrderProof(ord)
       };
     });
 
-    const filtered = populated.filter(ord => {
-      if (status && ord.status !== status) return false;
-      if (driverId && ord.driver_id !== driverId) return false;
-      if (clientId && ord.client_id !== clientId) return false;
-      if (search) {
-        const matchNumber = ord.order_number?.toLowerCase().includes(search);
-        const matchDriver = ord.driver_name.toLowerCase().includes(search);
-        const matchClient = ord.client_name.toLowerCase().includes(search);
-        const matchOrigin = ord.origin?.toLowerCase().includes(search);
-        const matchDest = ord.destination?.toLowerCase().includes(search);
-        const matchVehicle = ord.vehicle_plate.toLowerCase().includes(search);
-        return matchNumber || matchDriver || matchClient || matchOrigin || matchDest || matchVehicle;
-      }
-      return true;
-    });
-
-    return NextResponse.json(filtered);
+    return NextResponse.json(populated);
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
@@ -71,48 +60,56 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
 
-    // Enforce basic required properties as per PRD validations
-    if (!body.driver_id) {
-      return NextResponse.json({ success: false, error: "Identificação do motorista é obrigatória." }, { status: 400 });
-    }
-    if (!body.vehicle_id) {
-      return NextResponse.json({ success: false, error: "O veículo conjugado (cavalo/carreta) é obrigatório." }, { status: 400 });
-    }
-    if (!body.client_id) {
-      return NextResponse.json({ success: false, error: "O cliente pagador é obrigatório." }, { status: 400 });
-    }
-    if (!body.origin || !body.destination) {
-      return NextResponse.json({ success: false, error: "Cidades de origem e destino são obrigatórias para a viagem." }, { status: 400 });
-    }
-    if (Number(body.freight_value) <= 0) {
-      return NextResponse.json({ success: false, error: "O valor bruto do frete deve ser maior que zero." }, { status: 400 });
-    }
-    if (String(body.buonny_code || '').length > 20) {
-      return NextResponse.json({ success: false, error: "O código da consulta Buonny deve ter no máximo 20 caracteres." }, { status: 400 });
+    const payload = {
+      ...body,
+      freight_value: Number(body.freight_value) || 0,
+      advance_value: Number(body.advance_value) || 0,
+      cash_value: Number(body.cash_value) || 0,
+      loading_expense: Number(body.loading_expense) || 0,
+      unloading_expense: Number(body.unloading_expense) || 0,
+      other_expenses: Number(body.other_expenses) || 0,
+      cte_value: Number(body.cte_value) || 0,
+      cte_discount_percent: Number(body.cte_discount_percent ?? 10)
+    };
+    const parsed = FreightOrderSchema.safeParse(payload);
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: parsed.error.issues[0]?.message || 'Dados da ficha inválidos.' }, { status: 400 });
     }
 
     // Capture driver snapshot bank information as requested by PRD "data_snapshot"
-    const matchedDriver = await RBADatabase.getDriverById(body.driver_id);
-    const bankSnapshot = matchedDriver ? {
+    const [matchedDriver, matchedVehicle, matchedClient] = await Promise.all([
+      RBADatabase.getDriverById(parsed.data.driver_id),
+      RBADatabase.getVehicleById(parsed.data.vehicle_id),
+      RBADatabase.getClientById(parsed.data.client_id)
+    ]);
+    if (!matchedDriver) {
+      return NextResponse.json({ success: false, error: "Motorista informado não existe ou foi removido." }, { status: 400 });
+    }
+    if (!matchedVehicle) {
+      return NextResponse.json({ success: false, error: "Veículo informado não existe ou foi removido." }, { status: 400 });
+    }
+    if (!matchedClient) {
+      return NextResponse.json({ success: false, error: "Cliente informado não existe ou foi removido." }, { status: 400 });
+    }
+
+    const bankSnapshot = {
       bank_name: matchedDriver.bank_name,
       bank_agency: matchedDriver.bank_agency,
       bank_account: matchedDriver.bank_account,
       pix_key: matchedDriver.pix_key,
       beneficiary_name: matchedDriver.beneficiary_name || matchedDriver.name
-    } : {
-      bank_name: "N/A",
-      bank_agency: "N/A",
-      bank_account: "N/A",
-      pix_key: "N/A",
-      beneficiary_name: "N/A"
     };
 
     const newOrder = await RBADatabase.createFreightOrder({
-      ...body,
+      ...parsed.data,
       bank_data_snapshot: bankSnapshot,
       created_by: session.user.name,
-      responsible_name: body.responsible_name || session.user.name,
-      status: body.status || 'Rascunho'
+      approved_by: '',
+      approved_at: '',
+      responsible_name: parsed.data.responsible_name || session.user.name,
+      status: parsed.data.status || 'Rascunho',
+      cte_number: parsed.data.cte_number || '',
+      notes: parsed.data.notes || ''
     }, session.user.id, session.user.name);
 
     return NextResponse.json({ success: true, order: newOrder });

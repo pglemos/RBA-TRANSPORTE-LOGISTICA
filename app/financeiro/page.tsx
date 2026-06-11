@@ -16,7 +16,7 @@ export default function FinancePage() {
   // Creation form states
   const [showForm, setShowForm] = useState(false);
   const [orderId, setOrderId] = useState('');
-  const [paymentType, setPaymentType] = useState<'Adiantamento' | 'Saldo Final' | 'Pedágio' | 'Outros'>('Adiantamento');
+  const [paymentType, setPaymentType] = useState<'Adiantamento' | 'Saldo' | 'Taxa de Carga' | 'Outros'>('Adiantamento');
   const [amount, setAmount] = useState(0);
   const [status, setStatus] = useState<'Pendente' | 'Pago' | 'Cancelado'>('Pendente');
 
@@ -40,32 +40,33 @@ export default function FinancePage() {
         fetch('/api/orders')
       ]);
 
-      if (payRes.ok && ordRes.ok) {
-        const payData = await payRes.json();
-        const ordData = await ordRes.json();
-
-        setPayments(payData);
-        setOrders(ordData);
-
-        // Sum up metrics
-        let paid = 0;
-        let pending = 0;
-        payData.forEach((p: any) => {
-          if (p.status === 'Pago') {
-            paid += Number(p.amount) || 0;
-          } else if (p.status === 'Pendente') {
-            pending += Number(p.amount) || 0;
-          }
-        });
-
-        setStats({
-          totalPaid: paid,
-          totalPending: pending,
-          totalBudget: paid + pending
-        });
+      const payData = await payRes.json();
+      const ordData = await ordRes.json();
+      if (!payRes.ok || !ordRes.ok) {
+        throw new Error(payData?.error || ordData?.error || 'Erro ao carregar financeiro.');
       }
+
+      setPayments(Array.isArray(payData) ? payData : []);
+      setOrders(Array.isArray(ordData) ? ordData : []);
+
+      // Sum up metrics
+      let paid = 0;
+      let pending = 0;
+      (Array.isArray(payData) ? payData : []).forEach((p: any) => {
+        if (p.status === 'Pago') {
+          paid += Number(p.amount) || 0;
+        } else if (p.status === 'Pendente') {
+          pending += Number(p.amount) || 0;
+        }
+      });
+
+      setStats({
+        totalPaid: paid,
+        totalPending: pending,
+        totalBudget: paid + pending
+      });
     } catch (e) {
-      console.error(e);
+      setErrorMsg(e instanceof Error ? e.message : 'Erro ao carregar financeiro.');
     } finally {
       setLoading(false);
     }
@@ -115,9 +116,11 @@ export default function FinancePage() {
 
     setSaving(true);
     const payload = {
-      order_id: orderId,
-      payment_type: paymentType,
+      freight_order_id: orderId,
+      type: paymentType,
       amount,
+      payment_date: new Date().toISOString().split('T')[0],
+      payment_method: 'Pix',
       status
     };
 
@@ -273,8 +276,8 @@ export default function FinancePage() {
                     className="w-full text-xs font-black px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
                   >
                     <option value="Adiantamento">Adiantamento em Viagem</option>
-                    <option value="Saldo Final">Saldo Final de Entrega</option>
-                    <option value="Pedágio">Pedágio Integrado</option>
+                    <option value="Saldo">Saldo Final de Entrega</option>
+                    <option value="Taxa de Carga">Taxa de Carga / Pedágio</option>
                     <option value="Outros">Outras Despesas de Campo</option>
                   </select>
                 </div>
@@ -400,7 +403,7 @@ export default function FinancePage() {
                       </td>
                       <td className="p-4">
                         <span className="p-1 text-[10px] bg-slate-100 text-slate-700 font-bold rounded">
-                          {p.payment_type}
+                          {p.type}
                         </span>
                       </td>
                       <td className="p-4 font-mono font-bold text-slate-900">R$ {p.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>

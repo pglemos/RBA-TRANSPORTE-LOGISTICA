@@ -26,10 +26,9 @@ export default function SettingsPage() {
       setLoading(true);
       setErrorMsg('');
 
-      // Fetch audit logs and settings
       const [logsRes, settingsRes] = await Promise.all([
         fetch('/api/audit-logs'),
-        fetch('/api/auth/me') // We can mock load/modify settings configurations in state easily
+        fetch('/api/settings')
       ]);
 
       if (logsRes.ok) {
@@ -38,15 +37,21 @@ export default function SettingsPage() {
         setErrorMsg("Acesso restrito ao painel de registros de auditoria (LGPD). Verifique o Simulador de Perfil!");
       }
 
-      // Hardcoded config placeholder
-      setCompanyName("RBA Transporte & Logística Ltda");
-      setCompanyDocument("12.345.678/0001-90");
-      setSupportPhone("(11) 4004-9281");
-      setInsurancePolicyNumber("BR-TOKIO-903124A");
-      setBlockOnRiskAlert(true);
+      if (settingsRes.ok) {
+        const loadedSettings = await settingsRes.json();
+        setSettings(loadedSettings);
+        setCompanyName(loadedSettings.company_name || "RBA Transporte & Logística Ltda");
+        setCompanyDocument(loadedSettings.company_document || "12.345.678/0001-90");
+        setSupportPhone(loadedSettings.support_phone || "(11) 4004-9281");
+        setInsurancePolicyNumber(loadedSettings.insurance_policy_number || "BR-TOKIO-903124A");
+        setBlockOnRiskAlert(String(loadedSettings.block_on_risk_alert ?? 'true') === 'true');
+      } else {
+        const data = await settingsRes.json();
+        setErrorMsg(data?.error || "Erro ao carregar configurações.");
+      }
 
     } catch (e) {
-      console.error(e);
+      setErrorMsg("Erro de rede ao carregar configurações.");
     } finally {
       setLoading(false);
     }
@@ -70,26 +75,25 @@ export default function SettingsPage() {
     setSaving(true);
 
     try {
-      // Simulate save response with a clean mock delay
-      await new Promise(r => setTimeout(r, 600));
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          company_name: companyName,
+          company_document: companyDocument,
+          support_phone: supportPhone,
+          insurance_policy_number: insurancePolicyNumber,
+          block_on_risk_alert: String(blockOnRiskAlert)
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.success) {
+        setErrorMsg(data?.error || "Falha ao salvar preferências.");
+        return;
+      }
+      setSettings(data.settings);
       setMsg("Parâmetros do sistema RBA Fretes salvos com sucesso!");
-      
-      // Push mock log manually mock trigger
-      const logPush = {
-        action: 'Parâmetros Alterados',
-        details: `Alterou razão social para: ${companyName}, Apólice: ${insurancePolicyNumber}`,
-        ip_address: '187.3.11.90',
-        user_name: 'Morgan Ribeiro (Admin)'
-      };
-      
-      setAuditLogs(prev => [
-        {
-          id: `new_log_${Date.now()}`,
-          created_at: new Date().toISOString(),
-          ...logPush
-        },
-        ...prev
-      ]);
+      await loadData();
 
     } catch (err) {
       setErrorMsg("Falha ao salvar preferências.");

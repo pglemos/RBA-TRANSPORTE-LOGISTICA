@@ -9,6 +9,7 @@ export default function ReportsPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
 
   // Filter criteria
   const [selectedClient, setSelectedClient] = useState('');
@@ -23,12 +24,15 @@ export default function ReportsPage() {
         fetch('/api/clients')
       ]);
 
-      if (ordRes.ok && cliRes.ok) {
-        setOrders(await ordRes.json());
-        setClients(await cliRes.json());
+      const ordData = await ordRes.json();
+      const cliData = await cliRes.json();
+      if (!ordRes.ok || !cliRes.ok) {
+        throw new Error(ordData?.error || cliData?.error || 'Erro ao carregar relatórios.');
       }
+      setOrders(Array.isArray(ordData) ? ordData : []);
+      setClients(Array.isArray(cliData) ? cliData : []);
     } catch (e) {
-      console.error(e);
+      setErrorMsg(e instanceof Error ? e.message : 'Erro ao carregar relatórios.');
     } finally {
       setLoading(false);
     }
@@ -69,6 +73,11 @@ export default function ReportsPage() {
   return (
     <HeaderAndSidebar>
       <div className="space-y-6" id="reports-module">
+        {errorMsg && (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-bold text-red-800 print:hidden">
+            {errorMsg}
+          </div>
+        )}
         
         {/* Header tools */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 print:hidden">

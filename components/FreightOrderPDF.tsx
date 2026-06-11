@@ -41,6 +41,7 @@ interface Props {
     emission_month?: string;
     emission_year?: string;
     created_at: string;
+    pdf_proof_token?: string;
     bank_data_snapshot: {
       bank_name: string;
       bank_agency: string;
@@ -58,7 +59,7 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
   };
 
   const getQRSeed = () => {
-    return `RBA_SECURE_TOKEN:${order.cte_number || order.order_number}:${order.net_value}`;
+    return `RBA_HMAC_SHA256:${order.pdf_proof_token || 'assinatura-indisponivel'}`;
   };
 
   const emissionLabel =

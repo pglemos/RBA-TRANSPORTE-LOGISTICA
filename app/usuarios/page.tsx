@@ -6,6 +6,7 @@ import { ShieldAlert, Users, Shield, Lock, Eye, CheckCircle2, ChevronRight, Help
 
 export default function ProfilesPage() {
   const [activeUser, setActiveUser] = useState<any>(null);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const loadActiveUser = async () => {
     try {
@@ -15,7 +16,7 @@ export default function ProfilesPage() {
         setActiveUser(data?.user || null);
       }
     } catch (e) {
-      console.error(e);
+      setErrorMsg("Erro ao carregar usuário ativo.");
     }
   };
 
@@ -43,7 +44,7 @@ export default function ProfilesPage() {
         window.dispatchEvent(new Event('rba-auth-switch'));
       }
     } catch (e) {
-      console.error(e);
+      setErrorMsg("Erro ao alternar perfil.");
     }
   };
 
@@ -85,6 +86,11 @@ export default function ProfilesPage() {
   return (
     <HeaderAndSidebar>
       <div className="space-y-6">
+        {errorMsg && (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-bold text-red-800">
+            {errorMsg}
+          </div>
+        )}
         
         {/* Header section */}
         <div className="bg-white border p-6 rounded-3xl border-slate-200">

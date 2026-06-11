@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RBADatabase } from '@/lib/db';
 import { RBAAuth } from '@/lib/auth';
+import { FreightOrderSchema } from '@/lib/validators';
+import { signFreightOrderProof } from '@/lib/proof';
+
+const FINANCIAL_ORDER_FIELDS = new Set([
+  'freight_value',
+  'advance_value',
+  'cash_value',
+  'loading_expense',
+  'unloading_expense',
+  'other_expenses',
+  'cte_value',
+  'cte_discount_percent'
+]);
 
 export async function GET(
   req: NextRequest,
@@ -46,6 +59,7 @@ export async function GET(
       payments,
       attachments
     };
+    (maskedOrder as any).pdf_proof_token = signFreightOrderProof(order);
 
     return NextResponse.json(maskedOrder);
   } catch (error: any) {
@@ -66,21 +80,51 @@ export async function PUT(
       return NextResponse.json({ success: false, error: "Acesso negado: Perfil de visualização apenas." }, { status: 403 });
     }
 
-    const body = await req.json();
-    if (String(body.buonny_code || '').length > 20) {
-      return NextResponse.json({ success: false, error: "O código da consulta Buonny deve ter no máximo 20 caracteres." }, { status: 400 });
+    const currentOrder = await RBADatabase.getFreightOrderById(id);
+    if (!currentOrder) {
+      return NextResponse.json({ success: false, error: "Ordem de frete não encontrada." }, { status: 404 });
     }
+
+    const body = await req.json();
 
     // Check specific constraint limits based on role
     if (session.user.role === 'Operacional') {
-      // Operacional profiles can create & edit but CANNOT change payment statuses or alter payment entries
-      const oldOrder = await RBADatabase.getFreightOrderById(id);
-      if (oldOrder && body.status === 'Pago' && oldOrder.status !== 'Pago') {
+      if (body.status === 'Pago' && currentOrder.status !== 'Pago') {
         return NextResponse.json({ success: false, error: "Operacional não pode marcar ordem como Paga ou liquidada directamente." }, { status: 403 });
+      }
+      const attemptedFinancialEdit = Object.keys(body).some((key) =>
+        FINANCIAL_ORDER_FIELDS.has(key) && Number((body as any)[key]) !== Number((currentOrder as any)[key] ?? 0)
+      );
+      if (attemptedFinancialEdit) {
+        return NextResponse.json({ success: false, error: "Operacional não pode alterar valores financeiros da ficha." }, { status: 403 });
       }
     }
 
-    const updated = await RBADatabase.updateFreightOrder(id, body, session.user.id, session.user.name);
+    const allowedKeys = Object.keys(FreightOrderSchema.shape);
+    const normalizedBody = Object.fromEntries(
+      Object.entries(body).filter(([key]) => allowedKeys.includes(key))
+    );
+    const merged = {
+      ...currentOrder,
+      ...normalizedBody,
+      freight_value: Number((normalizedBody as any).freight_value ?? currentOrder.freight_value) || 0,
+      advance_value: Number((normalizedBody as any).advance_value ?? currentOrder.advance_value) || 0,
+      cash_value: Number((normalizedBody as any).cash_value ?? currentOrder.cash_value) || 0,
+      loading_expense: Number((normalizedBody as any).loading_expense ?? currentOrder.loading_expense) || 0,
+      unloading_expense: Number((normalizedBody as any).unloading_expense ?? currentOrder.unloading_expense) || 0,
+      other_expenses: Number((normalizedBody as any).other_expenses ?? currentOrder.other_expenses) || 0,
+      cte_value: Number((normalizedBody as any).cte_value ?? currentOrder.cte_value) || 0,
+      cte_discount_percent: Number((normalizedBody as any).cte_discount_percent ?? currentOrder.cte_discount_percent ?? 10)
+    };
+    const parsed = FreightOrderSchema.safeParse(merged);
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: parsed.error.issues[0]?.message || 'Dados da ficha inválidos.' }, { status: 400 });
+    }
+
+    const updatePayload = Object.fromEntries(
+      Object.entries(parsed.data).filter(([key]) => key in normalizedBody)
+    );
+    const updated = await RBADatabase.updateFreightOrder(id, updatePayload, session.user.id, session.user.name);
     return NextResponse.json({ success: true, order: updated });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

@@ -54,6 +54,7 @@ export default function OrderDetailsPage() {
 
   // Upload de documentos por categoria
   const [uploadingCat, setUploadingCat] = useState<string>('');
+  const [attachmentMsg, setAttachmentMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
 
   // Faturamento (CTE) — edição inline na página de detalhes
   const [cteValueEdit, setCteValueEdit] = useState<number>(0);
@@ -76,6 +77,7 @@ export default function OrderDetailsPage() {
   const handleUploadDoc = async (category: string, file: File | null) => {
     if (!file) return;
     setUploadingCat(category);
+    setAttachmentMsg(null);
     try {
       const fd = new FormData();
       fd.append('order_id', String(id));
@@ -84,12 +86,13 @@ export default function OrderDetailsPage() {
       const res = await fetch('/api/attachments', { method: 'POST', body: fd });
       const data = await res.json();
       if (data?.success) {
+        setAttachmentMsg({ type: 'ok', text: 'Documento anexado com sucesso.' });
         await fetchOrderDetails();
       } else {
-        alert(data?.error || 'Falha ao enviar o documento.');
+        setAttachmentMsg({ type: 'err', text: data?.error || 'Falha ao enviar o documento.' });
       }
     } catch (e) {
-      alert('Erro de rede ao enviar o documento.');
+      setAttachmentMsg({ type: 'err', text: 'Erro de rede ao enviar o documento.' });
     } finally {
       setUploadingCat('');
     }
@@ -97,11 +100,18 @@ export default function OrderDetailsPage() {
 
   const handleDeleteDoc = async (attId: string) => {
     if (!confirm('Excluir este documento anexado?')) return;
+    setAttachmentMsg(null);
     try {
       const res = await fetch(`/api/attachments?id=${attId}`, { method: 'DELETE' });
-      if (res.ok) await fetchOrderDetails();
+      const data = await res.json();
+      if (res.ok && data?.success) {
+        setAttachmentMsg({ type: 'ok', text: 'Documento excluído com sucesso.' });
+        await fetchOrderDetails();
+      } else {
+        setAttachmentMsg({ type: 'err', text: data?.error || 'Erro ao excluir o documento.' });
+      }
     } catch (e) {
-      alert('Erro ao excluir o documento.');
+      setAttachmentMsg({ type: 'err', text: 'Erro ao excluir o documento.' });
     }
   };
 
@@ -564,6 +574,15 @@ export default function OrderDetailsPage() {
                   Documentos da Ordem ({order.attachments?.length || 0})
                 </span>
               </div>
+              {attachmentMsg && (
+                <div className={`p-2.5 rounded-xl border text-[10px] font-bold ${
+                  attachmentMsg.type === 'ok'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                    : 'bg-red-50 border-red-200 text-red-800'
+                }`}>
+                  {attachmentMsg.text}
+                </div>
+              )}
 
               <div className="space-y-3">
                 {DOC_CATEGORIES.map((cat) => {

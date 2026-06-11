@@ -37,13 +37,18 @@ export default function OrdersListPage() {
   const loadOrders = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/orders');
-      if (res.ok) {
-        const data = await res.json();
-        setOrders(data);
+      setErrorMsg('');
+      const params = new URLSearchParams({ page: '1', page_size: '100' });
+      if (search.trim()) params.set('search', search.trim());
+      if (statusFilter) params.set('status', statusFilter);
+      const res = await fetch(`/api/orders?${params.toString()}`);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || 'Erro ao carregar ordens.');
       }
+      setOrders(Array.isArray(data) ? data : []);
     } catch (e) {
-      console.error(e);
+      setErrorMsg(e instanceof Error ? e.message : 'Erro ao carregar ordens.');
     } finally {
       setLoading(false);
     }
@@ -59,7 +64,7 @@ export default function OrdersListPage() {
       clearTimeout(timer);
       window.removeEventListener('rba-auth-switch', loadOrders);
     };
-  }, []);
+  }, [search, statusFilter]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Tem certeza que deseja excluir esta Ordem de Frete permanentemente? Esta ação gera um log de auditoria operacional.")) {
