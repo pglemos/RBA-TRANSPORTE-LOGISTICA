@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
 import { Search, Plus, Building2, Edit3, Trash2, Save, AlertCircle } from 'lucide-react';
+import { isValidBrazilianPhone, isValidCpfOrCnpj, normalizeDocument, onlyDigits } from '@/lib/validators';
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<any[]>([]);
@@ -30,12 +31,13 @@ export default function ClientsPage() {
     try {
       setLoading(true);
       const res = await fetch('/api/clients');
-      if (res.ok) {
-        const data = await res.json();
-        setClients(data);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || 'Erro ao carregar clientes.');
       }
+      setClients(Array.isArray(data) ? data : []);
     } catch (e) {
-      console.error(e);
+      setErrorMsg(e instanceof Error ? e.message : 'Erro ao carregar clientes.');
     } finally {
       setLoading(false);
     }
@@ -90,13 +92,32 @@ export default function ClientsPage() {
     setErrorMsg('');
     setMsg('');
 
+    const normalizedDocument = normalizeDocument(document);
+
     if (!name || !document) {
       setErrorMsg("Razão Social / Nome e CNPJ / CPF são obrigatórios.");
       return;
     }
+    if (!isValidCpfOrCnpj(normalizedDocument)) {
+      setErrorMsg("CPF/CNPJ do cliente inválido.");
+      return;
+    }
+    if (phone && !isValidBrazilianPhone(phone)) {
+      setErrorMsg("Telefone do cliente inválido.");
+      return;
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setErrorMsg("E-mail do cliente inválido.");
+      return;
+    }
 
     setSaving(true);
-    const payload = { name, document, email, phone };
+    const payload = {
+      name: name.trim(),
+      document: normalizedDocument,
+      email: email.trim(),
+      phone: phone ? onlyDigits(phone) : ''
+    };
 
     try {
       const url = editingId ? `/api/clients/${editingId}` : '/api/clients';

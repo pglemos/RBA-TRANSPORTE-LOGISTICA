@@ -35,7 +35,7 @@ export async function GET(
       vehicle_model: vehicle ? vehicle.model : "N/A",
       vehicle_year: vehicle ? vehicle.year : "N/A",
       client_name: client ? client.name : "N/A",
-      client_document: client ? RBAAuth.maskCPF(client.document, role) : "N/A",
+      client_document: client ? RBAAuth.maskDocument(client.document, role) : "N/A",
       bank_data_snapshot: {
         bank_name: order.bank_data_snapshot.bank_name,
         bank_agency: order.bank_data_snapshot.bank_agency,

@@ -84,7 +84,7 @@ export class RBAAuth {
   public static maskCPF(cpf: string, role?: AppRole): string {
     if (!cpf) return '';
     const clean = cpf.replace(/\D/g, '');
-    if (role === 'Administrador' || role === 'Financeiro' || role === 'Operacional') {
+    if (role === 'Administrador' || role === 'Financeiro') {
       // Show styled full if authorized
       return clean.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
     }
@@ -92,10 +92,25 @@ export class RBAAuth {
     return clean.replace(/(\d{3})\d{6}(\d{2})/, "$1.***.***-$2");
   }
 
+  public static maskDocument(document: string, role?: AppRole): string {
+    if (!document) return '';
+    const clean = document.replace(/\D/g, '');
+    if (clean.length === 11) {
+      return this.maskCPF(clean, role);
+    }
+    if (clean.length === 14) {
+      if (role === 'Administrador' || role === 'Financeiro') {
+        return clean.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+      }
+      return clean.replace(/(\d{2})\d{6}(\d{4})(\d{2})/, "$1.***.***/$2-$3");
+    }
+    return role === 'Administrador' || role === 'Financeiro' ? document : 'Documento protegido (LGPD)';
+  }
+
   public static maskRG(rg: string, role?: AppRole): string {
     if (!rg) return '';
     const clean = rg.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (role === 'Administrador' || role === 'Financeiro' || role === 'Operacional') {
+    if (role === 'Administrador' || role === 'Financeiro') {
       return rg;
     }
     if (clean.length >= 8) {
@@ -117,7 +132,7 @@ export class RBAAuth {
 
   public static maskPixKey(key: string, role?: AppRole): string {
     if (!key) return '';
-    if (role === 'Administrador' || role === 'Financeiro' || role === 'Operacional') {
+    if (role === 'Administrador' || role === 'Financeiro') {
       return key;
     }
     // Simple mask

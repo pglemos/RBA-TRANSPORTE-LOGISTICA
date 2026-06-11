@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RBADatabase } from '@/lib/db';
 import { RBAAuth } from '@/lib/auth';
+import { ClientSchema, normalizeDocument, onlyDigits } from '@/lib/validators';
 
 export async function GET(
   req: NextRequest,
@@ -19,7 +20,7 @@ export async function GET(
 
     const processed = {
       ...client,
-      document: RBAAuth.maskCPF(client.document, role)
+      document: RBAAuth.maskDocument(client.document, role)
     };
 
     return NextResponse.json(processed);
@@ -42,7 +43,19 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const updated = await RBADatabase.updateClient(id, body, session.user.id, session.user.name);
+    const payload = {
+      ...body,
+      name: String(body.name || '').trim(),
+      document: normalizeDocument(body.document || ''),
+      email: String(body.email || '').trim(),
+      phone: body.phone ? onlyDigits(body.phone) : ''
+    };
+    const parsed = ClientSchema.safeParse(payload);
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: parsed.error.issues[0]?.message || 'Dados do cliente inválidos.' }, { status: 400 });
+    }
+
+    const updated = await RBADatabase.updateClient(id, parsed.data, session.user.id, session.user.name);
     return NextResponse.json({ success: true, client: updated });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

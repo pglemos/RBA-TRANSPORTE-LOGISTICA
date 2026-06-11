@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RBADatabase } from '@/lib/db';
 import { RBAAuth } from '@/lib/auth';
+import { ClientSchema, normalizeDocument, onlyDigits } from '@/lib/validators';
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
     // Process list, masking CPF/CNPJ document if not authorized
     const processed = clients.map(c => ({
       ...c,
-      document: RBAAuth.maskCPF(c.document, role) // Custom validation masks CNPJ/CPF appropriately
+      document: RBAAuth.maskDocument(c.document, role)
     }));
 
     return NextResponse.json(processed);
@@ -32,7 +33,29 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const newClient = await RBADatabase.createClient(body, session.user.id, session.user.name);
+    const payload = {
+      ...body,
+      name: String(body.name || '').trim(),
+      document: normalizeDocument(body.document || ''),
+      email: String(body.email || '').trim(),
+      phone: body.phone ? onlyDigits(body.phone) : ''
+    };
+    const parsed = ClientSchema.safeParse(payload);
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: parsed.error.issues[0]?.message || 'Dados do cliente inválidos.' }, { status: 400 });
+    }
+
+    const newClient = await RBADatabase.createClient(
+      {
+        ...parsed.data,
+        phone: parsed.data.phone || '',
+        email: parsed.data.email || '',
+        address: parsed.data.address || '',
+        notes: parsed.data.notes || ''
+      },
+      session.user.id,
+      session.user.name
+    );
     return NextResponse.json({ success: true, client: newClient });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

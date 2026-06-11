@@ -87,10 +87,14 @@ export default function OrdersListPage() {
 
   // Filter listings
   const filteredOrders = orders.filter(o => {
+    const normalizedSearch = search.toLowerCase();
     const matchesSearch = 
-      o.driver_name?.toLowerCase().includes(search.toLowerCase()) ||
-      o.client_name?.toLowerCase().includes(search.toLowerCase()) ||
-      o.cte_number?.toLowerCase().includes(search.toLowerCase());
+      o.order_number?.toLowerCase().includes(normalizedSearch) ||
+      o.driver_name?.toLowerCase().includes(normalizedSearch) ||
+      o.client_name?.toLowerCase().includes(normalizedSearch) ||
+      o.cte_number?.toLowerCase().includes(normalizedSearch) ||
+      o.vehicle_tractor_plate?.toLowerCase().includes(normalizedSearch) ||
+      o.vehicle_trailer_plate?.toLowerCase().includes(normalizedSearch);
 
     const matchesStatus = statusFilter ? o.status === statusFilter : true;
 
@@ -143,7 +147,7 @@ export default function OrdersListPage() {
             <input
               id="search-input"
               type="text"
-              placeholder="Pesquisar motorista, CTE ou cliente..."
+              placeholder="Pesquisar ficha, motorista, placa, CTE ou cliente..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full text-xs font-semibold pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-250 rounded-xl outline-none focus:border-yellow-500 transition-colors text-slate-800"
@@ -192,7 +196,7 @@ export default function OrdersListPage() {
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-50 text-slate-400 font-bold border-b border-slate-200 text-[10px]">
-                    <th className="p-4">CTE</th>
+                    <th className="p-4">Ficha / CTE</th>
                     <th className="p-4">Motorista Condutor</th>
                     <th className="p-4">Veículo Conjugado</th>
                     <th className="p-4">Origem ➔ Destino</th>
@@ -208,11 +212,12 @@ export default function OrdersListPage() {
                   {filteredOrders.map((o) => (
                     <tr key={o.id} className="hover:bg-slate-50">
                       
-                      {/* CTE link */}
+                      {/* Order and CTE link */}
                       <td className="p-4">
                         <Link href={`/ordens/${o.id}`} className="font-extrabold text-xs text-yellow-650 hover:underline">
-                          {o.cte_number || 'CTE a emitir'}
+                          {o.order_number || 'Ficha sem número'}
                         </Link>
+                        <p className="mt-1 text-[10px] font-mono text-slate-500">{o.cte_number || 'CTE a emitir'}</p>
                       </td>
 
                       {/* Driver mask dynamically rendered */}

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
 import { Search, Plus, Truck, Edit3, Trash2, ShieldCheck, Key, Save, AlertCircle } from 'lucide-react';
+import { isValidBrazilianPlate, isValidCpfOrCnpj, isValidVehicleYear, normalizeDocument, normalizePlate, normalizeUf } from '@/lib/validators';
 
 export default function VehiclesPage() {
   const [vehicles, setVehicles] = useState<any[]>([]);
@@ -35,12 +36,13 @@ export default function VehiclesPage() {
     try {
       setLoading(true);
       const res = await fetch('/api/vehicles');
-      if (res.ok) {
-        const data = await res.json();
-        setVehicles(data);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || 'Erro ao carregar veículos.');
       }
+      setVehicles(Array.isArray(data) ? data : []);
     } catch (e) {
-      console.error(e);
+      setErrorMsg(e instanceof Error ? e.message : 'Erro ao carregar veículos.');
     } finally {
       setLoading(false);
     }
@@ -60,7 +62,7 @@ export default function VehiclesPage() {
   const handleEditTrigger = (vhc: any) => {
     setEditingId(vhc.id);
     setModel(vhc.model || '');
-    setYear(vhc.year || '');
+    setYear(String(vhc.year || ''));
     setTractorPlate(vhc.tractor_plate || '');
     setTrailerPlate(vhc.trailer_plate || '');
     setUf(vhc.uf || '');
@@ -101,22 +103,52 @@ export default function VehiclesPage() {
     setErrorMsg('');
     setMsg('');
 
-    if (!model || !tractorPlate || !trailerPlate) {
-      setErrorMsg("Modelo, Placa do Cavalo e Placa da Carreta são obrigatórios.");
+    const normalizedTractorPlate = normalizePlate(tractorPlate);
+    const normalizedTrailerPlate = normalizePlate(trailerPlate);
+    const normalizedUf = normalizeUf(uf);
+    const normalizedOwnerDocument = normalizeDocument(ownerDocument);
+    const parsedYear = Number(year);
+
+    if (model.trim().length < 2) {
+      setErrorMsg("Modelo do veículo é obrigatório.");
+      return;
+    }
+    if (!isValidVehicleYear(parsedYear)) {
+      setErrorMsg("Ano do veículo inválido.");
+      return;
+    }
+    if (!isValidBrazilianPlate(normalizedTractorPlate)) {
+      setErrorMsg("Placa do cavalo inválida. Use formato antigo ABC1234 ou Mercosul ABC1D23.");
+      return;
+    }
+    if (!isValidBrazilianPlate(normalizedTrailerPlate)) {
+      setErrorMsg("Placa da carreta inválida. Use formato antigo ABC1234 ou Mercosul ABC1D23.");
+      return;
+    }
+    if (ownerName.trim().length < 3) {
+      setErrorMsg("Nome do proprietário é obrigatório.");
+      return;
+    }
+    if (!isValidCpfOrCnpj(normalizedOwnerDocument)) {
+      setErrorMsg("CPF/CNPJ do proprietário inválido.");
+      return;
+    }
+    if (normalizedUf.length !== 2) {
+      setErrorMsg("UF do veículo é obrigatória com 2 letras.");
       return;
     }
 
     setSaving(true);
     const payload = {
-      model,
-      year,
-      tractor_plate: tractorPlate,
-      trailer_plate: trailerPlate,
-      uf,
-      antt,
-      renavam,
-      owner_name: ownerName || 'Próprio Motorista',
-      owner_document: ownerDocument || 'Isento'
+      model: model.trim(),
+      year: parsedYear,
+      tractor_plate: normalizedTractorPlate,
+      trailer_plate: normalizedTrailerPlate,
+      uf: normalizedUf,
+      antt: antt.trim(),
+      renavam: renavam.trim(),
+      owner_name: ownerName.trim(),
+      owner_document: normalizedOwnerDocument
     };
 
     try {
@@ -230,10 +262,12 @@ export default function VehiclesPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Ano de Fabricação</label>
+                  <label className="text-[10px] uppercase font-bold text-slate-500">Ano de Fabricação *</label>
                   <input
                     id="ip-vhc-year"
-                    type="text"
+                    type="number"
+                    min="1980"
+                    max={new Date().getFullYear() + 2}
                     placeholder="Ex: 2021"
                     value={year}
                     onChange={(e) => setYear(e.target.value)}
@@ -242,13 +276,14 @@ export default function VehiclesPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Estado UF de Registro Principal</label>
+                  <label className="text-[10px] uppercase font-bold text-slate-500">Estado UF de Registro Principal *</label>
                   <input
                     id="ip-vhc-uf"
                     type="text"
+                    maxLength={2}
                     placeholder="Ex: SP"
                     value={uf}
-                    onChange={(e) => setUf(e.target.value)}
+                    onChange={(e) => setUf(normalizeUf(e.target.value))}
                     className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
                   />
                 </div>
@@ -261,9 +296,10 @@ export default function VehiclesPage() {
                     id="ip-vhc-tractor"
                     type="text"
                     required
+                    maxLength={7}
                     placeholder="Ex: ABC1D23"
                     value={tractorPlate}
-                    onChange={(e) => setTractorPlate(e.target.value)}
+                    onChange={(e) => setTractorPlate(normalizePlate(e.target.value).slice(0, 7))}
                     className="w-full text-xs font-mono font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
                   />
                 </div>
@@ -274,9 +310,10 @@ export default function VehiclesPage() {
                     id="ip-vhc-trailer"
                     type="text"
                     required
+                    maxLength={7}
                     placeholder="Ex: XYZ9W87"
                     value={trailerPlate}
-                    onChange={(e) => setTrailerPlate(e.target.value)}
+                    onChange={(e) => setTrailerPlate(normalizePlate(e.target.value).slice(0, 7))}
                     className="w-full text-xs font-mono font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
                   />
                 </div>
@@ -319,7 +356,7 @@ export default function VehiclesPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">CPF/CNPJ do Proprietário</label>
+                  <label className="text-[10px] uppercase font-bold text-slate-500">CPF/CNPJ do Proprietário *</label>
                   <input
                     type="text"
                     placeholder="Ex: 12.345.678/0001-90"

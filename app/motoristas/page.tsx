@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
 import { Search, Plus, UserPlus, Edit3, Trash2, ShieldCheck, Lock, Save, AlertCircle } from 'lucide-react';
+import { isValidBrazilianPhone, isValidCPF, isValidCpfOrCnpj, isValidPixKey, normalizeDocument, onlyDigits } from '@/lib/validators';
 
 export default function DriversPage() {
   const [drivers, setDrivers] = useState<any[]>([]);
@@ -39,12 +40,13 @@ export default function DriversPage() {
     try {
       setLoading(true);
       const res = await fetch('/api/drivers');
-      if (res.ok) {
-        const data = await res.json();
-        setDrivers(data);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || 'Erro ao carregar motoristas.');
       }
+      setDrivers(Array.isArray(data) ? data : []);
     } catch (e) {
-      console.error(e);
+      setErrorMsg(e instanceof Error ? e.message : 'Erro ao carregar motoristas.');
     } finally {
       setLoading(false);
     }
@@ -108,24 +110,55 @@ export default function DriversPage() {
     setErrorMsg('');
     setMsg('');
 
-    if (!name || !cpf) {
-      setErrorMsg("Nome completo e CPF de identificação são obrigatórios.");
+    const normalizedCpf = normalizeDocument(cpf);
+    const normalizedBeneficiaryDocument = normalizeDocument(beneficiaryDocument || cpf);
+
+    if (name.trim().length < 3) {
+      setErrorMsg("Nome completo do motorista é obrigatório.");
+      return;
+    }
+    if (!isValidCPF(normalizedCpf)) {
+      setErrorMsg("CPF do motorista inválido.");
+      return;
+    }
+    if (rg.trim().length < 5) {
+      setErrorMsg("RG do motorista é obrigatório e deve ter pelo menos 5 caracteres.");
+      return;
+    }
+    if (!isValidBrazilianPhone(phone)) {
+      setErrorMsg("Telefone do motorista inválido.");
+      return;
+    }
+    if (bankName.trim().length < 2 || bankAgency.trim().length < 3 || bankAccount.trim().length < 4) {
+      setErrorMsg("Banco, agência e conta são obrigatórios.");
+      return;
+    }
+    if (!isValidPixKey(pixKey)) {
+      setErrorMsg("Chave Pix inválida. Use CPF/CNPJ válido, telefone, e-mail ou chave aleatória UUID.");
+      return;
+    }
+    if ((beneficiaryName || name).trim().length < 3) {
+      setErrorMsg("Nome do favorecido é obrigatório.");
+      return;
+    }
+    if (!isValidCpfOrCnpj(normalizedBeneficiaryDocument)) {
+      setErrorMsg("CPF/CNPJ do favorecido inválido.");
       return;
     }
 
     setSaving(true);
     const payload = {
-      name,
-      cpf,
-      rg,
-      phone,
+      name: name.trim(),
+      cpf: normalizedCpf,
+      rg: rg.trim(),
+      phone: onlyDigits(phone),
       status,
-      bank_name: bankName,
-      bank_agency: bankAgency,
-      bank_account: bankAccount,
-      pix_key: pixKey,
-      beneficiary_name: beneficiaryName || name,
-      beneficiary_document: beneficiaryDocument || cpf
+      bank_name: bankName.trim(),
+      bank_agency: bankAgency.trim(),
+      bank_account: bankAccount.trim(),
+      pix_key: pixKey.trim(),
+      beneficiary_name: (beneficiaryName || name).trim(),
+      beneficiary_document: normalizedBeneficiaryDocument
     };
 
     try {
@@ -252,7 +285,7 @@ export default function DriversPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Documento de Identidade RG</label>
+                  <label className="text-[10px] uppercase font-bold text-slate-500">Documento de Identidade RG *</label>
                   <input
                     id="ip-drv-rg"
                     type="text"
@@ -266,7 +299,7 @@ export default function DriversPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Telefone / Whatsapp do Piloto</label>
+                  <label className="text-[10px] uppercase font-bold text-slate-500">Telefone / Whatsapp do Piloto *</label>
                   <input
                     id="ip-drv-phone"
                     type="text"
@@ -297,7 +330,7 @@ export default function DriversPage() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold text-slate-500">Instituição Financeira / Banco</label>
+                    <label className="text-[10px] uppercase font-bold text-slate-500">Instituição Financeira / Banco *</label>
                     <input
                       type="text"
                       placeholder="Ex: Banco Itaú"
@@ -308,7 +341,7 @@ export default function DriversPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold text-slate-500">Agência Bancária</label>
+                    <label className="text-[10px] uppercase font-bold text-slate-500">Agência Bancária *</label>
                     <input
                       type="text"
                       placeholder="Ex: 0001"
@@ -319,7 +352,7 @@ export default function DriversPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold text-slate-500">Conta Corrente / Conta Poupança</label>
+                    <label className="text-[10px] uppercase font-bold text-slate-500">Conta Corrente / Conta Poupança *</label>
                     <input
                       type="text"
                       placeholder="Ex: 12345-6"
@@ -355,7 +388,7 @@ export default function DriversPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold text-slate-500">CPF/CNPJ do Favorecido</label>
+                    <label className="text-[10px] uppercase font-bold text-slate-500">CPF/CNPJ do Favorecido *</label>
                     <input
                       type="text"
                       placeholder="Deixe em branco se for o próprio motorista"

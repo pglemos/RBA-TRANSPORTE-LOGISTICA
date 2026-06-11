@@ -15,7 +15,6 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
     const orderId = formData.get('order_id') as string | null;
-    const customType = formData.get('file_type') as string | null;
     // Categoria do documento (comprovante_pagamento | auditoria_carga | cte | manifesto | outros)
     const category = formData.get('category') as string | null;
 
@@ -24,20 +23,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!file) {
-      // Create a fallback attachment for demo ease if file slot is empty
-      const demoPicNum = Math.floor(Math.random() * 100);
-      const mockUrl = `https://picsum.photos/seed/doc${demoPicNum}/600/400`;
-      const docName = customType === 'cte' ? 'CTE-Simulado-Digital.pdf' : 'Documento-Fiscal.png';
-      
-      const newAtt = await RBADatabase.createAttachment(
-        orderId,
-        docName,
-        mockUrl,
-        category || customType || (customType === 'cte' ? 'application/pdf' : 'image/png'),
-        operatorName
-      );
-      
-      return NextResponse.json({ success: true, attachment: newAtt });
+      return NextResponse.json({ success: false, error: "Selecione um arquivo real para anexar." }, { status: 400 });
     }
 
     // Read file binary and write to public/uploads

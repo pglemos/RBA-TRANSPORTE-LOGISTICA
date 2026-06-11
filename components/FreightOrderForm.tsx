@@ -93,7 +93,7 @@ export default function FreightOrderForm({ initialData }: Props) {
 
   // Attachments (only on edit)
   const [attachments, setAttachments] = useState<any[]>(initialData?.attachments || []);
-  const [uploadingDemo, setUploadingDemo] = useState(false);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
 
   // Load lists
   useEffect(() => {
@@ -108,11 +108,15 @@ export default function FreightOrderForm({ initialData }: Props) {
         const vhcData = await vhcRes.json();
         const cliData = await cliRes.json();
 
-        setDrivers(drvData);
-        setVehicles(vhcData);
-        setClients(cliData);
+        if (!drvRes.ok || !vhcRes.ok || !cliRes.ok) {
+          throw new Error(drvData?.error || vhcData?.error || cliData?.error || 'Erro ao carregar listas de cadastro.');
+        }
+
+        setDrivers(Array.isArray(drvData) ? drvData : []);
+        setVehicles(Array.isArray(vhcData) ? vhcData : []);
+        setClients(Array.isArray(cliData) ? cliData : []);
       } catch (err) {
-        console.error("Erro ao carregar seleções:", err);
+        setErrorMessage(err instanceof Error ? err.message : "Erro ao carregar motoristas, veículos e clientes.");
       } finally {
         setLoadingSelections(false);
       }
@@ -143,39 +147,50 @@ export default function FreightOrderForm({ initialData }: Props) {
 
   const fmt = (n: number) => n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  // Upload mock files to order (edit only)
-  const handleUploadMockFile = async (type: 'cte' | 'outros' | 'comprovante') => {
+  const handleUploadFile = async (event: React.ChangeEvent<HTMLInputElement>, type: 'cte' | 'outros' | 'comprovante') => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) return;
     if (!isEdit) {
-      alert("Por favor, submeta a Ficha de Frete (Rascunho) primeiro, e então anexe quantos documentos desejar na edição!");
+      setErrorMessage("Salve a ficha primeiro. Depois abra a edição para anexar documentos.");
       return;
     }
-    setUploadingDemo(true);
+    setUploadingAttachment(true);
+    setErrorMessage('');
     try {
       const fd = new FormData();
       fd.append('order_id', initialData!.id);
+      fd.append('file', file);
       fd.append('file_type', type);
+      fd.append('category', type);
       const res = await fetch('/api/attachments', { method: 'POST', body: fd });
       const data = await res.json();
       if (data && data.success) {
         setAttachments(prev => [...prev, data.attachment]);
         setSuccessMessage("Documento anexado com sucesso!");
         setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        setErrorMessage(data?.error || "Erro ao anexar documento.");
       }
     } catch (e) {
-      console.error(e);
+      setErrorMessage("Erro ao enviar documento.");
     } finally {
-      setUploadingDemo(false);
+      setUploadingAttachment(false);
     }
   };
 
   const handleRemoveAttachment = async (id: string) => {
     try {
       const res = await fetch(`/api/attachments?id=${id}`, { method: 'DELETE' });
-      if (res.ok) {
+      const data = await res.json();
+      if (res.ok && data?.success) {
         setAttachments(attachments.filter(a => a.id !== id));
+      } else {
+        setErrorMessage(data?.error || "Erro ao remover anexo.");
       }
     } catch (e) {
-      console.error(e);
+      setErrorMessage("Erro ao remover anexo.");
     }
   };
 
@@ -185,6 +200,10 @@ export default function FreightOrderForm({ initialData }: Props) {
     setErrorMessage('');
     setSuccessMessage('');
 
+    if (loadingSelections) {
+      setErrorMessage("Aguarde carregar motoristas, veículos e clientes antes de salvar.");
+      return;
+    }
     if (!driverId) {
       setErrorMessage("Identificação do motorista é obrigatória.");
       return;
@@ -725,16 +744,16 @@ export default function FreightOrderForm({ initialData }: Props) {
           {/* Anexos (apenas em edição) */}
           {isEdit && (
             <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Anexos da Ficha (Supabase Storage)</span>
+              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Anexos da Ficha</span>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <button type="button" onClick={() => handleUploadMockFile('cte')} disabled={uploadingDemo}
-                  className="py-3 border border-dashed border-slate-300 hover:border-yellow-500 hover:bg-slate-50 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-700">
+                <label className={`py-3 border border-dashed border-slate-300 hover:border-yellow-500 hover:bg-slate-50 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-700 ${uploadingAttachment ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+                  <input type="file" className="sr-only" disabled={uploadingAttachment} onChange={(e) => handleUploadFile(e, 'cte')} />
                   <Paperclip className="h-4 w-4 text-slate-400" /> Anexar CTE / XML
-                </button>
-                <button type="button" onClick={() => handleUploadMockFile('comprovante')} disabled={uploadingDemo}
-                  className="py-3 border border-dashed border-slate-300 hover:border-yellow-500 hover:bg-slate-50 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-700">
+                </label>
+                <label className={`py-3 border border-dashed border-slate-300 hover:border-yellow-500 hover:bg-slate-50 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-700 ${uploadingAttachment ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+                  <input type="file" className="sr-only" disabled={uploadingAttachment} onChange={(e) => handleUploadFile(e, 'comprovante')} />
                   <Paperclip className="h-4 w-4 text-emerald-500" /> Anexar Comprovante
-                </button>
+                </label>
               </div>
               {attachments.length > 0 && (
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1.5">
@@ -815,7 +834,16 @@ function DriverCombobox({
       );
 
   return (
-    <div className="relative flex-1 min-w-0">
+    <div
+      className="relative flex-1 min-w-0"
+      onBlur={(event) => {
+        const nextFocus = event.relatedTarget as Node | null;
+        if (!nextFocus || !event.currentTarget.contains(nextFocus)) {
+          setOpen(false);
+          setEditing(false);
+        }
+      }}
+    >
       <input
         id={inputId}
         name={inputId}
@@ -825,7 +853,6 @@ function DriverCombobox({
         placeholder={placeholder}
         onFocus={() => { setEditing(true); setOpen(true); setQuery(''); }}
         onChange={(e) => { setQuery(e.target.value); setEditing(true); setOpen(true); }}
-        onBlur={() => { window.setTimeout(() => { setOpen(false); setEditing(false); }, 150); }}
         className={inputClass}
       />
       {open && (
@@ -837,6 +864,7 @@ function DriverCombobox({
               <button
                 key={d.id}
                 type="button"
+                tabIndex={0}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => { onChange(d.id); setEditing(false); setOpen(false); setQuery(''); }}
                 className={`w-full text-left px-3 py-2 border-b border-slate-100 last:border-b-0 hover:bg-yellow-50 ${d.id === value ? 'bg-yellow-100' : ''}`}
@@ -906,7 +934,16 @@ function VehicleCombobox({
       );
 
   return (
-    <div className="relative flex-1 min-w-0">
+    <div
+      className="relative flex-1 min-w-0"
+      onBlur={(event) => {
+        const nextFocus = event.relatedTarget as Node | null;
+        if (!nextFocus || !event.currentTarget.contains(nextFocus)) {
+          setOpen(false);
+          setEditing(false);
+        }
+      }}
+    >
       <input
         id={inputId}
         name={inputId}
@@ -916,7 +953,6 @@ function VehicleCombobox({
         placeholder={placeholder}
         onFocus={() => { setEditing(true); setOpen(true); setQuery(''); }}
         onChange={(e) => { setQuery(e.target.value.toUpperCase()); setEditing(true); setOpen(true); }}
-        onBlur={() => { window.setTimeout(() => { setOpen(false); setEditing(false); }, 150); }}
         className={inputClass}
       />
       {open && (
@@ -928,6 +964,7 @@ function VehicleCombobox({
               <button
                 key={v.id}
                 type="button"
+                tabIndex={0}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => { onChange(v.id); setEditing(false); setOpen(false); setQuery(''); }}
                 className={`w-full text-left px-3 py-2 border-b border-slate-100 last:border-b-0 hover:bg-yellow-50 ${v.id === value ? 'bg-yellow-100' : ''}`}
