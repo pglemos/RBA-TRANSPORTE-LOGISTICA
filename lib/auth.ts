@@ -124,8 +124,9 @@ export class RBAAuth {
     if (role === 'Administrador' || role === 'Financeiro') {
       return account;
     }
-    if (account.length > 4) {
-      return '****-' + account.slice(-2);
+    const clean = account.replace(/[^A-Za-z0-9]/g, '');
+    if (clean.length > 2) {
+      return '****-' + clean.slice(-2);
     }
     return '****';
   }
