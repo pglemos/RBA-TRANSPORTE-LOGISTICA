@@ -222,6 +222,10 @@ const withFreightOrderDefaults = (order: any): FreightOrder => ({
   ...order
 });
 
+const throwSupabaseError = (action: string, error: any): never => {
+  throw new Error(`${action} no Supabase: ${error?.message || 'erro desconhecido'}`);
+};
+
 // Initial seed data
 const initialDB: Database = {
   profiles: [
@@ -731,6 +735,7 @@ export class RBADatabase {
   public static async getDrivers() {
     if (isSupabaseServerConfigured) {
       const { data, error } = await supabaseServer.from('drivers').select('*');
+      if (error) throwSupabaseError('Erro ao listar motoristas', error);
       if (!error && data) return data as Driver[];
     }
     return this.load().drivers;
@@ -739,7 +744,9 @@ export class RBADatabase {
   public static async getDriverById(id: string) {
     if (isSupabaseServerConfigured) {
       const { data, error } = await supabaseServer.from('drivers').select('*').eq('id', id).limit(1);
+      if (error) throwSupabaseError('Erro ao buscar motorista', error);
       if (!error && data && data.length > 0) return data[0] as Driver;
+      return undefined;
     }
     return this.load().drivers.find(d => d.id === id);
   }
@@ -763,6 +770,7 @@ export class RBADatabase {
         await this.addAuditLog(operatorId, operatorName, "Criar Motorista", "Motorista", newId, null, data);
         return data as Driver;
       }
+      throwSupabaseError('Erro ao criar motorista', error);
     }
 
     const db = this.load();
@@ -789,6 +797,7 @@ export class RBADatabase {
         await this.addAuditLog(operatorId, operatorName, "Editar Motorista", "Motorista", id, oldVal, data);
         return data as Driver;
       }
+      throwSupabaseError('Erro ao editar motorista', error);
     }
 
     const db = this.load();
@@ -817,6 +826,7 @@ export class RBADatabase {
         await this.addAuditLog(operatorId, operatorName, "Excluir Motorista", "Motorista", id, oldVal, null);
         return true;
       }
+      throwSupabaseError('Erro ao excluir motorista', error);
     }
 
     const db = this.load();
@@ -835,6 +845,7 @@ export class RBADatabase {
   public static async getVehicles() {
     if (isSupabaseServerConfigured) {
       const { data, error } = await supabaseServer.from('vehicles').select('*');
+      if (error) throwSupabaseError('Erro ao listar veículos', error);
       if (!error && data) return data as Vehicle[];
     }
     return this.load().vehicles;
@@ -843,7 +854,9 @@ export class RBADatabase {
   public static async getVehicleById(id: string) {
     if (isSupabaseServerConfigured) {
       const { data, error } = await supabaseServer.from('vehicles').select('*').eq('id', id).limit(1);
+      if (error) throwSupabaseError('Erro ao buscar veículo', error);
       if (!error && data && data.length > 0) return data[0] as Vehicle;
+      return undefined;
     }
     return this.load().vehicles.find(v => v.id === id);
   }
@@ -867,6 +880,7 @@ export class RBADatabase {
         await this.addAuditLog(operatorId, operatorName, "Criar Veículo", "Veículo", newId, null, data);
         return data as Vehicle;
       }
+      throwSupabaseError('Erro ao criar veículo', error);
     }
 
     const db = this.load();
@@ -893,6 +907,7 @@ export class RBADatabase {
         await this.addAuditLog(operatorId, operatorName, "Editar Veículo", "Veículo", id, oldVal, data);
         return data as Vehicle;
       }
+      throwSupabaseError('Erro ao editar veículo', error);
     }
 
     const db = this.load();
@@ -921,6 +936,7 @@ export class RBADatabase {
         await this.addAuditLog(operatorId, operatorName, "Excluir Veículo", "Veículo", id, oldVal, null);
         return true;
       }
+      throwSupabaseError('Erro ao excluir veículo', error);
     }
 
     const db = this.load();
@@ -939,6 +955,7 @@ export class RBADatabase {
   public static async getClients() {
     if (isSupabaseServerConfigured) {
       const { data, error } = await supabaseServer.from('clients').select('*');
+      if (error) throwSupabaseError('Erro ao listar clientes', error);
       if (!error && data) return data as Client[];
     }
     return this.load().clients;
@@ -947,7 +964,9 @@ export class RBADatabase {
   public static async getClientById(id: string) {
     if (isSupabaseServerConfigured) {
       const { data, error } = await supabaseServer.from('clients').select('*').eq('id', id).limit(1);
+      if (error) throwSupabaseError('Erro ao buscar cliente', error);
       if (!error && data && data.length > 0) return data[0] as Client;
+      return undefined;
     }
     return this.load().clients.find(c => c.id === id);
   }
@@ -971,6 +990,7 @@ export class RBADatabase {
         await this.addAuditLog(operatorId, operatorName, "Criar Cliente", "Cliente", newId, null, data);
         return data as Client;
       }
+      throwSupabaseError('Erro ao criar cliente', error);
     }
 
     const db = this.load();
@@ -994,9 +1014,10 @@ export class RBADatabase {
         .single();
 
       if (!error && data) {
-         await this.addAuditLog(operatorId, operatorName, "Editar Cliente", "Cliente", id, oldVal, data);
-         return data as Client;
+        await this.addAuditLog(operatorId, operatorName, "Editar Cliente", "Cliente", id, oldVal, data);
+        return data as Client;
       }
+      throwSupabaseError('Erro ao editar cliente', error);
     }
 
     const db = this.load();
@@ -1025,6 +1046,7 @@ export class RBADatabase {
         await this.addAuditLog(operatorId, operatorName, "Excluir Cliente", "Cliente", id, oldVal, null);
         return true;
       }
+      throwSupabaseError('Erro ao excluir cliente', error);
     }
 
     const db = this.load();
@@ -1043,6 +1065,7 @@ export class RBADatabase {
   public static async getFreightOrders() {
     if (isSupabaseServerConfigured) {
       const { data, error } = await supabaseServer.from('freight_orders').select('*');
+      if (error) throwSupabaseError('Erro ao listar ordens', error);
       if (!error && data) {
         return data.map(withFreightOrderDefaults);
       }
@@ -1053,9 +1076,11 @@ export class RBADatabase {
   public static async getFreightOrderById(id: string) {
     if (isSupabaseServerConfigured) {
       const { data, error } = await supabaseServer.from('freight_orders').select('*').eq('id', id).limit(1);
+      if (error) throwSupabaseError('Erro ao buscar ordem', error);
       if (!error && data && data.length > 0) {
         return withFreightOrderDefaults(data[0]);
       }
+      return undefined;
     }
     return this.load().freight_orders.find(o => o.id === id);
   }
