@@ -44,10 +44,14 @@ export async function PUT(
     }
 
     const body = await req.json();
+    const manufactureYear = Number(body.manufacture_year || body.year);
     const payload = {
       ...body,
       model: String(body.model || '').trim(),
-      year: Number(body.year),
+      year: manufactureYear,
+      manufacture_year: manufactureYear,
+      model_year: Number(body.model_year || body.year || body.manufacture_year),
+      vehicle_type: body.vehicle_type || 'Carreta',
       tractor_plate: normalizePlate(body.tractor_plate || ''),
       trailer_plate: normalizePlate(body.trailer_plate || ''),
       uf: normalizeUf(body.uf || ''),

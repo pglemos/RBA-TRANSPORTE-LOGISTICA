@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
-import { Search, Plus, Building2, Edit3, Trash2, Save, AlertCircle } from 'lucide-react';
+import { Search, Plus, Building2, Edit3, Trash2, Save, AlertCircle, Filter } from 'lucide-react';
+import { getUniqueFilterOptions, matchesAllFilters, matchesSearchFields } from '@/lib/tableFilters';
 import { isValidBrazilianPhone, isValidCpfOrCnpj, normalizeDocument, onlyDigits } from '@/lib/validators';
 
 export default function ClientsPage() {
@@ -11,6 +12,8 @@ export default function ClientsPage() {
 
   // Filters
   const [search, setSearch] = useState('');
+  const [documentTypeFilter, setDocumentTypeFilter] = useState('');
+  const [emailDomainFilter, setEmailDomainFilter] = useState('');
 
   // Form toggles
   const [showForm, setShowForm] = useState(false);
@@ -146,11 +149,24 @@ export default function ClientsPage() {
     }
   };
 
-  const filteredClients = clients.filter(c =>
-    c.name?.toLowerCase().includes(search.toLowerCase()) ||
-    c.document?.toLowerCase().includes(search.toLowerCase()) ||
-    c.email?.toLowerCase().includes(search.toLowerCase())
-  );
+  const getClientDocumentType = (client: any) => {
+    const documentValue = String(client.document || '');
+    return documentValue.includes('/') ? 'CNPJ' : 'CPF';
+  };
+
+  const getClientEmailDomain = (client: any) => String(client.email || '').split('@')[1] || '';
+
+  const filteredClients = clients.filter(c => {
+    const matchesSearch = matchesSearchFields(c, search, ['name', 'document', 'email', 'phone']);
+    const matchesFilters = matchesAllFilters(c, [
+      { value: documentTypeFilter, getValue: getClientDocumentType },
+      { value: emailDomainFilter, getValue: getClientEmailDomain },
+    ]);
+
+    return matchesSearch && matchesFilters;
+  });
+
+  const emailDomainOptions = getUniqueFilterOptions(clients, getClientEmailDomain);
 
   return (
     <HeaderAndSidebar>
@@ -288,8 +304,8 @@ export default function ClientsPage() {
         )}
 
         {/* Filter bar */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 flex gap-4 items-center">
-          <div className="relative w-full max-w-md">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col lg:flex-row gap-4 items-center justify-between">
+          <div className="relative w-full lg:max-w-md">
             <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
             <input
               type="text"
@@ -298,6 +314,36 @@ export default function ClientsPage() {
               onChange={(e) => setSearch(e.target.value)}
               className="w-full text-xs font-semibold pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-250 rounded-xl outline-none focus:border-yellow-500 text-slate-800"
             />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full lg:w-auto shrink-0">
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
+              <Filter className="h-3.5 w-3.5 text-slate-500" />
+              <select
+                id="client-document-type-filter"
+                value={documentTypeFilter}
+                onChange={(e) => setDocumentTypeFilter(e.target.value)}
+                className="w-full bg-transparent text-slate-700 outline-none font-bold"
+              >
+                <option value="">Todos os Documentos</option>
+                <option value="CNPJ">CNPJ</option>
+                <option value="CPF">CPF</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
+              <select
+                id="client-email-domain-filter"
+                value={emailDomainFilter}
+                onChange={(e) => setEmailDomainFilter(e.target.value)}
+                className="w-full bg-transparent text-slate-700 outline-none font-bold"
+              >
+                <option value="">Todos os E-mails</option>
+                {emailDomainOptions.map((domain) => (
+                  <option key={domain} value={domain}>{domain}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 

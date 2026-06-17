@@ -1,16 +1,21 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
-import { Search, Plus, UserPlus, Edit3, Trash2, ShieldCheck, Lock, Save, AlertCircle } from 'lucide-react';
+import { Search, Plus, UserPlus, Edit3, Trash2, ShieldCheck, Lock, Save, AlertCircle, Filter } from 'lucide-react';
+import { getUniqueFilterOptions, matchesAllFilters, matchesSearchFields } from '@/lib/tableFilters';
 import { isValidBrazilianPhone, isValidCPF, isValidCpfOrCnpj, isValidPixKey, normalizeDocument, onlyDigits } from '@/lib/validators';
 
 export default function DriversPage() {
+  const router = useRouter();
   const [drivers, setDrivers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Search/Filters
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [bankFilter, setBankFilter] = useState('');
 
   // Creation State Panel
   const [showForm, setShowForm] = useState(false);
@@ -121,16 +126,8 @@ export default function DriversPage() {
       setErrorMsg("CPF do motorista inválido.");
       return;
     }
-    if (rg.trim().length < 5) {
-      setErrorMsg("RG do motorista é obrigatório e deve ter pelo menos 5 caracteres.");
-      return;
-    }
     if (!isValidBrazilianPhone(phone)) {
       setErrorMsg("Telefone do motorista inválido.");
-      return;
-    }
-    if (bankName.trim().length < 2 || bankAgency.trim().length < 3 || bankAccount.trim().length < 4) {
-      setErrorMsg("Banco, agência e conta são obrigatórios.");
       return;
     }
     if (!isValidPixKey(pixKey)) {
@@ -164,6 +161,7 @@ export default function DriversPage() {
     try {
       const url = editingId ? `/api/drivers/${editingId}` : '/api/drivers';
       const method = editingId ? 'PUT' : 'POST';
+      const isNewDriver = !editingId;
 
       const res = await fetch(url, {
         method,
@@ -174,6 +172,7 @@ export default function DriversPage() {
 
       if (data && data.success) {
         setMsg(editingId ? "Motorista atualizado com sucesso!" : "Novo motorista incluído no banco de dados RBA!");
+        const shouldCreateVehicle = isNewDriver && window.confirm("Motorista cadastrado com sucesso. Deseja cadastrar o veículo agora?");
         setShowForm(false);
         setEditingId(null);
         
@@ -183,6 +182,9 @@ export default function DriversPage() {
         setBeneficiaryName(''); setBeneficiaryDocument('');
 
         loadDrivers();
+        if (shouldCreateVehicle) {
+          router.push('/veiculos?novo=1');
+        }
       } else {
         setErrorMsg(data.error || "Erro de gravação cadastral.");
       }
@@ -193,11 +195,17 @@ export default function DriversPage() {
     }
   };
 
-  const filteredDrivers = drivers.filter(d => 
-    d.name?.toLowerCase().includes(search.toLowerCase()) ||
-    d.cpf?.toLowerCase().includes(search.toLowerCase()) ||
-    d.phone?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredDrivers = drivers.filter(d => {
+    const matchesSearch = matchesSearchFields(d, search, ['name', 'cpf', 'phone', 'rg', 'bank_name', 'pix_key']);
+    const matchesFilters = matchesAllFilters(d, [
+      { value: statusFilter, getValue: (driver) => driver.status },
+      { value: bankFilter, getValue: (driver) => driver.bank_name },
+    ]);
+
+    return matchesSearch && matchesFilters;
+  });
+
+  const bankOptions = getUniqueFilterOptions(drivers, (driver) => driver.bank_name);
 
   return (
     <HeaderAndSidebar>
@@ -285,7 +293,7 @@ export default function DriversPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Documento de Identidade RG *</label>
+                  <label className="text-[10px] uppercase font-bold text-slate-500">Documento de Identidade RG</label>
                   <input
                     id="ip-drv-rg"
                     type="text"
@@ -330,7 +338,7 @@ export default function DriversPage() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold text-slate-500">Instituição Financeira / Banco *</label>
+                  <label className="text-[10px] uppercase font-bold text-slate-500">Instituição Financeira / Banco</label>
                     <input
                       type="text"
                       placeholder="Ex: Banco Itaú"
@@ -341,7 +349,7 @@ export default function DriversPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold text-slate-500">Agência Bancária *</label>
+                  <label className="text-[10px] uppercase font-bold text-slate-500">Agência Bancária</label>
                     <input
                       type="text"
                       placeholder="Ex: 0001"
@@ -352,7 +360,7 @@ export default function DriversPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold text-slate-500">Conta Corrente / Conta Poupança *</label>
+                  <label className="text-[10px] uppercase font-bold text-slate-500">Conta Corrente / Conta Poupança</label>
                     <input
                       type="text"
                       placeholder="Ex: 12345-6"
@@ -424,8 +432,8 @@ export default function DriversPage() {
         )}
 
         {/* Filter bar */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 flex gap-4 items-center">
-          <div className="relative w-full max-w-md">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col lg:flex-row gap-4 items-center justify-between">
+          <div className="relative w-full lg:max-w-md">
             <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
             <input
               type="text"
@@ -434,6 +442,36 @@ export default function DriversPage() {
               onChange={(e) => setSearch(e.target.value)}
               className="w-full text-xs font-semibold pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-250 rounded-xl outline-none focus:border-yellow-500 text-slate-800"
             />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full lg:w-auto shrink-0">
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
+              <Filter className="h-3.5 w-3.5 text-slate-500" />
+              <select
+                id="driver-status-filter"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full bg-transparent text-slate-700 outline-none font-bold"
+              >
+                <option value="">Todos os Status</option>
+                <option value="Ativo">Ativo</option>
+                <option value="Bloqueado">Bloqueado</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
+              <select
+                id="driver-bank-filter"
+                value={bankFilter}
+                onChange={(e) => setBankFilter(e.target.value)}
+                className="w-full bg-transparent text-slate-700 outline-none font-bold"
+              >
+                <option value="">Todos os Bancos</option>
+                {bankOptions.map((bank) => (
+                  <option key={bank} value={bank}>{bank}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 

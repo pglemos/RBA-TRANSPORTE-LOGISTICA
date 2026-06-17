@@ -8,7 +8,8 @@ import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export default function EditOrderPage() {
-  const { id } = useParams();
+const params = useParams<{ id: string }>();
+const id = params?.id;
   const router = useRouter();
   const [order, setOrder] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);

@@ -633,14 +633,14 @@ export default function FreightOrderForm({ initialData }: Props) {
               {/* ANO VEÍCULO / MOD */}
               <div className="flex items-stretch">
                 <div className="flex items-stretch flex-1 min-w-0">
-                  <span className={label}>Ano Veículo:</span>
-                  <span className={field + ' flex items-center'}>{activeVehicle?.year || ''}</span>
+                    <span className={label}>Ano Fab.:</span>
+                    <span className={field + ' flex items-center'}>{activeVehicle?.manufacture_year || activeVehicle?.year || ''}</span>
+                  </div>
+                  <div className={`flex items-stretch w-[42%] ${divider}`}>
+                    <span className={label}>Ano Mod.:</span>
+                    <span className={field + ' flex items-center'}>{activeVehicle?.model_year || activeVehicle?.year || ''}</span>
+                  </div>
                 </div>
-                <div className={`flex items-stretch w-[42%] ${divider}`}>
-                  <span className={label}>Mod.:</span>
-                  <span className={field + ' flex items-center'}>{activeVehicle?.model || ''}</span>
-                </div>
-              </div>
             </div>
           </div>
 

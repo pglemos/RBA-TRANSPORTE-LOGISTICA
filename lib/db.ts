@@ -39,6 +39,9 @@ export interface Vehicle {
   tractor_plate: string;
   trailer_plate: string;
   year: number;
+  manufacture_year?: number;
+  model_year?: number;
+  vehicle_type?: 'Utilitário' | 'VUC' | '3/4' | 'Toco' | 'Truck' | 'Carreta';
   model: string;
   owner_name: string;
   owner_document: string;

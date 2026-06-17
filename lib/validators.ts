@@ -87,11 +87,11 @@ export const ProfileSchema = z.object({
 export const DriverSchema = z.object({
   name: z.string().min(3, "Nome completo é obrigatório"),
   cpf: z.string().refine(isValidCPF, "CPF inválido"),
-  rg: z.string().min(5, "RG inválido"),
+  rg: z.string().optional().default(''),
   phone: z.string().refine(isValidBrazilianPhone, "Telefone inválido"),
-  bank_name: z.string().min(2, "Banco é obrigatório"),
-  bank_agency: z.string().min(3, "Agência inválida"),
-  bank_account: z.string().min(4, "Conta inválida"),
+  bank_name: z.string().optional().default(''),
+  bank_agency: z.string().optional().default(''),
+  bank_account: z.string().optional().default(''),
   pix_key: z.string().refine(isValidPixKey, "Chave Pix inválida"),
   beneficiary_name: z.string().min(3, "Nome do beneficiário é obrigatório"),
   beneficiary_document: z.string().refine(isValidCpfOrCnpj, "CPF/CNPJ do beneficiário inválido"),
@@ -102,8 +102,11 @@ export const DriverSchema = z.object({
 // Vehicle Validator
 export const VehicleSchema = z.object({
   tractor_plate: z.string().refine(isValidBrazilianPlate, "Placa do cavalo inválida"),
-  trailer_plate: z.string().refine(isValidBrazilianPlate, "Placa da carreta inválida"),
+  trailer_plate: z.string().optional().default(''),
   year: z.number().refine(isValidVehicleYear, "Ano do veículo inválido"),
+  manufacture_year: z.number().refine(isValidVehicleYear, "Ano de fabricação inválido"),
+  model_year: z.number().refine(isValidVehicleYear, "Ano modelo inválido"),
+  vehicle_type: z.enum(['Utilitário', 'VUC', '3/4', 'Toco', 'Truck', 'Carreta']),
   model: z.string().min(2, "Modelo é obrigatório"),
   owner_name: z.string().min(3, "Nome do proprietário obrigatório"),
   owner_document: z.string().refine(isValidCpfOrCnpj, "Documento do proprietário inválido"),
@@ -112,6 +115,14 @@ export const VehicleSchema = z.object({
   uf: z.string().length(2, "UF deve ter 2 caracteres"),
   status: z.enum(['Ativo', 'Inativo', 'Bloqueado']).default('Ativo'),
   notes: z.string().optional(),
+}).superRefine((vehicle, ctx) => {
+  if (vehicle.vehicle_type === 'Carreta' && !isValidBrazilianPlate(vehicle.trailer_plate)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Placa da carreta inválida",
+      path: ['trailer_plate'],
+    });
+  }
 });
 
 // Client Validator
@@ -137,7 +148,7 @@ export const FreightOrderSchema = z.object({
   other_expenses: z.number().nonnegative().optional().default(0),
   origin: z.string().min(3, "Origem inválida"),
   destination: z.string().min(3, "Destino inválido"),
-  delivery_date: z.string().min(8, "Data de entrega obrigatória"),
+  delivery_date: z.string().optional().default(''),
   cte_number: z.string().optional(),
   cte_value: z.number().nonnegative().optional().default(0),
   cte_discount_percent: z.number().min(0).max(100).optional().default(10),

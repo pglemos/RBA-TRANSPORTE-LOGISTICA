@@ -9,14 +9,14 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.106.2",
+    "@supabase/supabase-js": "^2.108.1",
     "@tailwindcss/postcss": "^4.3.0",
     "autoprefixer": "^10.5.0",
     "clsx": "^2.1.1",
     "lucide-react": "^1.17.0",
-    "next": "^15.0.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "next": "^15.5.19",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "recharts": "^3.8.1",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.0",
@@ -24,8 +24,8 @@
   },
   "devDependencies": {
     "@types/node": "20.17.6",
-    "@types/react": "19.2.15",
-    "eslint-config-next": "^16.2.6",
+    "@types/react": "^19.2.17",
+    "eslint-config-next": "^16.2.9",
     "typescript": "5.8.2"
   }
 }

@@ -42,7 +42,8 @@ const ORDER_STATUS_OPTIONS = [
 ] as const;
 
 export default function OrderDetailsPage() {
-  const { id } = useParams();
+const params = useParams<{ id: string }>();
+const id = params?.id;
   const router = useRouter();
   
   const [order, setOrder] = useState<any | null>(null);
@@ -301,7 +302,7 @@ export default function OrderDetailsPage() {
                 </div>
                 <div>
                   <span className="text-[9px] text-slate-450 block font-bold uppercase mb-0.5">Data de Entrega Limite</span>
-                  <p className="text-slate-900 font-bold font-mono">{order.delivery_date}</p>
+                  <p className="text-slate-900 font-bold font-mono">{order.delivery_date || 'N/A'}</p>
                 </div>
               </div>
 

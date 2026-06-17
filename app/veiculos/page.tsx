@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
-import { Search, Plus, Truck, Edit3, Trash2, ShieldCheck, Key, Save, AlertCircle } from 'lucide-react';
+import { Search, Plus, Truck, Edit3, Trash2, ShieldCheck, Key, Save, AlertCircle, Filter } from 'lucide-react';
+import { getUniqueFilterOptions, matchesAllFilters, matchesSearchFields } from '@/lib/tableFilters';
 import { isValidBrazilianPlate, isValidCpfOrCnpj, isValidVehicleYear, normalizeDocument, normalizePlate, normalizeUf } from '@/lib/validators';
 
 export default function VehiclesPage() {
@@ -11,6 +12,9 @@ export default function VehiclesPage() {
 
   // Search
   const [search, setSearch] = useState('');
+  const [modelFilter, setModelFilter] = useState('');
+  const [ownerFilter, setOwnerFilter] = useState('');
+  const [ufFilter, setUfFilter] = useState('');
 
   // Form toggles
   const [showForm, setShowForm] = useState(false);
@@ -18,7 +22,9 @@ export default function VehiclesPage() {
 
   // Vehicle form values
   const [model, setModel] = useState('');
-  const [year, setYear] = useState('');
+  const [manufactureYear, setManufactureYear] = useState('');
+  const [modelYear, setModelYear] = useState('');
+  const [vehicleType, setVehicleType] = useState<'Utilitário' | 'VUC' | '3/4' | 'Toco' | 'Truck' | 'Carreta'>('Truck');
   const [tractorPlate, setTractorPlate] = useState('');
   const [trailerPlate, setTrailerPlate] = useState('');
   const [uf, setUf] = useState('');
@@ -59,10 +65,19 @@ export default function VehiclesPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('novo') === '1') {
+      setEditingId(null);
+      setShowForm(true);
+    }
+  }, []);
+
   const handleEditTrigger = (vhc: any) => {
     setEditingId(vhc.id);
     setModel(vhc.model || '');
-    setYear(String(vhc.year || ''));
+    setManufactureYear(String(vhc.manufacture_year || vhc.year || ''));
+    setModelYear(String(vhc.model_year || vhc.year || ''));
+    setVehicleType(vhc.vehicle_type || 'Truck');
     setTractorPlate(vhc.tractor_plate || '');
     setTrailerPlate(vhc.trailer_plate || '');
     setUf(vhc.uf || '');
@@ -107,21 +122,26 @@ export default function VehiclesPage() {
     const normalizedTrailerPlate = normalizePlate(trailerPlate);
     const normalizedUf = normalizeUf(uf);
     const normalizedOwnerDocument = normalizeDocument(ownerDocument);
-    const parsedYear = Number(year);
+    const parsedManufactureYear = Number(manufactureYear);
+    const parsedModelYear = Number(modelYear);
 
     if (model.trim().length < 2) {
       setErrorMsg("Modelo do veículo é obrigatório.");
       return;
     }
-    if (!isValidVehicleYear(parsedYear)) {
-      setErrorMsg("Ano do veículo inválido.");
+    if (!isValidVehicleYear(parsedManufactureYear)) {
+      setErrorMsg("Ano de fabricação inválido.");
+      return;
+    }
+    if (!isValidVehicleYear(parsedModelYear)) {
+      setErrorMsg("Ano modelo inválido.");
       return;
     }
     if (!isValidBrazilianPlate(normalizedTractorPlate)) {
       setErrorMsg("Placa do cavalo inválida. Use formato antigo ABC1234 ou Mercosul ABC1D23.");
       return;
     }
-    if (!isValidBrazilianPlate(normalizedTrailerPlate)) {
+    if (vehicleType === 'Carreta' && !isValidBrazilianPlate(normalizedTrailerPlate)) {
       setErrorMsg("Placa da carreta inválida. Use formato antigo ABC1234 ou Mercosul ABC1D23.");
       return;
     }
@@ -141,7 +161,10 @@ export default function VehiclesPage() {
     setSaving(true);
     const payload = {
       model: model.trim(),
-      year: parsedYear,
+      year: parsedManufactureYear,
+      manufacture_year: parsedManufactureYear,
+      model_year: parsedModelYear,
+      vehicle_type: vehicleType,
       tractor_plate: normalizedTractorPlate,
       trailer_plate: normalizedTrailerPlate,
       uf: normalizedUf,
@@ -168,7 +191,7 @@ export default function VehiclesPage() {
         setEditingId(null);
 
         // Reset
-        setModel(''); setYear(''); setTractorPlate(''); setTrailerPlate('');
+        setModel(''); setManufactureYear(''); setModelYear(''); setVehicleType('Truck'); setTractorPlate(''); setTrailerPlate('');
         setUf(''); setAntt(''); setRenavam(''); setOwnerName(''); setOwnerDocument('');
 
         loadVehicles();
@@ -182,12 +205,32 @@ export default function VehiclesPage() {
     }
   };
 
-  const filteredVehicles = vehicles.filter(v =>
-    v.model?.toLowerCase().includes(search.toLowerCase()) ||
-    v.tractor_plate?.toLowerCase().includes(search.toLowerCase()) ||
-    v.trailer_plate?.toLowerCase().includes(search.toLowerCase()) ||
-    v.owner_name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredVehicles = vehicles.filter(v => {
+    const matchesSearch = matchesSearchFields(v, search, [
+      'model',
+      'vehicle_type',
+      'manufacture_year',
+      'model_year',
+      'tractor_plate',
+      'trailer_plate',
+      'owner_name',
+      'owner_document',
+      'antt',
+      'renavam',
+      'uf',
+    ]);
+    const matchesFilters = matchesAllFilters(v, [
+      { value: modelFilter, getValue: (vehicle) => vehicle.model },
+      { value: ownerFilter, getValue: (vehicle) => vehicle.owner_name },
+      { value: ufFilter, getValue: (vehicle) => vehicle.uf },
+    ]);
+
+    return matchesSearch && matchesFilters;
+  });
+
+  const modelOptions = getUniqueFilterOptions(vehicles, (vehicle) => vehicle.model);
+  const ownerOptions = getUniqueFilterOptions(vehicles, (vehicle) => vehicle.owner_name);
+  const ufOptions = getUniqueFilterOptions(vehicles, (vehicle) => vehicle.uf);
 
   return (
     <HeaderAndSidebar>
@@ -247,7 +290,7 @@ export default function VehiclesPage() {
 
             <form onSubmit={handleSaveVehicle} className="space-y-4">
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] uppercase font-bold text-slate-500">Modelo Mecânico / Chassi *</label>
                   <input
@@ -262,15 +305,46 @@ export default function VehiclesPage() {
                 </div>
 
                 <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold text-slate-500">Tipo de Veículo *</label>
+                  <select
+                    id="ip-vhc-type"
+                    value={vehicleType}
+                    onChange={(e) => setVehicleType(e.target.value as any)}
+                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                  >
+                    <option value="Utilitário">Utilitário</option>
+                    <option value="VUC">VUC</option>
+                    <option value="3/4">3/4</option>
+                    <option value="Toco">Toco</option>
+                    <option value="Truck">Truck</option>
+                    <option value="Carreta">Carreta</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
                   <label className="text-[10px] uppercase font-bold text-slate-500">Ano de Fabricação *</label>
                   <input
-                    id="ip-vhc-year"
+                    id="ip-vhc-manufacture-year"
+                    type="number"
+                    min="1980"
+                    max={new Date().getFullYear() + 2}
+                    placeholder="Ex: 2020"
+                    value={manufactureYear}
+                    onChange={(e) => setManufactureYear(e.target.value)}
+                    className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold text-slate-500">Ano Modelo *</label>
+                  <input
+                    id="ip-vhc-model-year"
                     type="number"
                     min="1980"
                     max={new Date().getFullYear() + 2}
                     placeholder="Ex: 2021"
-                    value={year}
-                    onChange={(e) => setYear(e.target.value)}
+                    value={modelYear}
+                    onChange={(e) => setModelYear(e.target.value)}
                     className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
                   />
                 </div>
@@ -305,11 +379,13 @@ export default function VehiclesPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Placa Semi-Reboque (Carreta) *</label>
+                  <label className="text-[10px] uppercase font-bold text-slate-500">
+                    Placa Semi-Reboque (Carreta){vehicleType === 'Carreta' ? ' *' : ''}
+                  </label>
                   <input
                     id="ip-vhc-trailer"
                     type="text"
-                    required
+                    required={vehicleType === 'Carreta'}
                     maxLength={7}
                     placeholder="Ex: XYZ9W87"
                     value={trailerPlate}
@@ -391,8 +467,8 @@ export default function VehiclesPage() {
         )}
 
         {/* Filter search bar */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 flex gap-4 items-center">
-          <div className="relative w-full max-w-md">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col lg:flex-row gap-4 items-center justify-between">
+          <div className="relative w-full lg:max-w-md">
             <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
             <input
               type="text"
@@ -401,6 +477,51 @@ export default function VehiclesPage() {
               onChange={(e) => setSearch(e.target.value)}
               className="w-full text-xs font-semibold pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-250 rounded-xl outline-none focus:border-yellow-500 text-slate-800"
             />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full lg:w-auto shrink-0">
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
+              <Filter className="h-3.5 w-3.5 text-slate-500" />
+              <select
+                id="vehicle-model-filter"
+                value={modelFilter}
+                onChange={(e) => setModelFilter(e.target.value)}
+                className="w-full bg-transparent text-slate-700 outline-none font-bold"
+              >
+                <option value="">Todos os Modelos</option>
+                {modelOptions.map((vehicleModel) => (
+                  <option key={vehicleModel} value={vehicleModel}>{vehicleModel}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
+              <select
+                id="vehicle-owner-filter"
+                value={ownerFilter}
+                onChange={(e) => setOwnerFilter(e.target.value)}
+                className="w-full bg-transparent text-slate-700 outline-none font-bold"
+              >
+                <option value="">Todos os Proprietários</option>
+                {ownerOptions.map((owner) => (
+                  <option key={owner} value={owner}>{owner}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
+              <select
+                id="vehicle-uf-filter"
+                value={ufFilter}
+                onChange={(e) => setUfFilter(e.target.value)}
+                className="w-full bg-transparent text-slate-700 outline-none font-bold"
+              >
+                <option value="">Todas as UFs</option>
+                {ufOptions.map((stateCode) => (
+                  <option key={stateCode} value={stateCode}>{stateCode}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -419,7 +540,8 @@ export default function VehiclesPage() {
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="bg-slate-50 text-slate-400 font-bold border-b border-indigo-200/5 text-[10px]">
-                    <th className="p-4">Modelo Trator</th>
+                    <th className="p-4">Modelo / Tipo</th>
+                    <th className="p-4">Ano Fab./Modelo</th>
                     <th className="p-4">Placa Cavalo</th>
                     <th className="p-4">Placa Carreta (Reboque)</th>
                     <th className="p-4">ANTT Registro</th>
@@ -432,7 +554,13 @@ export default function VehiclesPage() {
                 <tbody className="divide-y divide-slate-150 font-semibold text-slate-700">
                   {filteredVehicles.map((v) => (
                     <tr key={v.id} className="hover:bg-slate-50">
-                      <td className="p-4 font-extrabold text-slate-900">{v.model} ({v.year || 'N/A'})</td>
+                      <td className="p-4 font-extrabold text-slate-900">
+                        <p>{v.model}</p>
+                        <p className="text-[9.5px] text-slate-500">{v.vehicle_type || 'Truck'}</p>
+                      </td>
+                      <td className="p-4 font-mono text-slate-700">
+                        {v.manufacture_year || v.year || 'N/A'} / {v.model_year || v.year || 'N/A'}
+                      </td>
                       <td className="p-4">
                         <span className="font-mono font-bold border-2 border-slate-600 bg-slate-55 rounded p-1 px-2.5 text-slate-900 text-[11px]">
                           {v.tractor_plate}
@@ -440,7 +568,7 @@ export default function VehiclesPage() {
                       </td>
                       <td className="p-4">
                         <span className="font-mono font-bold border-2 border-slate-450 bg-slate-55 rounded p-1 px-2.5 text-slate-600 text-[11px]">
-                          {v.trailer_plate}
+                          {v.trailer_plate || 'Sem carreta'}
                         </span>
                       </td>
                       <td className="p-4 font-mono text-slate-600 font-bold">{v.antt || 'Isento'}</td>

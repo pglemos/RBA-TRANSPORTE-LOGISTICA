@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
 import FreightOrderPDF from '@/components/FreightOrderPDF';
+import { getUniqueFilterOptions, matchesAllFilters, matchesSearchFields } from '@/lib/tableFilters';
 import { 
   Search, 
   Plus, 
@@ -23,6 +24,9 @@ export default function OrdersListPage() {
   // Filters
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [driverFilter, setDriverFilter] = useState('');
+  const [vehicleFilter, setVehicleFilter] = useState('');
+  const [clientFilter, setClientFilter] = useState('');
   const [selectedOrderForPDF, setSelectedOrderForPDF] = useState<any | null>(null);
 
   // Messages
@@ -33,6 +37,11 @@ export default function OrdersListPage() {
     const digits = cteNumber?.match(/\d+/g)?.join('');
     return digits ? Number(digits) : -1;
   };
+
+  const getOrderVehicleLabel = (order: any) =>
+    [order.vehicle_model, order.vehicle_tractor_plate, order.vehicle_trailer_plate]
+      .filter(Boolean)
+      .join(' | ');
 
   const loadOrders = async () => {
     try {
@@ -92,23 +101,32 @@ export default function OrdersListPage() {
 
   // Filter listings
   const filteredOrders = orders.filter(o => {
-    const normalizedSearch = search.toLowerCase();
-    const matchesSearch = 
-      o.order_number?.toLowerCase().includes(normalizedSearch) ||
-      o.driver_name?.toLowerCase().includes(normalizedSearch) ||
-      o.client_name?.toLowerCase().includes(normalizedSearch) ||
-      o.cte_number?.toLowerCase().includes(normalizedSearch) ||
-      o.vehicle_tractor_plate?.toLowerCase().includes(normalizedSearch) ||
-      o.vehicle_trailer_plate?.toLowerCase().includes(normalizedSearch);
+    const matchesSearch = matchesSearchFields(o, search, [
+      'order_number',
+      'driver_name',
+      'client_name',
+      'cte_number',
+      'vehicle_model',
+      'vehicle_tractor_plate',
+      'vehicle_trailer_plate',
+    ]);
+    const matchesFilters = matchesAllFilters(o, [
+      { value: statusFilter, getValue: (order) => order.status },
+      { value: driverFilter, getValue: (order) => order.driver_name },
+      { value: vehicleFilter, getValue: getOrderVehicleLabel },
+      { value: clientFilter, getValue: (order) => order.client_name },
+    ]);
 
-    const matchesStatus = statusFilter ? o.status === statusFilter : true;
-
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesFilters;
   }).sort((a, b) => {
     const cteDiff = getCteSortValue(b.cte_number) - getCteSortValue(a.cte_number);
     if (cteDiff !== 0) return cteDiff;
     return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
   });
+
+  const driverOptions = getUniqueFilterOptions(orders, (order) => order.driver_name);
+  const vehicleOptions = getUniqueFilterOptions(orders, getOrderVehicleLabel);
+  const clientOptions = getUniqueFilterOptions(orders, (order) => order.client_name);
 
   return (
     <HeaderAndSidebar>
@@ -159,10 +177,10 @@ export default function OrdersListPage() {
             />
           </div>
 
-          <div className="flex gap-2 w-full md:w-auto shrink-0">
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
-              <Filter className="h-3.5 w-3.5 text-slate-500" />
-              <select
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 w-full xl:w-auto shrink-0">
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
+            <Filter className="h-3.5 w-3.5 text-slate-500" />
+            <select
                 id="status-filter"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -178,9 +196,51 @@ export default function OrdersListPage() {
                 <option value="Entregue">✅ Entregue</option>
                 <option value="Pago">💵 Pago / Liquidado</option>
                 <option value="Cancelado">❌ Cancelado</option>
-              </select>
-            </div>
+            </select>
           </div>
+
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
+            <select
+              id="driver-filter"
+              value={driverFilter}
+              onChange={(e) => setDriverFilter(e.target.value)}
+              className="w-full bg-transparent text-slate-700 outline-none font-bold"
+            >
+              <option value="">Todos os Motoristas</option>
+              {driverOptions.map((driver) => (
+                <option key={driver} value={driver}>{driver}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
+            <select
+              id="vehicle-filter"
+              value={vehicleFilter}
+              onChange={(e) => setVehicleFilter(e.target.value)}
+              className="w-full bg-transparent text-slate-700 outline-none font-bold"
+            >
+              <option value="">Todos os Veículos</option>
+              {vehicleOptions.map((vehicle) => (
+                <option key={vehicle} value={vehicle}>{vehicle}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
+            <select
+              id="client-filter"
+              value={clientFilter}
+              onChange={(e) => setClientFilter(e.target.value)}
+              className="w-full bg-transparent text-slate-700 outline-none font-bold"
+            >
+              <option value="">Todos os Clientes</option>
+              {clientOptions.map((client) => (
+                <option key={client} value={client}>{client}</option>
+              ))}
+            </select>
+          </div>
+        </div>
 
         </div>
 
