@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Save, AlertCircle, Paperclip } from 'lucide-react';
 import { Driver, Vehicle, Client, FreightOrder } from '@/lib/db';
 import { FREIGHT_ORDER_STATUSES, getFreightStatusMeta, normalizeFreightOrderStatus } from '@/lib/freightStatus';
+import { getShipmentReleaseValidationError } from '@/lib/freightOrderFormValidation';
 
 interface Props {
   initialData?: FreightOrder & {
@@ -232,9 +233,13 @@ export default function FreightOrderForm({ initialData }: Props) {
       return;
     }
 
-    const prechecksOk = buonnyStatus === 'Aprovado';
-    if (shipmentReleaseStatus !== 'Contratar' && !prechecksOk && !releaseJustification.trim()) {
-      setErrorMessage("⚠️ Não é permitido liberar embarque sem a consulta Buonny aprovada sem uma justificativa de override.");
+    const shipmentReleaseError = getShipmentReleaseValidationError({
+      shipmentReleaseStatus,
+      buonnyStatus,
+      releaseJustification,
+    });
+    if (shipmentReleaseError) {
+      setErrorMessage(shipmentReleaseError);
       return;
     }
     if (buonnyCode.trim().length > 20) {

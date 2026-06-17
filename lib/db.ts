@@ -42,7 +42,7 @@ export interface Vehicle {
   year: number;
   manufacture_year?: number;
   model_year?: number;
-  vehicle_type?: 'Utilitário' | 'VUC' | '3/4' | 'Toco' | 'Truck' | 'Carreta';
+  vehicle_type?: 'Utilitário' | 'VUC' | '3/4' | 'Toco' | 'Truck' | 'Bitruck' | 'Carreta';
   model: string;
   owner_name: string;
   owner_document: string;

@@ -107,7 +107,7 @@ export const VehicleSchema = z.object({
   year: z.number().refine(isValidVehicleYear, "Ano do veículo inválido"),
   manufacture_year: z.number().refine(isValidVehicleYear, "Ano de fabricação inválido"),
   model_year: z.number().refine(isValidVehicleYear, "Ano modelo inválido"),
-  vehicle_type: z.enum(['Utilitário', 'VUC', '3/4', 'Toco', 'Truck', 'Carreta']),
+  vehicle_type: z.enum(['Utilitário', 'VUC', '3/4', 'Toco', 'Truck', 'Bitruck', 'Carreta']),
   model: z.string().min(2, "Modelo é obrigatório"),
   owner_name: z.string().min(3, "Nome do proprietário obrigatório"),
   owner_document: z.string().refine(isValidCpfOrCnpj, "Documento do proprietário inválido"),

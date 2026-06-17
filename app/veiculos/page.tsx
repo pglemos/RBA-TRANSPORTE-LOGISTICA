@@ -24,7 +24,7 @@ export default function VehiclesPage() {
   const [model, setModel] = useState('');
   const [manufactureYear, setManufactureYear] = useState('');
   const [modelYear, setModelYear] = useState('');
-  const [vehicleType, setVehicleType] = useState<'Utilitário' | 'VUC' | '3/4' | 'Toco' | 'Truck' | 'Carreta'>('Truck');
+  const [vehicleType, setVehicleType] = useState<'Utilitário' | 'VUC' | '3/4' | 'Toco' | 'Truck' | 'Bitruck' | 'Carreta'>('Truck');
   const [tractorPlate, setTractorPlate] = useState('');
   const [trailerPlate, setTrailerPlate] = useState('');
   const [uf, setUf] = useState('');
@@ -66,10 +66,16 @@ export default function VehiclesPage() {
   }, []);
 
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('novo') === '1') {
+    if (new URLSearchParams(window.location.search).get('novo') !== '1') {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
       setEditingId(null);
       setShowForm(true);
-    }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   const handleEditTrigger = (vhc: any) => {
@@ -317,6 +323,7 @@ export default function VehiclesPage() {
                     <option value="3/4">3/4</option>
                     <option value="Toco">Toco</option>
                     <option value="Truck">Truck</option>
+                    <option value="Bitruck">Bitruck</option>
                     <option value="Carreta">Carreta</option>
                   </select>
                 </div>
