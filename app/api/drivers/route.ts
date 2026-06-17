@@ -5,20 +5,18 @@ import { DriverSchema, normalizeDocument, onlyDigits } from '@/lib/validators';
 
 export async function GET(req: NextRequest) {
   try {
-    const cookieHeader = req.headers.get('cookie') || '';
-    const session = RBAAuth.getSession(cookieHeader);
-    const role = session.user?.role || 'Consulta/Auditoria';
+    const guard = await RBAAuth.requireAuth(req);
+    if (guard.response) return guard.response;
 
+    const role = guard.session.user!.role;
     const drivers = await RBADatabase.getDrivers();
-    
-    // Process list with LGPD masking based on access privilege
-    const maskedDrivers = drivers.map(d => ({
-      ...d,
-      cpf: RBAAuth.maskCPF(d.cpf, role),
-      rg: RBAAuth.maskRG(d.rg, role),
-      bank_account: RBAAuth.maskBankDetails(d.bank_account, role),
-      pix_key: RBAAuth.maskPixKey(d.pix_key, role),
-      beneficiary_document: RBAAuth.maskDocument(d.beneficiary_document, role)
+    const maskedDrivers = drivers.map((driver) => ({
+      ...driver,
+      cpf: RBAAuth.maskCPF(driver.cpf, role),
+      rg: RBAAuth.maskRG(driver.rg, role),
+      bank_account: RBAAuth.maskBankDetails(driver.bank_account, role),
+      pix_key: RBAAuth.maskPixKey(driver.pix_key, role),
+      beneficiary_document: RBAAuth.maskDocument(driver.beneficiary_document, role),
     }));
 
     return NextResponse.json(maskedDrivers);
@@ -29,12 +27,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieHeader = req.headers.get('cookie') || '';
-    const session = RBAAuth.getSession(cookieHeader);
-    
-    if (!session.user || RBAAuth.isReadOnly(session.user.role)) {
-      return NextResponse.json({ success: false, error: "Acesso negado: Somente perfis operacionais ou administrativos de frete." }, { status: 403 });
-    }
+    const guard = await RBAAuth.requireAuth(req, ['Administrador', 'Operacional']);
+    if (guard.response) return guard.response;
 
     const body = await req.json();
     const payload = {
@@ -48,17 +42,30 @@ export async function POST(req: NextRequest) {
       bank_account: String(body.bank_account || '').trim(),
       pix_key: String(body.pix_key || '').trim(),
       beneficiary_name: String(body.beneficiary_name || body.name || '').trim(),
-      beneficiary_document: normalizeDocument(body.beneficiary_document || body.cpf || '')
+      beneficiary_document: normalizeDocument(body.beneficiary_document || body.cpf || ''),
     };
+
     const parsed = DriverSchema.safeParse(payload);
     if (!parsed.success) {
-      return NextResponse.json({ success: false, error: parsed.error.issues[0]?.message || 'Dados do motorista inválidos.' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: parsed.error.issues[0]?.message || 'Dados do motorista inválidos.' },
+        { status: 400 },
+      );
     }
 
+    const session = guard.session.user!;
     const newDriver = await RBADatabase.createDriver(
-      { ...parsed.data, notes: parsed.data.notes || '' }, 
-      session.user.id, 
-      session.user.name
+      {
+        ...parsed.data,
+        notes: parsed.data.notes || '',
+        phone: parsed.data.phone || '',
+        rg: parsed.data.rg || '',
+        bank_name: parsed.data.bank_name || '',
+        bank_agency: parsed.data.bank_agency || '',
+        bank_account: parsed.data.bank_account || '',
+      },
+      session.id,
+      session.name,
     );
 
     return NextResponse.json({ success: true, driver: newDriver });

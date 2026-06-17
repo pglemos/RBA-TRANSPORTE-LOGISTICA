@@ -211,7 +211,7 @@
       "unloading_expense": 200,
       "other_expenses": 50,
       "total_expenses": 400,
-      "net_value": 11600,
+"net_value": 14600,
       "bank_data_snapshot": {
         "bank_name": "Banco do Brasil",
         "bank_agency": "1234",
@@ -258,7 +258,7 @@
       "unloading_expense": 150,
       "other_expenses": 0,
       "total_expenses": 250,
-      "net_value": 8250,
+"net_value": 13120,
       "bank_data_snapshot": {
         "bank_name": "Banco Itaú",
         "bank_agency": "0432",
@@ -309,7 +309,8 @@
       "emission_year": "26",
       "status": "Rascunho",
       "cte_number": "2424",
-      "cte_value": 15000,
+"cte_value": 15000,
+"cte_discount_percent": 10,
       "notes": ".",
       "buonny_status": "Renovar",
       "buonny_code": "",
@@ -330,7 +331,7 @@
       "order_number": "RBA-2026-0003",
       "balance_value": 3000,
       "total_expenses": 0,
-      "net_value": 10000,
+"net_value": 3500,
       "created_at": "2026-06-10T01:32:58.587Z",
       "updated_at": "2026-06-10T01:32:58.587Z"
     }

@@ -262,9 +262,9 @@ export default function FinancePage() {
                     className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
                   >
                     <option value="">Selecione a Ordem</option>
-                    {orders.map(o => (
-                      <option key={o.id} value={o.id}>Ordem #{o.order_number} {o.driver_name} (Bruto: R$ {o.freight_value})</option>
-                    ))}
+ {orders.map(o => (
+ <option key={o.id} value={o.id}>Ordem #{o.order_number} {o.driver_name} (Motorista: R$ {o.freight_value} | CTE: R$ {o.cte_value || 0})</option>
+ ))}
                   </select>
                 </div>
 

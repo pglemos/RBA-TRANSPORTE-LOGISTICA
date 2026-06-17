@@ -61,11 +61,8 @@ export default function DriversPage() {
     const timer = setTimeout(() => {
       loadDrivers();
     }, 0);
-    // Refresh list if simulated user role switching changes, to update CPF unmasking!
-    window.addEventListener('rba-auth-switch', loadDrivers);
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('rba-auth-switch', loadDrivers);
     };
   }, []);
 

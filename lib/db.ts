@@ -2,7 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
 import { supabaseServer, isSupabaseServerConfigured } from './supabase/server';
+import { getRBADataClient } from './dbContext';
 import type { FreightOrderStatus } from './freightStatus';
+import { calculateFreightOrderFinancials } from './financialMetrics';
 
 // Define DB Types based on PRD
 
@@ -192,18 +194,26 @@ const getCteSortValue = (cteNumber?: string) => {
 
 const isUniqueViolation = (error: any) => error?.code === '23505' || /duplicate key|unique/i.test(error?.message || '');
 
-const withFreightOrderDefaults = (order: any): FreightOrder => ({
-  buonny_code: '',
-  buonny_responsible: '',
-  emission_day: '',
-  emission_month: '',
-  emission_year: '',
-  ...order
-});
+const withFreightOrderDefaults = (order: any): FreightOrder => {
+  const defaults = {
+    buonny_code: '',
+    buonny_responsible: '',
+    emission_day: '',
+    emission_month: '',
+    emission_year: '',
+    ...order
+  };
+  return {
+    ...defaults,
+    ...calculateFreightOrderFinancials(defaults)
+  } as FreightOrder;
+};
 
 const throwSupabaseError = (action: string, error: any): never => {
   throw new Error(`${action} no Supabase: ${error?.message || 'erro desconhecido'}`);
 };
+
+const supabaseDataClient = () => getRBADataClient(supabaseServer);
 
 // Initial seed data
 const initialDB: Database = {
@@ -419,7 +429,7 @@ const initialDB: Database = {
       unloading_expense: 200.00,
       other_expenses: 50.00,
       total_expenses: 400.00,
-      net_value: 11600.00,
+      net_value: 4250.00,
       bank_data_snapshot: {
         bank_name: "Banco do Brasil",
         bank_agency: "1234",
@@ -465,7 +475,7 @@ const initialDB: Database = {
       unloading_expense: 150.00,
       other_expenses: 0.00,
       total_expenses: 250.00,
-      net_value: 8250.00,
+ net_value: 13120.00,
       bank_data_snapshot: {
         bank_name: "Banco Itaú",
         bank_agency: "0432",
@@ -679,7 +689,7 @@ export class RBADatabase {
   // Settings
   public static async getSettings() {
     if (isSupabaseServerConfigured) {
-      const { data, error } = await supabaseServer.from('app_settings').select('*');
+      const { data, error } = await supabaseDataClient().from('app_settings').select('*');
       if (error) throwSupabaseError('Erro ao listar configurações', error);
       if (!error && data) return data as AppSetting[];
     }
@@ -718,7 +728,7 @@ export class RBADatabase {
   // Profiles and user management
   public static async getProfiles() {
     if (isSupabaseServerConfigured) {
-      const { data, error } = await supabaseServer.from('profiles').select('*');
+      const { data, error } = await supabaseDataClient().from('profiles').select('*');
       if (!error && data) return data as Profile[];
     }
     return this.load().profiles;
@@ -726,7 +736,7 @@ export class RBADatabase {
 
   public static async updateProfileRole(id: string, role: Profile['role'], active: boolean, operatorId: string, operatorName: string) {
     if (isSupabaseServerConfigured) {
-      const { data: oldValArray } = await supabaseServer.from('profiles').select('*').eq('id', id).limit(1);
+      const { data: oldValArray } = await supabaseDataClient().from('profiles').select('*').eq('id', id).limit(1);
       const oldVal = (oldValArray && oldValArray[0]) || null;
 
       const { data, error } = await supabaseServer
@@ -758,7 +768,7 @@ export class RBADatabase {
 
   public static async getProfileByEmail(email: string) {
     if (isSupabaseServerConfigured) {
-      const { data, error } = await supabaseServer.from('profiles').select('*').eq('email', email).limit(1);
+      const { data, error } = await supabaseDataClient().from('profiles').select('*').eq('email', email).limit(1);
       if (!error && data && data.length > 0) return data[0] as Profile;
     }
     return this.load().profiles.find(p => p.email.toLowerCase() === email.toLowerCase());
@@ -767,7 +777,7 @@ export class RBADatabase {
   // Drivers CRUD
   public static async getDrivers() {
     if (isSupabaseServerConfigured) {
-      const { data, error } = await supabaseServer.from('drivers').select('*').order('name', { ascending: true });
+      const { data, error } = await supabaseDataClient().from('drivers').select('*').order('name', { ascending: true });
       if (error) throwSupabaseError('Erro ao listar motoristas', error);
       if (!error && data) return data as Driver[];
     }
@@ -776,7 +786,7 @@ export class RBADatabase {
 
   public static async getDriverById(id: string) {
     if (isSupabaseServerConfigured) {
-      const { data, error } = await supabaseServer.from('drivers').select('*').eq('id', id).limit(1);
+      const { data, error } = await supabaseDataClient().from('drivers').select('*').eq('id', id).limit(1);
       if (error) throwSupabaseError('Erro ao buscar motorista', error);
       if (!error && data && data.length > 0) return data[0] as Driver;
       return undefined;
@@ -816,7 +826,7 @@ export class RBADatabase {
 
   public static async updateDriver(id: string, driverData: Partial<Driver>, operatorId: string, operatorName: string) {
     if (isSupabaseServerConfigured) {
-      const { data: oldValArray } = await supabaseServer.from('drivers').select('*').eq('id', id).limit(1);
+      const { data: oldValArray } = await supabaseDataClient().from('drivers').select('*').eq('id', id).limit(1);
       const oldVal = (oldValArray && oldValArray[0]) || null;
 
       const { data, error } = await supabaseServer
@@ -860,10 +870,10 @@ export class RBADatabase {
         throw new Error('Motorista possui fichas de frete vinculadas e não pode ser excluído.');
       }
 
-      const { data: oldValArray } = await supabaseServer.from('drivers').select('*').eq('id', id).limit(1);
+      const { data: oldValArray } = await supabaseDataClient().from('drivers').select('*').eq('id', id).limit(1);
       const oldVal = (oldValArray && oldValArray[0]) || null;
 
-      const { error } = await supabaseServer.from('drivers').delete().eq('id', id);
+      const { error } = await supabaseDataClient().from('drivers').delete().eq('id', id);
       if (!error) {
         await this.addAuditLog(operatorId, operatorName, "Excluir Motorista", "Motorista", id, oldVal, null);
         return true;
@@ -889,7 +899,7 @@ export class RBADatabase {
   // Vehicles CRUD
   public static async getVehicles() {
     if (isSupabaseServerConfigured) {
-      const { data, error } = await supabaseServer.from('vehicles').select('*').order('model', { ascending: true });
+      const { data, error } = await supabaseDataClient().from('vehicles').select('*').order('model', { ascending: true });
       if (error) throwSupabaseError('Erro ao listar veículos', error);
       if (!error && data) return data as Vehicle[];
     }
@@ -898,7 +908,7 @@ export class RBADatabase {
 
   public static async getVehicleById(id: string) {
     if (isSupabaseServerConfigured) {
-      const { data, error } = await supabaseServer.from('vehicles').select('*').eq('id', id).limit(1);
+      const { data, error } = await supabaseDataClient().from('vehicles').select('*').eq('id', id).limit(1);
       if (error) throwSupabaseError('Erro ao buscar veículo', error);
       if (!error && data && data.length > 0) return data[0] as Vehicle;
       return undefined;
@@ -938,7 +948,7 @@ export class RBADatabase {
 
   public static async updateVehicle(id: string, vData: Partial<Vehicle>, operatorId: string, operatorName: string) {
     if (isSupabaseServerConfigured) {
-      const { data: oldValArray } = await supabaseServer.from('vehicles').select('*').eq('id', id).limit(1);
+      const { data: oldValArray } = await supabaseDataClient().from('vehicles').select('*').eq('id', id).limit(1);
       const oldVal = (oldValArray && oldValArray[0]) || null;
 
       const { data, error } = await supabaseServer
@@ -982,10 +992,10 @@ export class RBADatabase {
         throw new Error('Veículo possui fichas de frete vinculadas e não pode ser excluído.');
       }
 
-      const { data: oldValArray } = await supabaseServer.from('vehicles').select('*').eq('id', id).limit(1);
+      const { data: oldValArray } = await supabaseDataClient().from('vehicles').select('*').eq('id', id).limit(1);
       const oldVal = (oldValArray && oldValArray[0]) || null;
 
-      const { error } = await supabaseServer.from('vehicles').delete().eq('id', id);
+      const { error } = await supabaseDataClient().from('vehicles').delete().eq('id', id);
       if (!error) {
         await this.addAuditLog(operatorId, operatorName, "Excluir Veículo", "Veículo", id, oldVal, null);
         return true;
@@ -1011,7 +1021,7 @@ export class RBADatabase {
   // Clients CRUD
   public static async getClients() {
     if (isSupabaseServerConfigured) {
-      const { data, error } = await supabaseServer.from('clients').select('*').order('name', { ascending: true });
+      const { data, error } = await supabaseDataClient().from('clients').select('*').order('name', { ascending: true });
       if (error) throwSupabaseError('Erro ao listar clientes', error);
       if (!error && data) return data as Client[];
     }
@@ -1020,7 +1030,7 @@ export class RBADatabase {
 
   public static async getClientById(id: string) {
     if (isSupabaseServerConfigured) {
-      const { data, error } = await supabaseServer.from('clients').select('*').eq('id', id).limit(1);
+      const { data, error } = await supabaseDataClient().from('clients').select('*').eq('id', id).limit(1);
       if (error) throwSupabaseError('Erro ao buscar cliente', error);
       if (!error && data && data.length > 0) return data[0] as Client;
       return undefined;
@@ -1060,7 +1070,7 @@ export class RBADatabase {
 
   public static async updateClient(id: string, cData: Partial<Client>, operatorId: string, operatorName: string) {
     if (isSupabaseServerConfigured) {
-      const { data: oldValArray } = await supabaseServer.from('clients').select('*').eq('id', id).limit(1);
+      const { data: oldValArray } = await supabaseDataClient().from('clients').select('*').eq('id', id).limit(1);
       const oldVal = (oldValArray && oldValArray[0]) || null;
 
       const { data, error } = await supabaseServer
@@ -1104,10 +1114,10 @@ export class RBADatabase {
         throw new Error('Cliente possui fichas de frete vinculadas e não pode ser excluído.');
       }
 
-      const { data: oldValArray } = await supabaseServer.from('clients').select('*').eq('id', id).limit(1);
+      const { data: oldValArray } = await supabaseDataClient().from('clients').select('*').eq('id', id).limit(1);
       const oldVal = (oldValArray && oldValArray[0]) || null;
 
-      const { error } = await supabaseServer.from('clients').delete().eq('id', id);
+      const { error } = await supabaseDataClient().from('clients').delete().eq('id', id);
       if (!error) {
         await this.addAuditLog(operatorId, operatorName, "Excluir Cliente", "Cliente", id, oldVal, null);
         return true;
@@ -1176,33 +1186,25 @@ export class RBADatabase {
         o.destination?.toLowerCase().includes(term)
       );
     }
-    return orders.slice((page - 1) * pageSize, page * pageSize);
+    return orders.slice((page - 1) * pageSize, page * pageSize).map(withFreightOrderDefaults);
   }
 
   public static async getFreightOrderById(id: string) {
     if (isSupabaseServerConfigured) {
-      const { data, error } = await supabaseServer.from('freight_orders').select('*').eq('id', id).limit(1);
+      const { data, error } = await supabaseDataClient().from('freight_orders').select('*').eq('id', id).limit(1);
       if (error) throwSupabaseError('Erro ao buscar ordem', error);
       if (!error && data && data.length > 0) {
         return withFreightOrderDefaults(data[0]);
       }
       return undefined;
     }
-    return this.load().freight_orders.find(o => o.id === id);
+    const order = this.load().freight_orders.find(o => o.id === id);
+    return order ? withFreightOrderDefaults(order) : undefined;
   }
 
   public static async createFreightOrder(orderData: Omit<FreightOrder, 'id' | 'order_number' | 'created_at' | 'updated_at' | 'balance_value' | 'total_expenses' | 'net_value'>, operatorId: string, operatorName: string) {
-    const fVal = Number(orderData.freight_value) || 0;
-    const advVal = Number(orderData.advance_value) || 0;
-    const cashVal = Number(orderData.cash_value) || 0;
-    const balVal = fVal - advVal - cashVal;
-
-    const loadExp = Number(orderData.loading_expense) || 0;
-    const unloadExp = Number(orderData.unloading_expense) || 0;
-    const otherExp = Number(orderData.other_expenses) || 0;
-    const totExp = loadExp + unloadExp + otherExp;
-
-    const netVal = fVal - totExp;
+    const financials = calculateFreightOrderFinancials(orderData);
+    const { cte_discount_value: _cteDiscountValue, net_revenue: _netRevenue, ...persistedFinancials } = financials;
     const newId = generateId('ord');
     const year = new Date().getFullYear();
 
@@ -1225,15 +1227,7 @@ export class RBADatabase {
       id: newId,
       order_number: orderNumber,
       approved_at: orderData.approved_at || null,
-      balance_value: balVal,
-      total_expenses: totExp,
-      net_value: netVal,
-      freight_value: fVal,
-      advance_value: advVal,
-      cash_value: cashVal,
-      loading_expense: loadExp,
-      unloading_expense: unloadExp,
-      other_expenses: otherExp,
+      ...persistedFinancials,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     });
@@ -1250,13 +1244,13 @@ export class RBADatabase {
           .single();
         if (!error && data) {
           // Auto-create initial advance payments if specified
-          if (advVal > 0) {
+        if (financials.advance_value > 0) {
             const newPayId = generateId('pay');
-            await supabaseServer.from('freight_payments').insert({
+            await supabaseDataClient().from('freight_payments').insert({
               id: newPayId,
               freight_order_id: newId,
               type: 'Adiantamento',
-              amount: advVal,
+            amount: financials.advance_value,
               payment_date: new Date().toISOString().split('T')[0],
               payment_method: 'Pix',
               proof_url: '',
@@ -1312,21 +1306,11 @@ export class RBADatabase {
 
   public static async updateFreightOrder(id: string, orderData: Partial<FreightOrder>, operatorId: string, operatorName: string) {
     if (isSupabaseServerConfigured) {
-      const { data: oldValArray } = await supabaseServer.from('freight_orders').select('*').eq('id', id).limit(1);
+      const { data: oldValArray } = await supabaseDataClient().from('freight_orders').select('*').eq('id', id).limit(1);
       const oldVal = (oldValArray && oldValArray[0]) || null;
       const baseObj = { ...oldVal, ...orderData };
-
-      const fVal = Number(baseObj.freight_value) || 0;
-      const advVal = Number(baseObj.advance_value) || 0;
-      const cashVal = Number(baseObj.cash_value) || 0;
-      const balVal = fVal - advVal - cashVal;
-
-      const loadExp = Number(baseObj.loading_expense) || 0;
-      const unloadExp = Number(baseObj.unloading_expense) || 0;
-      const otherExp = Number(baseObj.other_expenses) || 0;
-      const totExp = loadExp + unloadExp + otherExp;
-
-      const netVal = fVal - totExp;
+      const financials = calculateFreightOrderFinancials(baseObj);
+      const { cte_discount_value: _cteDiscountValue, net_revenue: _netRevenue, ...persistedFinancials } = financials;
 
       let approvedBy = baseObj.approved_by || null;
       let approvedAt = baseObj.approved_at || null;
@@ -1336,20 +1320,12 @@ export class RBADatabase {
     }
 
       const updatePayload = {
-          ...orderData,
-          balance_value: balVal,
-          total_expenses: totExp,
-          net_value: netVal,
-          freight_value: fVal,
-          advance_value: advVal,
-          cash_value: cashVal,
-          loading_expense: loadExp,
-          unloading_expense: unloadExp,
-          other_expenses: otherExp,
-          approved_by: approvedBy,
-          approved_at: approvedAt,
-          updated_at: new Date().toISOString()
-        };
+        ...orderData,
+        ...persistedFinancials,
+        approved_by: approvedBy,
+        approved_at: approvedAt,
+        updated_at: new Date().toISOString()
+      };
 
       const { data, error } = await supabaseServer
         .from('freight_orders')
@@ -1370,18 +1346,8 @@ export class RBADatabase {
     if (idx !== -1) {
       const oldVal = { ...db.freight_orders[idx] };
       const baseObj = { ...db.freight_orders[idx], ...orderData };
-
-      const fVal = Number(baseObj.freight_value) || 0;
-      const advVal = Number(baseObj.advance_value) || 0;
-      const cashVal = Number(baseObj.cash_value) || 0;
-      const balVal = fVal - advVal - cashVal;
-
-      const loadExp = Number(baseObj.loading_expense) || 0;
-      const unloadExp = Number(baseObj.unloading_expense) || 0;
-      const otherExp = Number(baseObj.other_expenses) || 0;
-      const totExp = loadExp + unloadExp + otherExp;
-
-      const netVal = fVal - totExp;
+      const financials = calculateFreightOrderFinancials(baseObj);
+      const { cte_discount_value: _cteDiscountValue, net_revenue: _netRevenue, ...persistedFinancials } = financials;
 
       let approvedBy = baseObj.approved_by || '';
       let approvedAt = baseObj.approved_at || '';
@@ -1392,15 +1358,7 @@ export class RBADatabase {
 
       db.freight_orders[idx] = {
         ...baseObj,
-        balance_value: balVal,
-        total_expenses: totExp,
-        net_value: netVal,
-        freight_value: fVal,
-        advance_value: advVal,
-        cash_value: cashVal,
-        loading_expense: loadExp,
-        unloading_expense: unloadExp,
-        other_expenses: otherExp,
+        ...persistedFinancials,
         approved_by: approvedBy,
         approved_at: approvedAt,
         updated_at: new Date().toISOString()
@@ -1415,10 +1373,10 @@ export class RBADatabase {
 
   public static async deleteFreightOrder(id: string, operatorId: string, operatorName: string) {
     if (isSupabaseServerConfigured) {
-      const { data: oldValArray } = await supabaseServer.from('freight_orders').select('*').eq('id', id).limit(1);
+      const { data: oldValArray } = await supabaseDataClient().from('freight_orders').select('*').eq('id', id).limit(1);
       const oldVal = (oldValArray && oldValArray[0]) || null;
 
-      const { error } = await supabaseServer.from('freight_orders').delete().eq('id', id);
+      const { error } = await supabaseDataClient().from('freight_orders').delete().eq('id', id);
       if (!error) {
         await this.addAuditLog(operatorId, operatorName, "Excluir Ordem Frete", "Ordem de Frete", id, oldVal, null);
         return true;
@@ -1440,7 +1398,7 @@ export class RBADatabase {
   // Payments CRUD
   public static async getPayments() {
     if (isSupabaseServerConfigured) {
-      const { data, error } = await supabaseServer.from('freight_payments').select('*');
+      const { data, error } = await supabaseDataClient().from('freight_payments').select('*');
       if (error) throwSupabaseError('Erro ao listar pagamentos', error);
       if (!error && data) return data as FreightPayment[];
     }
@@ -1449,7 +1407,7 @@ export class RBADatabase {
 
   public static async getPaymentsByOrderId(orderId: string) {
     if (isSupabaseServerConfigured) {
-      const { data, error } = await supabaseServer.from('freight_payments').select('*').eq('freight_order_id', orderId);
+      const { data, error } = await supabaseDataClient().from('freight_payments').select('*').eq('freight_order_id', orderId);
       if (error) throwSupabaseError('Erro ao listar pagamentos da ordem', error);
       if (!error && data) return data as FreightPayment[];
     }
@@ -1508,7 +1466,7 @@ export class RBADatabase {
 
   public static async updatePayment(id: string, payData: Partial<FreightPayment>, operatorId: string, operatorName: string) {
     if (isSupabaseServerConfigured) {
-      const { data: oldValArray } = await supabaseServer.from('freight_payments').select('*').eq('id', id).limit(1);
+      const { data: oldValArray } = await supabaseDataClient().from('freight_payments').select('*').eq('id', id).limit(1);
       const oldVal = (oldValArray && oldValArray[0]) || null;
 
       const { data, error } = await supabaseServer
@@ -1545,10 +1503,10 @@ export class RBADatabase {
 
   public static async deletePayment(id: string, operatorId: string, operatorName: string) {
     if (isSupabaseServerConfigured) {
-      const { data: oldValArray } = await supabaseServer.from('freight_payments').select('*').eq('id', id).limit(1);
+      const { data: oldValArray } = await supabaseDataClient().from('freight_payments').select('*').eq('id', id).limit(1);
       const oldVal = (oldValArray && oldValArray[0]) || null;
 
-      const { error } = await supabaseServer.from('freight_payments').delete().eq('id', id);
+      const { error } = await supabaseDataClient().from('freight_payments').delete().eq('id', id);
       if (!error) {
         await this.addAuditLog(operatorId, operatorName, "Excluir Pagamento", "Pagamentos do Frete", id, oldVal, null);
         if (oldVal?.freight_order_id) await this.syncOrderPaymentStatus(oldVal.freight_order_id, operatorId, operatorName);
@@ -1573,7 +1531,7 @@ export class RBADatabase {
   // File Attachments
   public static async getAttachmentsByOrderId(orderId: string) {
     if (isSupabaseServerConfigured) {
-      const { data, error } = await supabaseServer.from('freight_order_attachments').select('*').eq('freight_order_id', orderId);
+      const { data, error } = await supabaseDataClient().from('freight_order_attachments').select('*').eq('freight_order_id', orderId);
       if (error) throwSupabaseError('Erro ao listar anexos', error);
       if (!error && data) return data as FreightOrderAttachment[];
     }
@@ -1626,7 +1584,7 @@ export class RBADatabase {
         .limit(1);
       if (selectError) throwSupabaseError('Erro ao buscar anexo', selectError);
 
-      const { error } = await supabaseServer.from('freight_order_attachments').delete().eq('id', id);
+      const { error } = await supabaseDataClient().from('freight_order_attachments').delete().eq('id', id);
       if (!error) {
         removeLocalFile(oldValArray?.[0]?.file_url);
         return true;
@@ -1648,7 +1606,7 @@ export class RBADatabase {
   // Audit Logs Getter
   public static async getAuditLogs() {
     if (isSupabaseServerConfigured) {
-      const { data, error } = await supabaseServer.from('audit_logs').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabaseDataClient().from('audit_logs').select('*').order('created_at', { ascending: false });
       if (error) throwSupabaseError('Erro ao listar auditoria', error);
       if (!error && data) return data as AuditLog[];
     }

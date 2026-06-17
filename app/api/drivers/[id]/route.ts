@@ -5,29 +5,27 @@ import { DriverSchema, normalizeDocument, onlyDigits } from '@/lib/validators';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id } = await params;
-    const cookieHeader = req.headers.get('cookie') || '';
-    const session = RBAAuth.getSession(cookieHeader);
-    const role = session.user?.role || 'Consulta/Auditoria';
+    const guard = await RBAAuth.requireAuth(req);
+    if (guard.response) return guard.response;
 
+    const { id } = await params;
     const driver = await RBADatabase.getDriverById(id);
     if (!driver) {
-      return NextResponse.json({ success: false, error: "Motorista não encontrado" }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Motorista não encontrado' }, { status: 404 });
     }
 
-    const maskedDriver = {
+    const role = guard.session.user!.role;
+    return NextResponse.json({
       ...driver,
       cpf: RBAAuth.maskCPF(driver.cpf, role),
       rg: RBAAuth.maskRG(driver.rg, role),
       bank_account: RBAAuth.maskBankDetails(driver.bank_account, role),
       pix_key: RBAAuth.maskPixKey(driver.pix_key, role),
-      beneficiary_document: RBAAuth.maskDocument(driver.beneficiary_document, role)
-    };
-
-    return NextResponse.json(maskedDriver);
+      beneficiary_document: RBAAuth.maskDocument(driver.beneficiary_document, role),
+    });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
@@ -35,17 +33,13 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const guard = await RBAAuth.requireAuth(req, ['Administrador', 'Operacional']);
+    if (guard.response) return guard.response;
+
     const { id } = await params;
-    const cookieHeader = req.headers.get('cookie') || '';
-    const session = RBAAuth.getSession(cookieHeader);
-
-    if (!session.user || RBAAuth.isReadOnly(session.user.role)) {
-      return NextResponse.json({ success: false, error: "Acesso negado." }, { status: 403 });
-    }
-
     const body = await req.json();
     const payload = {
       ...body,
@@ -58,14 +52,33 @@ export async function PUT(
       bank_account: String(body.bank_account || '').trim(),
       pix_key: String(body.pix_key || '').trim(),
       beneficiary_name: String(body.beneficiary_name || body.name || '').trim(),
-      beneficiary_document: normalizeDocument(body.beneficiary_document || body.cpf || '')
+      beneficiary_document: normalizeDocument(body.beneficiary_document || body.cpf || ''),
     };
+
     const parsed = DriverSchema.safeParse(payload);
     if (!parsed.success) {
-      return NextResponse.json({ success: false, error: parsed.error.issues[0]?.message || 'Dados do motorista inválidos.' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: parsed.error.issues[0]?.message || 'Dados do motorista inválidos.' },
+        { status: 400 },
+      );
     }
 
-    const updated = await RBADatabase.updateDriver(id, parsed.data, session.user.id, session.user.name);
+    const session = guard.session.user!;
+    const updated = await RBADatabase.updateDriver(
+      id,
+      {
+        ...parsed.data,
+        notes: parsed.data.notes || '',
+        phone: parsed.data.phone || '',
+        rg: parsed.data.rg || '',
+        bank_name: parsed.data.bank_name || '',
+        bank_agency: parsed.data.bank_agency || '',
+        bank_account: parsed.data.bank_account || '',
+      },
+      session.id,
+      session.name,
+    );
+
     return NextResponse.json({ success: true, driver: updated });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -74,18 +87,15 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const guard = await RBAAuth.requireAuth(req, ['Administrador']);
+    if (guard.response) return guard.response;
+
     const { id } = await params;
-    const cookieHeader = req.headers.get('cookie') || '';
-    const session = RBAAuth.getSession(cookieHeader);
-
-    if (!session.user || RBAAuth.isReadOnly(session.user.role)) {
-      return NextResponse.json({ success: false, error: "Acesso negado." }, { status: 403 });
-    }
-
-    const success = await RBADatabase.deleteDriver(id, session.user.id, session.user.name);
+    const session = guard.session.user!;
+    const success = await RBADatabase.deleteDriver(id, session.id, session.name);
     return NextResponse.json({ success });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

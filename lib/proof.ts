@@ -4,8 +4,7 @@ import { FreightOrder } from './db';
 const signingSecret = () =>
   process.env.RBA_PDF_SIGNING_SECRET ||
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-  'rba-local-dev-signing-key';
+  (process.env.NODE_ENV === 'production' ? '' : 'rba-local-dev-signing-key');
 
 export function signFreightOrderProof(order: Pick<FreightOrder, 'id' | 'order_number' | 'cte_number' | 'net_value' | 'updated_at'>) {
   const payload = [
@@ -16,5 +15,10 @@ export function signFreightOrderProof(order: Pick<FreightOrder, 'id' | 'order_nu
     order.updated_at || ''
   ].join('|');
 
-  return createHmac('sha256', signingSecret()).update(payload).digest('hex');
+  const secret = signingSecret();
+  if (!secret) {
+    throw new Error('RBA_PDF_SIGNING_SECRET não configurado para assinatura de comprovantes.');
+  }
+
+  return createHmac('sha256', secret).update(payload).digest('hex');
 }

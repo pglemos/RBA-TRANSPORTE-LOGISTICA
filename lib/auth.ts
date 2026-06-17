@@ -1,11 +1,14 @@
-import { Profile } from './db';
+import { NextResponse, type NextRequest } from 'next/server';
+import type { Profile } from './db';
+import { enterRBADataClient } from './dbContext';
+import { createSupabaseRouteClient, isSupabaseConfigured } from './supabase/server';
 
-// Simple check permissions helper
 export type AppRole = Profile['role'];
 
 export interface Session {
   user: {
     id: string;
+    auth_user_id: string;
     name: string;
     email: string;
     role: AppRole;
@@ -13,49 +16,116 @@ export interface Session {
   } | null;
 }
 
-// Memory session for server container (fallback if cookies not set yet)
-let currentServerSession: Session = {
-  user: {
-    id: "user_admin",
-    name: "Morgan Ribeiro (Admin)",
-    email: "admin@rba.com",
-    role: "Administrador",
-    active: true
-  }
+type GuardResult = {
+  session: Session;
+  response?: NextResponse;
 };
 
+const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
+function appOrigins(req: NextRequest) {
+  return [
+    new URL(req.url).origin,
+    process.env.APP_URL,
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '',
+  ].filter(Boolean) as string[];
+}
+
+function requestOrigin(req: NextRequest) {
+  const origin = req.headers.get('origin');
+  if (origin) return origin;
+
+  const referer = req.headers.get('referer');
+  if (!referer) return '';
+
+  try {
+    return new URL(referer).origin;
+  } catch {
+    return '';
+  }
+}
+
+function sameOriginResponse(req: NextRequest) {
+  if (!WRITE_METHODS.has(req.method)) return null;
+
+  const origin = requestOrigin(req);
+  if (origin && appOrigins(req).includes(origin)) return null;
+
+  return NextResponse.json(
+    { success: false, error: 'Origem da requisição não autorizada.' },
+    { status: 403 },
+  );
+}
+
 export class RBAAuth {
-  // Get active session
-  public static getSession(cookieHeader?: string): Session {
-    // If we have custom cookies in request, we can parse them
-    if (cookieHeader) {
-      const cookies = Object.fromEntries(
-        cookieHeader.split(';').map(c => {
-          const [k, v] = c.trim().split('=');
-          return [k, decodeURIComponent(v || '')];
-        })
-      );
-      if (cookies.rba_role && cookies.rba_user_id && cookies.rba_user_name) {
-        return {
-          user: {
-            id: cookies.rba_user_id,
-            name: cookies.rba_user_name,
-            email: cookies.rba_user_email || `${cookies.rba_user_id}@rba.com`,
-            role: cookies.rba_role as AppRole,
-            active: true
-          }
-        };
-      }
+  public static async getSession(req: NextRequest): Promise<Session> {
+    if (!isSupabaseConfigured) {
+      return { user: null };
     }
-    return currentServerSession;
+
+    const supabase = createSupabaseRouteClient(req);
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !authData.user) {
+      return { user: null };
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id,user_id,name,email,role,active')
+      .eq('user_id', authData.user.id)
+      .eq('active', true)
+      .maybeSingle();
+
+    if (profileError || !profile) {
+      return { user: null };
+    }
+
+    enterRBADataClient(supabase);
+
+    return {
+      user: {
+        id: profile.id,
+        auth_user_id: profile.user_id,
+        name: profile.name,
+        email: profile.email || authData.user.email || '',
+        role: profile.role,
+        active: profile.active,
+      },
+    };
   }
 
-  // Update server fallback session (used to sync role select mock bar easily)
-  public static setFallbackSession(user: Session['user']) {
-    currentServerSession = { user };
+  public static async requireAuth(req: NextRequest, allowedRoles?: AppRole[]): Promise<GuardResult> {
+    const originFailure = sameOriginResponse(req);
+    if (originFailure) {
+      return { session: { user: null }, response: originFailure };
+    }
+
+    const session = await this.getSession(req);
+    if (!session.user) {
+      return {
+        session,
+        response: NextResponse.json(
+          { success: false, error: 'Sessão expirada. Faça login novamente.' },
+          { status: 401 },
+        ),
+      };
+    }
+
+    if (allowedRoles?.length && !allowedRoles.includes(session.user.role)) {
+      return {
+        session,
+        response: NextResponse.json(
+          { success: false, error: 'Acesso negado para o perfil autenticado.' },
+          { status: 403 },
+        ),
+      };
+    }
+
+    return { session };
   }
 
-  // Check if role is allowed to perform a certain action
   public static canManageUsers(role: AppRole): boolean {
     return role === 'Administrador';
   }
@@ -80,16 +150,13 @@ export class RBAAuth {
     return role === 'Consulta/Auditoria';
   }
 
-  // LGPD Masking Utilities
   public static maskCPF(cpf: string, role?: AppRole): string {
     if (!cpf) return '';
     const clean = cpf.replace(/\D/g, '');
     if (role === 'Administrador' || role === 'Financeiro') {
-      // Show styled full if authorized
-      return clean.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+      return clean.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
     }
-    // Masked for audit or public
-    return clean.replace(/(\d{3})\d{6}(\d{2})/, "$1.***.***-$2");
+    return clean.replace(/(\d{3})\d{6}(\d{2})/, '$1.***.***-$2');
   }
 
   public static maskDocument(document: string, role?: AppRole): string {
@@ -100,9 +167,9 @@ export class RBAAuth {
     }
     if (clean.length === 14) {
       if (role === 'Administrador' || role === 'Financeiro') {
-        return clean.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+        return clean.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
       }
-      return clean.replace(/(\d{2})\d{6}(\d{4})(\d{2})/, "$1.***.***/$2-$3");
+      return clean.replace(/(\d{2})\d{6}(\d{4})(\d{2})/, '$1.***.***/$2-$3');
     }
     return role === 'Administrador' || role === 'Financeiro' ? document : 'Documento protegido (LGPD)';
   }
@@ -114,7 +181,7 @@ export class RBAAuth {
       return rg;
     }
     if (clean.length >= 8) {
-      return clean.substring(0, 2) + '.***.***-' + clean.charAt(clean.length - 1);
+      return `${clean.substring(0, 2)}.***.***-${clean.charAt(clean.length - 1)}`;
     }
     return '***-**';
   }
@@ -125,8 +192,8 @@ export class RBAAuth {
       return account;
     }
     const clean = account.replace(/[^A-Za-z0-9]/g, '');
-    if (clean.length > 2) {
-      return '****-' + clean.slice(-2);
+    if (clean.length > 4) {
+      return `****-${clean.slice(-4)}`;
     }
     return '****';
   }
@@ -136,14 +203,14 @@ export class RBAAuth {
     if (role === 'Administrador' || role === 'Financeiro') {
       return key;
     }
-    // Simple mask
     if (key.includes('@')) {
-      const parts = key.split('@');
-      return parts[0].substring(0, 2) + '***@' + parts[1];
+      const [name, domain] = key.split('@');
+      return `${name.slice(0, 2)}***@${domain}`;
     }
-    if (key.length >= 11) {
-      return key.substring(0, 3) + '.***.***-' + key.slice(-2);
+    const clean = key.replace(/\D/g, '');
+    if (clean.length > 4) {
+      return `***${clean.slice(-4)}`;
     }
-    return 'Chave Pix Protegida (LGPD)';
+    return '***';
   }
 }

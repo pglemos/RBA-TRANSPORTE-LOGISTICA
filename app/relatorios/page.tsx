@@ -5,6 +5,7 @@ import HeaderAndSidebar from '@/components/HeaderAndSidebar';
 import RBALogo from '@/components/RBALogo';
 import { Search, Printer, DollarSign, BarChart3, Filter, ShieldCheck, FileCheck, ArrowDownToLine } from 'lucide-react';
 import { FREIGHT_ORDER_STATUSES, getFreightStatusMeta, normalizeFreightOrderStatus } from '@/lib/freightStatus';
+import { summarizeFreightOrders } from '@/lib/financialMetrics';
 
 export default function ReportsPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -62,10 +63,11 @@ export default function ReportsPage() {
   });
 
   // Aggregated totals
-  const totalFreight = filteredOrders.reduce((acc, current) => acc + (Number(current.freight_value) || 0), 0);
-  const totalAdvance = filteredOrders.reduce((acc, current) => acc + (Number(current.advance_value) || 0), 0);
-  const totalBalance = filteredOrders.reduce((acc, current) => acc + (Number(current.balance_value) || 0), 0);
-  const totalNet = filteredOrders.reduce((acc, current) => acc + (Number(current.net_value) || 0), 0);
+  const reportSummary = summarizeFreightOrders(filteredOrders);
+  const totalGrossRevenue = reportSummary.totalGrossRevenue;
+  const totalAdvance = reportSummary.totalAdvance;
+  const totalBalance = reportSummary.totalBalanceToPay;
+  const totalNet = reportSummary.totalNet;
 
   const handlePrintReport = () => {
     window.print();
@@ -173,9 +175,9 @@ export default function ReportsPage() {
               <div className="bg-white border rounded-2xl p-4 text-center">
                 <span className="text-[9px] text-slate-450 font-black block uppercase tracking-wider mb-2">Faturamento Bruto</span>
                 <span className="text-md md:text-lg font-black font-mono text-slate-900 block">
-                  R$ {totalFreight.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  R$ {totalGrossRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
-                <span className="text-[8px] text-slate-400 block mt-1">Soma do frete bruto acordado</span>
+                <span className="text-[8px] text-slate-400 block mt-1">Soma do valor bruto do CTE</span>
               </div>
 
               <div className="bg-white border rounded-2xl p-4 text-center">
@@ -199,7 +201,7 @@ export default function ReportsPage() {
                 <span className="text-md md:text-lg font-black font-mono text-emerald-800 block">
                   R$ {totalNet.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
-                <span className="text-[8px] text-slate-450 block mt-1">Faturamento Bruto - Custos Carga/Descarga</span>
+                  <span className="text-[8px] text-slate-450 block mt-1">CTE líquido - motorista - despesas</span>
               </div>
 
             </div>
@@ -224,7 +226,7 @@ export default function ReportsPage() {
                         <th className="p-3">Motorista</th>
                         <th className="p-3">Origem ➔ Destino</th>
                         <th className="p-3">Cliente</th>
-                        <th className="p-3 font-mono text-right">Bruto (R$)</th>
+                        <th className="p-3 font-mono text-right">CTE (R$)</th>
                         <th className="p-3 font-mono text-right">Adiantamento (R$)</th>
                         <th className="p-3 font-mono text-right">Saldo (R$)</th>
                         <th className="p-3 font-mono text-right">Líquido (R$)</th>
@@ -241,7 +243,7 @@ export default function ReportsPage() {
                           <td className="p-3 font-bold text-slate-900">{o.driver_name}</td>
                           <td className="p-3 truncate max-w-[120px]">{o.origin} ➔ {o.destination}</td>
                           <td className="p-3 truncate max-w-[110px] text-slate-500">{o.client_name}</td>
-                          <td className="p-3 font-mono text-right font-bold text-slate-900">R$ {o.freight_value.toLocaleString('pt-BR')}</td>
+                          <td className="p-3 font-mono text-right font-bold text-slate-900">R$ {(Number(o.cte_value) || 0).toLocaleString('pt-BR')}</td>
                           <td className="p-3 font-mono text-right text-slate-500">R$ {o.advance_value.toLocaleString('pt-BR')}</td>
                           <td className="p-3 font-mono text-right text-slate-500">R$ {o.balance_value.toLocaleString('pt-BR')}</td>
                           <td className="p-3 font-mono text-right text-emerald-800 font-black">R$ {o.net_value.toLocaleString('pt-BR')}</td>

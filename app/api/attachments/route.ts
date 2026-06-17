@@ -5,12 +5,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { RBAAuth } from '@/lib/auth';
 import { RBADatabase } from '@/lib/db';
 import { isSupabaseServerConfigured, supabaseServer } from '@/lib/supabase/server';
+import {
+  ATTACHMENTS_BUCKET,
+  createAttachmentSignedUrl,
+  removeAttachmentObject,
+  signAttachmentRecord,
+} from '@/lib/attachments';
 
 export const dynamic = 'force-dynamic';
 
-const ATTACHMENTS_BUCKET = process.env.SUPABASE_ATTACHMENTS_BUCKET || 'order-attachments';
 const MAX_FILE_SIZE_BYTES = 4 * 1024 * 1024;
-
 const ALLOWED_TYPES = new Set([
   'application/pdf',
   'image/png',
@@ -21,8 +25,7 @@ const ALLOWED_TYPES = new Set([
 ]);
 
 type StoredFile = {
-  url: string;
-  storagePath?: string;
+  fileUrl: string;
   localPath?: string;
 };
 
@@ -36,41 +39,23 @@ function sanitizeFileName(fileName: string) {
 }
 
 function validateFile(file: File) {
-  if (file.size <= 0) {
-    return 'Selecione um arquivo real para anexar.';
-  }
-
-  if (file.size > MAX_FILE_SIZE_BYTES) {
-    return 'Arquivo maior que 4 MB. Reduza o arquivo e tente novamente.';
-  }
-
-  if (!ALLOWED_TYPES.has(file.type)) {
-    return 'Tipo de arquivo não permitido. Envie PDF, imagem PNG/JPG/WEBP ou XML.';
-  }
-
+  if (file.size <= 0) return 'Selecione um arquivo real para anexar.';
+  if (file.size > MAX_FILE_SIZE_BYTES) return 'Arquivo maior que 4 MB. Reduza o arquivo e tente novamente.';
+  if (!ALLOWED_TYPES.has(file.type)) return 'Tipo de arquivo não permitido. Envie PDF, imagem PNG/JPG/WEBP ou XML.';
   return null;
-}
-
-function hasSessionCookies(cookieHeader: string) {
-  return ['rba_user_id', 'rba_user_name', 'rba_role'].every((cookieName) =>
-    new RegExp(`(?:^|;\\s*)${cookieName}=`).test(cookieHeader),
-  );
 }
 
 async function ensureAttachmentsBucket() {
   const { error: getError } = await supabaseServer.storage.getBucket(ATTACHMENTS_BUCKET);
-
-  if (!getError) {
-    return;
-  }
+  if (!getError) return;
 
   const { error: createError } = await supabaseServer.storage.createBucket(ATTACHMENTS_BUCKET, {
-    public: true,
+    public: false,
     fileSizeLimit: `${Math.ceil(MAX_FILE_SIZE_BYTES / 1024 / 1024)}MB`,
     allowedMimeTypes: Array.from(ALLOWED_TYPES),
   });
 
-  if (createError && !/already exists/i.test(createError.message)) {
+  if (createError) {
     throw new Error(`Erro ao preparar bucket de anexos: ${createError.message}`);
   }
 }
@@ -81,7 +66,6 @@ async function storeFile(file: File, orderId: string): Promise<StoredFile> {
 
   if (isSupabaseServerConfigured) {
     await ensureAttachmentsBucket();
-
     const storagePath = `freight-orders/${orderId}/${uniqueName}`;
     const buffer = Buffer.from(await file.arrayBuffer());
     const { error: uploadError } = await supabaseServer.storage
@@ -95,8 +79,7 @@ async function storeFile(file: File, orderId: string): Promise<StoredFile> {
       throw new Error(`Erro ao enviar arquivo para o Supabase Storage: ${uploadError.message}`);
     }
 
-    const { data } = supabaseServer.storage.from(ATTACHMENTS_BUCKET).getPublicUrl(storagePath);
-    return { url: data.publicUrl, storagePath };
+    return { fileUrl: storagePath };
   }
 
   const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
@@ -104,18 +87,20 @@ async function storeFile(file: File, orderId: string): Promise<StoredFile> {
 
   const localPath = path.join(uploadsDir, uniqueName);
   fs.writeFileSync(localPath, Buffer.from(await file.arrayBuffer()));
+  return { fileUrl: `/uploads/${uniqueName}`, localPath };
+}
 
-  return { url: `/uploads/${uniqueName}`, localPath };
+function localUploadPath(fileUrl?: string | null) {
+  if (!fileUrl?.startsWith('/uploads/')) return null;
+
+  const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+  const uploadPath = path.join(process.cwd(), 'public', fileUrl);
+  return uploadPath.startsWith(uploadsDir) ? uploadPath : null;
 }
 
 async function removeStoredFile(file: StoredFile | string | null | undefined) {
-  const url = typeof file === 'string' ? file : file?.url;
-  const storagePath = typeof file === 'string' ? storagePathFromPublicUrl(file) : file?.storagePath;
-
-  if (isSupabaseServerConfigured && storagePath) {
-    await supabaseServer.storage.from(ATTACHMENTS_BUCKET).remove([storagePath]);
-    return;
-  }
+  const fileUrl = typeof file === 'string' ? file : file?.fileUrl;
+  if (await removeAttachmentObject(fileUrl)) return;
 
   const localPath = typeof file === 'string' ? localUploadPath(file) : file?.localPath;
   if (localPath && fs.existsSync(localPath)) {
@@ -123,45 +108,14 @@ async function removeStoredFile(file: StoredFile | string | null | undefined) {
     return;
   }
 
-  const fallbackPath = localUploadPath(url);
+  const fallbackPath = localUploadPath(fileUrl);
   if (fallbackPath && fs.existsSync(fallbackPath)) {
     fs.unlinkSync(fallbackPath);
   }
 }
 
-function localUploadPath(fileUrl?: string | null) {
-  if (!fileUrl?.startsWith('/uploads/')) {
-    return null;
-  }
-
-  const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-  const uploadPath = path.join(process.cwd(), 'public', fileUrl);
-  return uploadPath.startsWith(uploadsDir) ? uploadPath : null;
-}
-
-function storagePathFromPublicUrl(fileUrl?: string | null) {
-  if (!fileUrl) {
-    return null;
-  }
-
-  try {
-    const url = new URL(fileUrl);
-    const marker = `/storage/v1/object/public/${ATTACHMENTS_BUCKET}/`;
-    const markerIndex = url.pathname.indexOf(marker);
-    if (markerIndex === -1) {
-      return null;
-    }
-
-    return decodeURIComponent(url.pathname.slice(markerIndex + marker.length));
-  } catch {
-    return null;
-  }
-}
-
 async function findAttachmentUrl(id: string) {
-  if (!isSupabaseServerConfigured) {
-    return null;
-  }
+  if (!isSupabaseServerConfigured) return null;
 
   const { data, error } = await supabaseServer
     .from('freight_order_attachments')
@@ -178,17 +132,8 @@ async function findAttachmentUrl(id: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieHeader = req.headers.get('cookie') || '';
-    if (!hasSessionCookies(cookieHeader)) {
-      return NextResponse.json({ success: false, error: 'Sessão expirada. Faça login novamente.' }, { status: 401 });
-    }
-
-    const session = RBAAuth.getSession(cookieHeader);
-    const operatorName = session.user?.name || 'Sistema';
-
-    if (!session.user || RBAAuth.isReadOnly(session.user.role)) {
-      return NextResponse.json({ success: false, error: 'Acesso negado para anexar documentos.' }, { status: 403 });
-    }
+    const guard = await RBAAuth.requireAuth(req, ['Administrador', 'Operacional', 'Financeiro']);
+    if (guard.response) return guard.response;
 
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
@@ -220,17 +165,18 @@ export async function POST(req: NextRequest) {
     }
 
     const storedFile = await storeFile(file, orderId);
-
     try {
       const attachment = await RBADatabase.createAttachment(
         orderId,
         file.name,
-        storedFile.url,
+        storedFile.fileUrl,
         category || file.type || 'application/octet-stream',
-        operatorName,
+        guard.session.user!.name,
       );
-
-      return NextResponse.json({ success: true, attachment });
+      const signedAttachment = isSupabaseServerConfigured
+        ? await signAttachmentRecord(attachment)
+        : { ...attachment, file_url: await createAttachmentSignedUrl(attachment.file_url) };
+      return NextResponse.json({ success: true, attachment: signedAttachment });
     } catch (error) {
       await removeStoredFile(storedFile);
       throw error;
@@ -242,18 +188,10 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const guard = await RBAAuth.requireAuth(req, ['Administrador', 'Operacional', 'Financeiro']);
+    if (guard.response) return guard.response;
+
     const { searchParams } = new URL(req.url);
-    const cookieHeader = req.headers.get('cookie') || '';
-    if (!hasSessionCookies(cookieHeader)) {
-      return NextResponse.json({ success: false, error: 'Sessão expirada. Faça login novamente.' }, { status: 401 });
-    }
-
-    const session = RBAAuth.getSession(cookieHeader);
-
-    if (!session.user || RBAAuth.isReadOnly(session.user.role)) {
-      return NextResponse.json({ success: false, error: 'Acesso negado para excluir anexos.' }, { status: 403 });
-    }
-
     const id = searchParams.get('id');
     if (!id) {
       return NextResponse.json({ success: false, error: 'ID do anexo obrigatório.' }, { status: 400 });
@@ -261,7 +199,6 @@ export async function DELETE(req: NextRequest) {
 
     const attachmentUrl = await findAttachmentUrl(id);
     const success = await RBADatabase.deleteAttachment(id);
-
     if (success) {
       await removeStoredFile(attachmentUrl);
     }

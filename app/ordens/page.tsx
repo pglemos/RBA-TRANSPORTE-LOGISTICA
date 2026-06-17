@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import Link from 'next/link';
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
 import FreightOrderPDF from '@/components/FreightOrderPDF';
@@ -44,7 +44,7 @@ export default function OrdersListPage() {
       .filter(Boolean)
       .join(' | ');
 
-  const loadOrders = async () => {
+  const loadOrders = useCallback(async () => {
     try {
       setLoading(true);
       setErrorMsg('');
@@ -62,7 +62,7 @@ export default function OrdersListPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, statusFilter]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -74,7 +74,7 @@ export default function OrdersListPage() {
       clearTimeout(timer);
       window.removeEventListener('rba-auth-switch', loadOrders);
     };
-  }, [search, statusFilter]);
+  }, [loadOrders]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Tem certeza que deseja excluir esta Ordem de Frete permanentemente? Esta ação gera um log de auditoria operacional.")) {
@@ -266,7 +266,7 @@ export default function OrdersListPage() {
                     <th className="p-4">Veículo Conjugado</th>
                     <th className="p-4">Origem ➔ Destino</th>
                     <th className="p-4">Cliente Pagador</th>
-                    <th className="p-4">Valor Bruto</th>
+                    <th className="p-4">Valor CTE</th>
                     <th className="p-4">Saldo do Frete</th>
                     <th className="p-4">Status Geral</th>
                     <th className="p-4 text-center">Imprimir</th>
@@ -311,9 +311,9 @@ export default function OrdersListPage() {
                       {/* Cliente */}
                       <td className="p-4 text-slate-550 truncate max-w-[120px]">{o.client_name}</td>
 
-                      {/* Bruto and Residual Balances */}
+                      {/* CTE value and residual driver balance */}
                       <td className="p-4 font-mono font-bold text-slate-900">
-                        R$ {o.freight_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        R$ {(Number(o.cte_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </td>
                       <td className={`p-4 font-mono font-bold ${o.balance_value < 0 ? 'text-red-600' : 'text-slate-900'}`}>
                         R$ {o.balance_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}

@@ -221,7 +221,7 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
                 <div className="space-y-3.5 pr-0 md:pr-4">
                   <h4 className="text-[10px] font-black text-slate-550 uppercase tracking-wider block">Créditos Contratuais</h4>
                   <div className="flex justify-between text-xs">
-                    <span className="text-slate-500 font-bold">Valor Bruto do Frete Contratado</span>
+                    <span className="text-slate-500 font-bold">Valor do Frete ao Motorista</span>
                     <strong className="text-slate-950 font-mono text-sm leading-none">R$ {order.freight_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
                   </div>
                   <div className="flex justify-between text-xs text-rose-700">

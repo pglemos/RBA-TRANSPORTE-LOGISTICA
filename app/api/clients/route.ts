@@ -5,16 +5,14 @@ import { ClientSchema, normalizeDocument, onlyDigits } from '@/lib/validators';
 
 export async function GET(req: NextRequest) {
   try {
-    const cookieHeader = req.headers.get('cookie') || '';
-    const session = RBAAuth.getSession(cookieHeader);
-    const role = session.user?.role || 'Consulta/Auditoria';
+    const guard = await RBAAuth.requireAuth(req);
+    if (guard.response) return guard.response;
 
+    const role = guard.session.user!.role;
     const clients = await RBADatabase.getClients();
-    
-    // Process list, masking CPF/CNPJ document if not authorized
-    const processed = clients.map(c => ({
-      ...c,
-      document: RBAAuth.maskDocument(c.document, role)
+    const processed = clients.map((client) => ({
+      ...client,
+      document: RBAAuth.maskDocument(client.document, role),
     }));
 
     return NextResponse.json(processed);
@@ -25,12 +23,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieHeader = req.headers.get('cookie') || '';
-    const session = RBAAuth.getSession(cookieHeader);
-    
-    if (!session.user || RBAAuth.isReadOnly(session.user.role)) {
-      return NextResponse.json({ success: false, error: "Acesso negado." }, { status: 403 });
-    }
+    const guard = await RBAAuth.requireAuth(req, ['Administrador', 'Operacional']);
+    if (guard.response) return guard.response;
 
     const body = await req.json();
     const payload = {
@@ -38,24 +32,30 @@ export async function POST(req: NextRequest) {
       name: String(body.name || '').trim(),
       document: normalizeDocument(body.document || ''),
       email: String(body.email || '').trim(),
-      phone: body.phone ? onlyDigits(body.phone) : ''
+      phone: body.phone ? onlyDigits(body.phone) : '',
     };
+
     const parsed = ClientSchema.safeParse(payload);
     if (!parsed.success) {
-      return NextResponse.json({ success: false, error: parsed.error.issues[0]?.message || 'Dados do cliente inválidos.' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: parsed.error.issues[0]?.message || 'Dados do cliente inválidos.' },
+        { status: 400 },
+      );
     }
 
+    const session = guard.session.user!;
     const newClient = await RBADatabase.createClient(
       {
         ...parsed.data,
         phone: parsed.data.phone || '',
         email: parsed.data.email || '',
         address: parsed.data.address || '',
-        notes: parsed.data.notes || ''
+        notes: parsed.data.notes || '',
       },
-      session.user.id,
-      session.user.name
+      session.id,
+      session.name,
     );
+
     return NextResponse.json({ success: true, client: newClient });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

@@ -5,23 +5,23 @@ import { FreightPaymentSchema } from '@/lib/validators';
 
 export async function GET(req: NextRequest) {
   try {
-    const cookieHeader = req.headers.get('cookie') || '';
-    const session = RBAAuth.getSession(cookieHeader);
+    const guard = await RBAAuth.requireAuth(req);
+    if (guard.response) return guard.response;
 
-    // Retrieve all payments with populated order numbers
-    const payments = await RBADatabase.getPayments();
-    const orders = await RBADatabase.getFreightOrders();
-    const drivers = await RBADatabase.getDrivers();
+    const [payments, orders, drivers] = await Promise.all([
+      RBADatabase.getPayments(),
+      RBADatabase.getFreightOrders(),
+      RBADatabase.getDrivers(),
+    ]);
 
-    const populated = payments.map(pay => {
-      const order = orders.find(o => o.id === pay.freight_order_id);
-      const driver = order ? drivers.find(d => d.id === order.driver_id) : null;
-
+    const populated = payments.map((payment) => {
+      const order = orders.find((item) => item.id === payment.freight_order_id);
+      const driver = order ? drivers.find((item) => item.id === order.driver_id) : null;
       return {
-        ...pay,
-        order_number: order ? order.order_number : "Não vinculado",
-        destination: order ? order.destination : "N/A",
-        driver_name: driver ? driver.name : "Desconhecido"
+        ...payment,
+        order_number: order ? order.order_number : 'Não vinculado',
+        destination: order ? order.destination : 'N/A',
+        driver_name: driver ? driver.name : 'Desconhecido',
       };
     });
 
@@ -33,36 +33,30 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieHeader = req.headers.get('cookie') || '';
-    const session = RBAAuth.getSession(cookieHeader);
-
-    // Check financial role constraints
-    if (!session.user || !RBAAuth.canEditFinance(session.user.role)) {
-      return NextResponse.json({ success: false, error: "Acesso negado: Somente perfis administrativos ou financeiros." }, { status: 403 });
-    }
+    const guard = await RBAAuth.requireAuth(req, ['Administrador', 'Financeiro']);
+    if (guard.response) return guard.response;
 
     const body = await req.json();
-
     const payload = {
       ...body,
-      amount: Number(body.amount) || 0
+      amount: Number(body.amount) || 0,
     };
     const parsed = FreightPaymentSchema.safeParse(payload);
     if (!parsed.success) {
-      return NextResponse.json({ success: false, error: parsed.error.issues[0]?.message || 'Dados do pagamento inválidos.' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: parsed.error.issues[0]?.message || 'Dados do pagamento inválidos.' },
+        { status: 400 },
+      );
     }
 
-    const order = await RBADatabase.getFreightOrderById(parsed.data.freight_order_id);
-    if (!order) {
-      return NextResponse.json({ success: false, error: "Ordem de frete vinculada não existe." }, { status: 400 });
-    }
-
-    const newPay = await RBADatabase.createPayment(
+    const session = guard.session.user!;
+    const newPayment = await RBADatabase.createPayment(
       { ...parsed.data, proof_url: body.proof_url || '', notes: parsed.data.notes || '' },
-      session.user.id,
-      session.user.name
+      session.id,
+      session.name,
     );
-    return NextResponse.json({ success: true, payment: newPay });
+
+    return NextResponse.json({ success: true, payment: newPayment });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }

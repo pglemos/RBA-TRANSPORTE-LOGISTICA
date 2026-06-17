@@ -53,7 +53,7 @@ export default function FreightOrderForm({ initialData }: Props) {
   const [status] = useState<FreightOrder['status']>(normalizeFreightOrderStatus(initialData?.status));
   const [tripNotes, setTripNotes] = useState(initialData?.notes || '');
 
-  // Finance Bruto & Liquidations (calculated live)
+  // Driver freight and liquidations (calculated live)
   const [freightValue, setFreightValue] = useState(initialData?.freight_value || 0);
   const [advanceValue, setAdvanceValue] = useState(initialData?.advance_value || 0);
   const [cashValue, setCashValue] = useState(initialData?.cash_value || 0);

@@ -1,16 +1,16 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
 import { FREIGHT_ORDER_STATUSES, getFreightStatusMeta, normalizeFreightOrderStatus } from '@/lib/freightStatus';
+import { summarizeFreightOrders } from '@/lib/financialMetrics';
 import {
   Area,
   AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
@@ -30,20 +30,24 @@ import {
 
 interface SummaryData {
   totalOrders: number;
-  totalFreight: number;
+  totalGrossRevenue: number;
+  totalDriverFreight: number;
   totalAdvance: number;
   totalBalanceToPay: number;
   totalExpenses: number;
+  totalCteDiscount: number;
   totalNet: number;
   ordersByStatus: Record<string, number>;
 }
 
 const emptySummary: SummaryData = {
   totalOrders: 0,
-  totalFreight: 0,
+  totalGrossRevenue: 0,
+  totalDriverFreight: 0,
   totalAdvance: 0,
   totalBalanceToPay: 0,
   totalExpenses: 0,
+  totalCteDiscount: 0,
   totalNet: 0,
   ordersByStatus: {},
 };
@@ -60,33 +64,8 @@ export default function DashboardPage() {
       const data = await res.json();
       if (!res.ok || !Array.isArray(data)) throw new Error(data?.error || 'Erro ao carregar dashboard.');
 
-      let freight = 0;
-      let advance = 0;
-      let balance = 0;
-      let expenses = 0;
-      let net = 0;
-      const statusMap: Record<string, number> = {};
-
-      data.forEach((order) => {
-        freight += Number(order.freight_value) || 0;
-        advance += Number(order.advance_value) || 0;
-        balance += Number(order.balance_value) || 0;
-        expenses += Number(order.total_expenses) || 0;
-        net += Number(order.net_value) || 0;
-        const normalizedStatus = normalizeFreightOrderStatus(order.status);
-        statusMap[normalizedStatus] = (statusMap[normalizedStatus] || 0) + 1;
-      });
-
       setOrders(data);
-      setSummary({
-        totalOrders: data.length,
-        totalFreight: freight,
-        totalAdvance: advance,
-        totalBalanceToPay: balance,
-        totalExpenses: expenses,
-        totalNet: net,
-        ordersByStatus: statusMap,
-      });
+      setSummary(summarizeFreightOrders(data, (status) => normalizeFreightOrderStatus(status as any)));
     } catch (e) {
       setErrorMsg(e instanceof Error ? e.message : 'Erro ao carregar dashboard.');
     } finally {
@@ -106,12 +85,12 @@ export default function DashboardPage() {
   const formatCurrency = (value: number) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 
   const chartData = [
-    { name: 'Jan', Fretes: summary.totalFreight * 0.38 || 20000, Margem: summary.totalNet * 0.34 || 12000 },
-    { name: 'Fev', Fretes: summary.totalFreight * 0.52 || 32000, Margem: summary.totalNet * 0.45 || 22000 },
-    { name: 'Mar', Fretes: summary.totalFreight * 0.48 || 28000, Margem: summary.totalNet * 0.42 || 19000 },
-    { name: 'Abr', Fretes: summary.totalFreight * 0.72 || 45000, Margem: summary.totalNet * 0.64 || 35000 },
-    { name: 'Mai', Fretes: summary.totalFreight || 62000, Margem: summary.totalNet || 47000 },
-    { name: 'Jun', Fretes: summary.totalFreight * 1.08 || 68000, Margem: summary.totalNet * 1.12 || 52000 },
+    { name: 'Jan', Fretes: summary.totalGrossRevenue * 0.38 || 20000, Margem: summary.totalNet * 0.34 || 12000 },
+    { name: 'Fev', Fretes: summary.totalGrossRevenue * 0.52 || 32000, Margem: summary.totalNet * 0.45 || 22000 },
+    { name: 'Mar', Fretes: summary.totalGrossRevenue * 0.48 || 28000, Margem: summary.totalNet * 0.42 || 19000 },
+    { name: 'Abr', Fretes: summary.totalGrossRevenue * 0.72 || 45000, Margem: summary.totalNet * 0.64 || 35000 },
+    { name: 'Mai', Fretes: summary.totalGrossRevenue || 62000, Margem: summary.totalNet || 47000 },
+    { name: 'Jun', Fretes: summary.totalGrossRevenue * 1.08 || 68000, Margem: summary.totalNet * 1.12 || 52000 },
   ];
 
   const statusData = FREIGHT_ORDER_STATUSES.map((statusOption) => ({
@@ -184,7 +163,7 @@ export default function DashboardPage() {
             <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <KpiCard
                 label="Faturamento bruto"
-                value={formatCurrency(summary.totalFreight)}
+                value={formatCurrency(summary.totalGrossRevenue)}
                 detail={`Margem liquida: ${formatCurrency(summary.totalNet)}`}
                 icon={DollarSign}
                 tone="emerald"
@@ -255,9 +234,9 @@ export default function DashboardPage() {
                   <span className="text-xs font-semibold text-slate-500">Valores consolidados por competência</span>
                 </div>
 
-                <div className="mt-6 h-72 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <MeasuredChartFrame className="mt-6 h-72 w-full min-w-0" minHeight={288}>
+                  {({ width, height }) => (
+                    <AreaChart width={width} height={height} data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                       <defs>
                         <linearGradient id="fretesFill" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#d8b45d" stopOpacity={0.35} />
@@ -280,8 +259,8 @@ export default function DashboardPage() {
                       <Area type="monotone" dataKey="Fretes" stroke="#b88a2c" strokeWidth={3} fill="url(#fretesFill)" />
                       <Area type="monotone" dataKey="Margem" stroke="#10b981" strokeWidth={3} fill="url(#margemFill)" />
                     </AreaChart>
-                  </ResponsiveContainer>
-                </div>
+                  )}
+                </MeasuredChartFrame>
               </div>
             </section>
 
@@ -311,7 +290,7 @@ export default function DashboardPage() {
                           <th className="p-4">Motorista</th>
                           <th className="p-4">Rota</th>
                           <th className="p-4">Cliente</th>
-                          <th className="p-4">Valor bruto</th>
+                          <th className="p-4">Valor CTE</th>
                           <th className="p-4">Status</th>
                           <th className="p-4 text-right">Ação</th>
                         </tr>
@@ -329,7 +308,7 @@ export default function DashboardPage() {
                               <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">Entrega: {order.delivery_date}</p>
                             </td>
                             <td className="p-4 font-semibold text-slate-600">{order.client_name}</td>
-                            <td className="p-4 font-mono font-black text-slate-950">{formatCurrency(Number(order.freight_value) || 0)}</td>
+                            <td className="p-4 font-mono font-black text-slate-950">{formatCurrency(Number(order.cte_value) || 0)}</td>
                             <td className="p-4">
                               <StatusBadge status={order.status} />
                             </td>
@@ -355,9 +334,9 @@ export default function DashboardPage() {
                   <UserPlus className="h-5 w-5 text-[#8a6725]" />
                 </div>
 
-                <div className="mt-6 h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={statusData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
+                <MeasuredChartFrame className="mt-6 h-64 w-full min-w-0" minHeight={256}>
+                  {({ width, height }) => (
+                    <BarChart width={width} height={height} data={statusData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                       <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
                       <YAxis allowDecimals={false} stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
@@ -367,14 +346,51 @@ export default function DashboardPage() {
                       />
                       <Bar dataKey="value" fill="#d8b45d" radius={[8, 8, 0, 0]} />
                     </BarChart>
-                  </ResponsiveContainer>
-                </div>
+                  )}
+                </MeasuredChartFrame>
               </div>
             </section>
           </>
         )}
       </div>
     </HeaderAndSidebar>
+  );
+}
+
+function MeasuredChartFrame({
+  className,
+  minHeight,
+  children,
+}: {
+  className: string;
+  minHeight: number;
+  children: (size: { width: number; height: number }) => React.ReactNode;
+}) {
+  const frameRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ width: 0, height: minHeight });
+
+  useEffect(() => {
+    const element = frameRef.current;
+    if (!element) return;
+
+    const updateSize = () => {
+      const rect = element.getBoundingClientRect();
+      setSize({
+        width: Math.max(1, Math.floor(rect.width)),
+        height: Math.max(minHeight, Math.floor(rect.height)),
+      });
+    };
+
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [minHeight]);
+
+  return (
+    <div ref={frameRef} className={className}>
+      {size.width > 1 ? children(size) : null}
+    </div>
   );
 }
 

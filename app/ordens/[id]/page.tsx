@@ -360,7 +360,7 @@ const id = params?.id;
                 <div className="space-y-2">
                   <h4 className="text-[9px] font-black uppercase tracking-wider text-slate-400">Fluxos de Pagamentos</h4>
                   <div className="flex justify-between border-b pb-1.5 text-slate-600">
-                    <span>Valor Bruto Contratado:</span>
+                    <span>Valor do Frete ao Motorista:</span>
                     <strong className="text-slate-900 font-mono">R$ {order.freight_value.toLocaleString('pt-BR')}</strong>
                   </div>
                   <div className="flex justify-between border-b pb-1.5 text-red-700">
