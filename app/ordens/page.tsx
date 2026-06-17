@@ -280,7 +280,7 @@ export default function OrdersListPage() {
                       {/* Order and CTE link */}
                       <td className="p-4">
                         <Link href={`/ordens/${o.id}`} className="font-extrabold text-xs text-yellow-650 hover:underline">
-                          {o.cte_number || 'CTE/Manifesto a emitir'}
+                          {o.cte_number || 'A emitir'}
                         </Link>
                       </td>
 
