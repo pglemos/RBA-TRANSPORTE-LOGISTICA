@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Save, AlertCircle, Paperclip } from 'lucide-react';
 import { Driver, Vehicle, Client, FreightOrder } from '@/lib/db';
+import { FREIGHT_ORDER_STATUSES, getFreightStatusMeta, normalizeFreightOrderStatus } from '@/lib/freightStatus';
 
 interface Props {
   initialData?: FreightOrder & {
@@ -48,7 +49,7 @@ export default function FreightOrderForm({ initialData }: Props) {
   const [origin, setOrigin] = useState(initialData?.origin || '');
   const [destination, setDestination] = useState(initialData?.destination || '');
   const [deliveryDate, setDeliveryDate] = useState(initialData?.delivery_date || '');
-  const [status, setStatus] = useState<FreightOrder['status']>(initialData?.status || 'Rascunho');
+  const [status] = useState<FreightOrder['status']>(normalizeFreightOrderStatus(initialData?.status));
   const [tripNotes, setTripNotes] = useState(initialData?.notes || '');
 
   // Finance Bruto & Liquidations (calculated live)
@@ -64,7 +65,9 @@ export default function FreightOrderForm({ initialData }: Props) {
   const [buonnyCode, setBuonnyCode] = useState(initialData?.buonny_code || '');
 
   // Shipment Release
-  const [shipmentReleaseStatus, setShipmentReleaseStatus] = useState<FreightOrder['shipment_release_status']>(initialData?.shipment_release_status || 'Pendente');
+  const [shipmentReleaseStatus, setShipmentReleaseStatus] = useState<FreightOrder['shipment_release_status']>(
+    normalizeFreightOrderStatus(initialData?.shipment_release_status || initialData?.status)
+  );
   const [shipmentReleaseLimit, setShipmentReleaseLimit] = useState<FreightOrder['shipment_release_limit']>(initialData?.shipment_release_limit || 'Até 100.000');
   const [releaseJustification, setReleaseJustification] = useState('');
 
@@ -230,7 +233,7 @@ export default function FreightOrderForm({ initialData }: Props) {
     }
 
     const prechecksOk = buonnyStatus === 'Aprovado';
-    if (shipmentReleaseStatus === 'Liberado' && !prechecksOk && !releaseJustification.trim()) {
+    if (shipmentReleaseStatus !== 'Contratar' && !prechecksOk && !releaseJustification.trim()) {
       setErrorMessage("⚠️ Não é permitido liberar embarque sem a consulta Buonny aprovada sem uma justificativa de override.");
       return;
     }
@@ -241,10 +244,7 @@ export default function FreightOrderForm({ initialData }: Props) {
 
     setSubmitting(true);
 
-    const orderStatus =
-      status === 'Rascunho' && shipmentReleaseStatus === 'Liberado'
-        ? 'Liberado para Embarque'
-        : status;
+    const orderStatus = shipmentReleaseStatus || status;
 
     const payload = {
       driver_id: driverId,
@@ -314,7 +314,7 @@ export default function FreightOrderForm({ initialData }: Props) {
   const field = "flex-1 min-w-0 bg-transparent outline-none px-2 py-1.5 text-xs md:text-sm font-semibold text-blue-800";
   const selectField = field + " cursor-pointer";
   const divider = "border-l-2 border-slate-900";
-  const canEnterBuonnyCode = buonnyStatus === 'Aprovado' && shipmentReleaseStatus === 'Liberado';
+  const canEnterBuonnyCode = buonnyStatus === 'Aprovado';
 
   return (
     <div className="space-y-6">
@@ -481,13 +481,63 @@ export default function FreightOrderForm({ initialData }: Props) {
               <div className="flex items-center">
                 <span className={label}>Consulta Buonny:</span>
                 <label className="flex items-center gap-1.5 px-2 cursor-pointer select-none">
-                  <PrintedCheckbox checked={buonnyStatus === 'Aprovado'} onClick={() => { setBuonnyStatus('Aprovado'); setShipmentReleaseStatus('Liberado'); }} />
+                    <PrintedCheckbox checked={buonnyStatus === 'Aprovado'} onClick={() => { setBuonnyStatus('Aprovado'); setShipmentReleaseStatus('Carregando'); }} />
                   <span className="text-[10px] md:text-[11px] font-bold uppercase text-slate-900">Aprovado</span>
                 </label>
                 <label className="flex items-center gap-1.5 px-2 cursor-pointer select-none">
                   <PrintedCheckbox checked={buonnyStatus === 'Renovar'} onClick={() => setBuonnyStatus('Renovar')} />
                   <span className="text-[10px] md:text-[11px] font-bold uppercase text-slate-900">Renovar</span>
                 </label>
+              </div>
+
+              {/* Liberação de Embarque / Resp. */}
+              <div className="mt-2 flex items-stretch border-t-2 border-slate-900">
+                <div className="flex items-stretch flex-1 min-w-0">
+                  <span className={label}>Liberação de Embarque:</span>
+                  <div className="flex flex-1 min-w-0 items-stretch">
+                    <select
+                      id="ip-shipment-status"
+                      name="shipment_release_status"
+                      value={shipmentReleaseStatus}
+                      onChange={(e) => setShipmentReleaseStatus(e.target.value as any)}
+                      className={selectField}
+                    >
+                      {FREIGHT_ORDER_STATUSES.map((statusOption) => {
+                        const meta = getFreightStatusMeta(statusOption);
+                        return (
+                          <option key={statusOption} value={statusOption}>
+                            {meta.icon} {meta.label}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    {canEnterBuonnyCode && (
+                      <input
+                        id="ip-buonny-code"
+                        name="buonny_code"
+                        type="text"
+                        value={buonnyCode}
+                        onChange={(e) => setBuonnyCode(e.target.value.slice(0, 20))}
+                        maxLength={20}
+                        placeholder="Código Buonny"
+                        aria-label="Código da consulta Buonny"
+                        className={`${field} w-[45%] flex-none border-l-2 border-slate-900 font-mono tracking-wide placeholder:font-semibold placeholder:tracking-normal placeholder:text-slate-400`}
+                      />
+                    )}
+                  </div>
+                </div>
+                <div className={`flex items-stretch w-[34%] ${divider}`}>
+                  <span className={label} title="Responsável pela consulta Buonny">Resp.:</span>
+                  <input
+                    id="ip-buonny-responsible"
+                    name="buonny_responsible"
+                    type="text"
+                    value={buonnyResponsible}
+                    onChange={(e) => setBuonnyResponsible(e.target.value)}
+                    placeholder="resp. da consulta Buonny"
+                    className={field}
+                  />
+                </div>
               </div>
             </div>
             {/* CTE */}
@@ -515,53 +565,8 @@ export default function FreightOrderForm({ initialData }: Props) {
             </div>
           </div>
 
-          {/* LIBERAÇÃO DE EMBARQUE / RESP. */}
-          <div className={cell}>
-            <div className="flex items-stretch flex-1 min-w-0">
-              <span className={label}>Liberação de Embarque:</span>
-              <div className="flex flex-1 min-w-0 items-stretch">
-                <select
-                  id="ip-shipment-status"
-                  name="shipment_release_status"
-                  value={shipmentReleaseStatus}
-                  onChange={(e) => setShipmentReleaseStatus(e.target.value as any)}
-                  className={selectField}
-                >
-                  <option value="Pendente">Pendente</option>
-                  <option value="Liberado">Liberado</option>
-                  <option value="Bloqueado">Bloqueado</option>
-                </select>
-                {canEnterBuonnyCode && (
-                  <input
-                    id="ip-buonny-code"
-                    name="buonny_code"
-                    type="text"
-                    value={buonnyCode}
-                    onChange={(e) => setBuonnyCode(e.target.value.slice(0, 20))}
-                    maxLength={20}
-                    placeholder="Código Buonny"
-                    aria-label="Código da consulta Buonny"
-                    className={`${field} w-[45%] flex-none border-l-2 border-slate-900 font-mono tracking-wide placeholder:font-semibold placeholder:tracking-normal placeholder:text-slate-400`}
-                  />
-                )}
-              </div>
-            </div>
-            <div className={`flex items-stretch w-[42%] ${divider}`}>
-              <span className={label} title="Responsável pela consulta Buonny">Resp.:</span>
-              <input
-                id="ip-buonny-responsible"
-                name="buonny_responsible"
-                type="text"
-                value={buonnyResponsible}
-                onChange={(e) => setBuonnyResponsible(e.target.value)}
-                placeholder="resp. da consulta Buonny"
-                className={field}
-              />
-            </div>
-          </div>
-
           {/* Justificativa override liberação */}
-          {shipmentReleaseStatus === 'Liberado' && buonnyStatus !== 'Aprovado' && (
+          {shipmentReleaseStatus !== 'Contratar' && buonnyStatus !== 'Aprovado' && (
             <div className="border-b-2 border-slate-900 bg-amber-50 px-2 py-1.5">
               <input
                 id="ip-justification"

@@ -3,6 +3,7 @@ import { RBADatabase } from '@/lib/db';
 import { RBAAuth } from '@/lib/auth';
 import { FreightOrderSchema } from '@/lib/validators';
 import { signFreightOrderProof } from '@/lib/proof';
+import { normalizeFreightOrderStatus, syncFreightOrderStatuses } from '@/lib/freightStatus';
 
 export async function GET(req: NextRequest) {
   try {
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
     const page = Number(searchParams.get('page') || '1');
     const pageSize = Number(searchParams.get('page_size') || '50');
 
-    const orders = await RBADatabase.getFreightOrders({ search, status, driverId, clientId, page, pageSize });
+    const orders = await RBADatabase.getFreightOrders({ search, status: '', driverId, clientId, page, pageSize });
     const drivers = await RBADatabase.getDrivers();
     const vehicles = await RBADatabase.getVehicles();
     const clients = await RBADatabase.getClients();
@@ -28,9 +29,11 @@ export async function GET(req: NextRequest) {
       const driver = drivers.find(d => d.id === ord.driver_id);
       const vehicle = vehicles.find(v => v.id === ord.vehicle_id);
       const client = clients.find(c => c.id === ord.client_id);
+      const syncedStatuses = syncFreightOrderStatuses(ord);
 
       return {
         ...ord,
+        ...syncedStatuses,
         driver_name: driver ? driver.name : "N/A",
         driver_cpf: driver ? RBAAuth.maskCPF(driver.cpf, role) : "N/A",
         vehicle_plate: vehicle ? `${vehicle.tractor_plate} / ${vehicle.trailer_plate}` : "N/A",
@@ -41,7 +44,7 @@ export async function GET(req: NextRequest) {
         client_name: client ? client.name : "N/A",
         pdf_proof_token: signFreightOrderProof(ord)
       };
-    });
+    }).filter((ord) => !status || normalizeFreightOrderStatus(ord.status) === normalizeFreightOrderStatus(status));
 
     return NextResponse.json(populated);
   } catch (error: any) {
@@ -100,14 +103,15 @@ export async function POST(req: NextRequest) {
       beneficiary_name: matchedDriver.beneficiary_name || matchedDriver.name
     };
 
+    const syncedStatuses = syncFreightOrderStatuses(parsed.data);
     const newOrder = await RBADatabase.createFreightOrder({
       ...parsed.data,
+      ...syncedStatuses,
       bank_data_snapshot: bankSnapshot,
       created_by: session.user.name,
       approved_by: '',
       approved_at: '',
       responsible_name: parsed.data.responsible_name || session.user.name,
-      status: parsed.data.status || 'Rascunho',
       cte_number: parsed.data.cte_number || '',
       notes: parsed.data.notes || ''
     }, session.user.id, session.user.name);

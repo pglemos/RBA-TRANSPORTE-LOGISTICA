@@ -3,6 +3,7 @@ import { RBADatabase } from '@/lib/db';
 import { RBAAuth } from '@/lib/auth';
 import { FreightOrderSchema } from '@/lib/validators';
 import { signFreightOrderProof } from '@/lib/proof';
+import { normalizeFreightOrderStatus, syncFreightOrderStatuses } from '@/lib/freightStatus';
 
 const FINANCIAL_ORDER_FIELDS = new Set([
   'freight_value',
@@ -37,8 +38,10 @@ export async function GET(
     const attachments = await RBADatabase.getAttachmentsByOrderId(id);
 
     // Apply LGPD masking conditionally
+    const syncedStatuses = syncFreightOrderStatuses(order);
     const maskedOrder = {
       ...order,
+      ...syncedStatuses,
       driver_name: driver ? driver.name : "N/A",
       driver_phone: driver ? driver.phone : "N/A",
       driver_cpf: driver ? RBAAuth.maskCPF(driver.cpf, role) : "N/A",
@@ -87,27 +90,32 @@ export async function PUT(
 
     const body = await req.json();
 
-    // Check specific constraint limits based on role
-    if (session.user.role === 'Operacional') {
-      if (body.status === 'Pago' && currentOrder.status !== 'Pago') {
-        return NextResponse.json({ success: false, error: "Operacional não pode marcar ordem como Paga ou liquidada directamente." }, { status: 403 });
-      }
-      const attemptedFinancialEdit = Object.keys(body).some((key) =>
-        FINANCIAL_ORDER_FIELDS.has(key) && Number((body as any)[key]) !== Number((currentOrder as any)[key] ?? 0)
-      );
+  // Check specific constraint limits based on role
+  if (session.user.role === 'Operacional') {
+    const attemptedFinancialEdit = Object.keys(body).some((key) =>
+      FINANCIAL_ORDER_FIELDS.has(key) && Number((body as any)[key]) !== Number((currentOrder as any)[key] ?? 0)
+    );
       if (attemptedFinancialEdit) {
         return NextResponse.json({ success: false, error: "Operacional não pode alterar valores financeiros da ficha." }, { status: 403 });
       }
     }
 
     const allowedKeys = Object.keys(FreightOrderSchema.shape);
-    const normalizedBody = Object.fromEntries(
-      Object.entries(body).filter(([key]) => allowedKeys.includes(key))
-    );
+  const normalizedBody = Object.fromEntries(
+    Object.entries(body).filter(([key]) => allowedKeys.includes(key))
+  );
+    if (typeof normalizedBody.status === 'string' || typeof normalizedBody.shipment_release_status === 'string') {
+      Object.assign(normalizedBody, syncFreightOrderStatuses(normalizedBody));
+    }
+    const syncedStatuses = syncFreightOrderStatuses({
+      status: (normalizedBody as any).status ?? currentOrder.status,
+      shipment_release_status: (normalizedBody as any).shipment_release_status ?? currentOrder.shipment_release_status,
+    });
     const merged = {
       ...currentOrder,
       ...normalizedBody,
-      freight_value: Number((normalizedBody as any).freight_value ?? currentOrder.freight_value) || 0,
+      ...syncedStatuses,
+    freight_value: Number((normalizedBody as any).freight_value ?? currentOrder.freight_value) || 0,
       advance_value: Number((normalizedBody as any).advance_value ?? currentOrder.advance_value) || 0,
       cash_value: Number((normalizedBody as any).cash_value ?? currentOrder.cash_value) || 0,
       loading_expense: Number((normalizedBody as any).loading_expense ?? currentOrder.loading_expense) || 0,

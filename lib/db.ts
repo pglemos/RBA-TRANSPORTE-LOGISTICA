@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
 import { supabaseServer, isSupabaseServerConfigured } from './supabase/server';
+import type { FreightOrderStatus } from './freightStatus';
 
 // Define DB Types based on PRD
 
@@ -93,7 +94,7 @@ export interface FreightOrder {
   cte_number: string;
   cte_value: number;
   cte_discount_percent: number;
-  shipment_release_status: 'Liberado' | 'Pendente' | 'Bloqueado';
+  shipment_release_status: FreightOrderStatus;
   shipment_release_limit: 'Até 100.000' | 'Até 200.000' | 'Até 300.000' | 'Até 400.000' | 'Até 500.000';
   origin: string;
   destination: string;
@@ -104,7 +105,7 @@ export interface FreightOrder {
   responsible_name: string;
   buonny_responsible: string;
   signature_url: string;
-  status: 'Rascunho' | 'Em Análise' | 'Aprovado' | 'Liberado para Embarque' | 'Carregando' | 'Em Viagem' | 'Entregue' | 'Pago' | 'Cancelado';
+  status: FreightOrderStatus;
   notes: string;
   created_by: string;
   approved_by: string;
@@ -431,7 +432,7 @@ const initialDB: Database = {
       cte_number: "CTE-10293",
       cte_value: 18500.00,
       cte_discount_percent: 10,
-      shipment_release_status: "Liberado",
+      shipment_release_status: "Carregando",
       shipment_release_limit: "Até 100.000",
       origin: "Jundiaí - SP",
       destination: "Cajamar - SP",
@@ -442,7 +443,7 @@ const initialDB: Database = {
       responsible_name: "Ana Costa",
       buonny_responsible: "Morgan Ribeiro (Admin)",
       signature_url: "Assinado Digitalmente por Ana Costa",
-      status: "Liberado para Embarque",
+      status: "Carregando",
       notes: "Carregamento de bebidas Ambev. Liberação autorizada Buonny ativa.",
       created_by: "Ana Costa",
       approved_by: "Morgan Ribeiro (Admin)",
@@ -477,7 +478,7 @@ const initialDB: Database = {
       cte_number: "CTE-12831",
       cte_value: 24300.00,
       cte_discount_percent: 10,
-      shipment_release_status: "Pendente",
+      shipment_release_status: "Contratar",
       shipment_release_limit: "Até 200.000",
       origin: "Telêmaco Borba - PR",
       destination: "Mogi das Cruzes - SP",
@@ -488,7 +489,7 @@ const initialDB: Database = {
       responsible_name: "Ana Costa",
       buonny_responsible: "Ana Costa",
       signature_url: "",
-      status: "Em Análise",
+      status: "Contratar",
       notes: "Aguardando liberação do sinistro.",
       created_by: "Ana Costa",
       approved_by: "",
@@ -1329,10 +1330,10 @@ export class RBADatabase {
 
       let approvedBy = baseObj.approved_by || null;
       let approvedAt = baseObj.approved_at || null;
-      if (orderData.status === 'Aprovado' && oldVal?.status !== 'Aprovado') {
-        approvedBy = operatorName;
-        approvedAt = new Date().toISOString();
-      }
+    if (orderData.status && orderData.status !== 'Contratar' && oldVal?.status === 'Contratar') {
+      approvedBy = operatorName;
+      approvedAt = new Date().toISOString();
+    }
 
       const updatePayload = {
           ...orderData,
@@ -1384,10 +1385,10 @@ export class RBADatabase {
 
       let approvedBy = baseObj.approved_by || '';
       let approvedAt = baseObj.approved_at || '';
-      if (orderData.status === 'Aprovado' && oldVal.status !== 'Aprovado') {
-        approvedBy = operatorName;
-        approvedAt = new Date().toISOString();
-      }
+    if (orderData.status && orderData.status !== 'Contratar' && oldVal.status === 'Contratar') {
+      approvedBy = operatorName;
+      approvedAt = new Date().toISOString();
+    }
 
       db.freight_orders[idx] = {
         ...baseObj,
@@ -1457,7 +1458,7 @@ export class RBADatabase {
 
   private static async syncOrderPaymentStatus(orderId: string, operatorId: string, operatorName: string) {
     const order = await this.getFreightOrderById(orderId);
-    if (!order || order.status === 'Cancelado') return;
+    if (!order) return;
 
     const payments = await this.getPaymentsByOrderId(orderId);
     const paidTotal = payments
@@ -1465,14 +1466,11 @@ export class RBADatabase {
       .reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0);
     const freightValue = Number(order.freight_value) || 0;
 
-    if (freightValue > 0 && paidTotal >= freightValue && order.status !== 'Pago') {
-      await this.updateFreightOrder(orderId, { status: 'Pago' }, operatorId, operatorName);
+    if (freightValue > 0 && paidTotal >= freightValue && order.status !== 'Entregue') {
+      await this.updateFreightOrder(orderId, { status: 'Entregue' }, operatorId, operatorName);
       return;
     }
 
-    if (order.status === 'Pago' && paidTotal < freightValue) {
-      await this.updateFreightOrder(orderId, { status: 'Entregue' }, operatorId, operatorName);
-    }
   }
 
   public static async createPayment(payData: Omit<FreightPayment, 'id' | 'created_at' | 'updated_at'>, operatorId: string, operatorName: string) {
