@@ -261,7 +261,7 @@ export default function OrdersListPage() {
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-50 text-slate-400 font-bold border-b border-slate-200 text-[10px]">
-                    <th className="p-4">Ficha / CTE</th>
+<th className="p-4">CTE/MANIFESTO</th>
                     <th className="p-4">Motorista Condutor</th>
                     <th className="p-4">Veículo Conjugado</th>
                     <th className="p-4">Origem ➔ Destino</th>
@@ -280,9 +280,8 @@ export default function OrdersListPage() {
                       {/* Order and CTE link */}
                       <td className="p-4">
                         <Link href={`/ordens/${o.id}`} className="font-extrabold text-xs text-yellow-650 hover:underline">
-                          {o.order_number || 'Ficha sem número'}
+                          {o.cte_number || 'CTE/Manifesto a emitir'}
                         </Link>
-                        <p className="mt-1 text-[10px] font-mono text-slate-500">{o.cte_number || 'CTE a emitir'}</p>
                       </td>
 
                       {/* Driver mask dynamically rendered */}
