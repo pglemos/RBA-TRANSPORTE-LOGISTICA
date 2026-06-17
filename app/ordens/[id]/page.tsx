@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
 import FreightOrderPDF from '@/components/FreightOrderPDF';
+import { FREIGHT_ORDER_STATUSES, getFreightStatusMeta, normalizeFreightOrderStatus } from '@/lib/freightStatus';
 import { 
   ArrowLeft,
   Printer,
@@ -29,17 +30,7 @@ import {
   Download
 } from 'lucide-react';
 
-const ORDER_STATUS_OPTIONS = [
-  'Rascunho',
-  'Em Análise',
-  'Aprovado',
-  'Liberado para Embarque',
-  'Carregando',
-  'Em Viagem',
-  'Entregue',
-  'Pago',
-  'Cancelado',
-] as const;
+const ORDER_STATUS_OPTIONS = FREIGHT_ORDER_STATUSES;
 
 export default function OrderDetailsPage() {
 const params = useParams<{ id: string }>();
@@ -124,7 +115,7 @@ const id = params?.id;
         const data = await res.json();
         setCteValueEdit(Number(data.cte_value) || 0);
         setCteDiscountEdit(data.cte_discount_percent ?? 10);
-        setStatusEdit(data.status || 'Rascunho');
+          setStatusEdit(normalizeFreightOrderStatus(data.status));
         setOrder(data);
       } else {
         setErrorMsg("Você não possui permissão para ver esta ficha, ou o registro não existe.");
@@ -234,7 +225,7 @@ const id = params?.id;
   const fatDirty =
     (Number(cteValueEdit) || 0) !== (Number(order.cte_value) || 0) ||
     (Number(cteDiscountEdit) || 0) !== (order.cte_discount_percent ?? 10);
-  const statusDirty = statusEdit !== (order.status || 'Rascunho');
+  const statusDirty = statusEdit !== normalizeFreightOrderStatus(order.status);
 
   return (
     <HeaderAndSidebar>
@@ -287,7 +278,7 @@ const id = params?.id;
                   Dados de Itinerário & Clientes
                 </h2>
                 <span className="text-[10px] bg-slate-100 p-1 px-2.5 rounded-full font-bold text-slate-600">
-                  {order.status}
+                  {getFreightStatusMeta(order.status).icon} {normalizeFreightOrderStatus(order.status)}
                 </span>
               </div>
 
@@ -520,9 +511,14 @@ const id = params?.id;
                   }}
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-black text-slate-800 outline-none focus:border-yellow-500"
                 >
-                  {ORDER_STATUS_OPTIONS.map(statusOption => (
-                    <option key={statusOption} value={statusOption}>{statusOption}</option>
-                  ))}
+                  {ORDER_STATUS_OPTIONS.map(statusOption => {
+                    const meta = getFreightStatusMeta(statusOption);
+                    return (
+                      <option key={statusOption} value={statusOption}>
+                        {meta.icon} {meta.label}
+                      </option>
+                    );
+                  })}
                 </select>
               </label>
 
@@ -532,7 +528,7 @@ const id = params?.id;
                     {statusMsg.text}
                   </span>
                 ) : (
-                  <span className="text-[10px] font-bold text-slate-400">Atual: {order.status}</span>
+                  <span className="text-[10px] font-bold text-slate-400">Atual: {normalizeFreightOrderStatus(order.status)}</span>
                 )}
                 <button
                   id="det-status-save"
@@ -561,7 +557,7 @@ const id = params?.id;
 
                 <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl space-y-1">
                   <span className="text-[9px] text-slate-500 block uppercase font-bold">STATUS DE LIBERAÇÃO</span>
-                  <p className="font-black text-slate-900">{order.shipment_release_status}</p>
+                    <p className="font-black text-slate-900">{normalizeFreightOrderStatus(order.shipment_release_status)}</p>
                   <p className="text-[9.5px] text-slate-500">Limite de Cobertura: {order.shipment_release_limit}</p>
                 </div>
               </div>

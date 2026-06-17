@@ -1,5 +1,6 @@
 // lib/validators.ts
 import { z } from 'zod';
+import { FREIGHT_ORDER_STATUSES } from './freightStatus.ts';
 
 export const onlyDigits = (value: string = '') => value.replace(/\D/g, '');
 
@@ -116,7 +117,7 @@ export const VehicleSchema = z.object({
   status: z.enum(['Ativo', 'Inativo', 'Bloqueado']).default('Ativo'),
   notes: z.string().optional(),
 }).superRefine((vehicle, ctx) => {
-  if (vehicle.vehicle_type === 'Carreta' && !isValidBrazilianPlate(vehicle.trailer_plate)) {
+  if ((vehicle.vehicle_type === 'Carreta' || vehicle.trailer_plate) && !isValidBrazilianPlate(vehicle.trailer_plate)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: "Placa da carreta inválida",
@@ -155,14 +156,14 @@ export const FreightOrderSchema = z.object({
   buonny_status: z.enum(['Aprovado', 'Renovar']).optional().default('Renovar'),
   buonny_code: z.string().max(20, "Código Buonny deve ter no máximo 20 caracteres").optional().default(''),
   buonny_responsible: z.string().optional().default(''),
-  shipment_release_status: z.enum(['Liberado', 'Pendente', 'Bloqueado']).optional().default('Pendente'),
+  shipment_release_status: z.enum(FREIGHT_ORDER_STATUSES).optional().default('Contratar'),
   shipment_release_limit: z.enum(['Até 100.000', 'Até 200.000', 'Até 300.000', 'Até 400.000', 'Até 500.000']).optional().default('Até 100.000'),
   responsible_name: z.string().optional().default(''),
   emission_day: z.string().max(2).optional().default(''),
   emission_month: z.string().optional().default(''),
   emission_year: z.string().max(2).optional().default(''),
   signature_url: z.string().optional().default(''),
-  status: z.enum(['Rascunho', 'Em Análise', 'Aprovado', 'Liberado para Embarque', 'Carregando', 'Em Viagem', 'Entregue', 'Pago', 'Cancelado']).optional().default('Rascunho'),
+  status: z.enum(FREIGHT_ORDER_STATUSES).optional().default('Contratar'),
   notes: z.string().optional(),
 });
 

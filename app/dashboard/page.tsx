@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
+import { FREIGHT_ORDER_STATUSES, getFreightStatusMeta, normalizeFreightOrderStatus } from '@/lib/freightStatus';
 import {
   Area,
   AreaChart,
@@ -72,7 +73,8 @@ export default function DashboardPage() {
         balance += Number(order.balance_value) || 0;
         expenses += Number(order.total_expenses) || 0;
         net += Number(order.net_value) || 0;
-        statusMap[order.status] = (statusMap[order.status] || 0) + 1;
+        const normalizedStatus = normalizeFreightOrderStatus(order.status);
+        statusMap[normalizedStatus] = (statusMap[normalizedStatus] || 0) + 1;
       });
 
       setOrders(data);
@@ -112,13 +114,10 @@ export default function DashboardPage() {
     { name: 'Jun', Fretes: summary.totalFreight * 1.08 || 68000, Margem: summary.totalNet * 1.12 || 52000 },
   ];
 
-  const statusData = [
-    { name: 'Rascunho', value: summary.ordersByStatus.Rascunho || 0 },
-    { name: 'Análise', value: summary.ordersByStatus['Em Análise'] || 0 },
-    { name: 'Liberado', value: summary.ordersByStatus['Liberado para Embarque'] || 0 },
-    { name: 'Carregando', value: summary.ordersByStatus.Carregando || 0 },
-    { name: 'Pago', value: summary.ordersByStatus.Pago || 0 },
-  ];
+  const statusData = FREIGHT_ORDER_STATUSES.map((statusOption) => ({
+    name: statusOption,
+    value: summary.ordersByStatus[statusOption] || 0,
+  }));
 
   return (
     <HeaderAndSidebar>
@@ -207,7 +206,7 @@ export default function DashboardPage() {
               <KpiCard
                 label="Fretes ativos"
                 value={`${summary.totalOrders} emissões`}
-                detail={`Liberados: ${summary.ordersByStatus['Liberado para Embarque'] || 0}`}
+                detail={`Carregando: ${summary.ordersByStatus.Carregando || 0}`}
                 icon={TrendingUp}
                 tone="slate"
               />
@@ -431,22 +430,11 @@ function AlertItem({ title, text, icon: Icon, tone }: { title: string; text: str
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const classes =
-    status === 'Pago'
-      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-      : status === 'Liberado para Embarque'
-        ? 'border-blue-200 bg-blue-50 text-blue-700'
-        : status === 'Carregando'
-          ? 'border-orange-200 bg-orange-50 text-orange-700'
-        : status === 'Em Análise'
-          ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
-          : status === 'Cancelado'
-            ? 'border-rose-200 bg-rose-50 text-rose-700'
-            : 'border-[#ead18b] bg-[#fff7df] text-[#8a6725]';
+  const meta = getFreightStatusMeta(status);
 
   return (
-    <span className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${classes}`}>
-      {status}
+    <span className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${meta.className}`}>
+      {meta.icon} {normalizeFreightOrderStatus(status)}
     </span>
   );
 }

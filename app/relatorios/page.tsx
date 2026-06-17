@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
 import RBALogo from '@/components/RBALogo';
 import { Search, Printer, DollarSign, BarChart3, Filter, ShieldCheck, FileCheck, ArrowDownToLine } from 'lucide-react';
+import { FREIGHT_ORDER_STATUSES, getFreightStatusMeta, normalizeFreightOrderStatus } from '@/lib/freightStatus';
 
 export default function ReportsPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -48,7 +49,7 @@ export default function ReportsPage() {
   // Filter orders dynamically
   const filteredOrders = orders.filter(o => {
     const matchesClient = selectedClient ? o.client_id === selectedClient : true;
-    const matchesStatus = statusFilter ? o.status === statusFilter : true;
+  const matchesStatus = statusFilter ? normalizeFreightOrderStatus(o.status) === statusFilter : true;
     
     let matchesMonth = true;
     if (monthFilter && o.created_at) {
@@ -126,15 +127,14 @@ export default function ReportsPage() {
                 className="w-full bg-transparent text-xs font-bold text-slate-700 outline-none"
               >
                 <option value="">Todos os Status</option>
-                <option value="Rascunho">Rascunho</option>
-                <option value="Em Análise">Em Análise de Crédito</option>
-                <option value="Aprovado">Aprovado Buonny</option>
-                <option value="Liberado para Embarque">Liberado para Embarque</option>
-                <option value="Carregando">Carregando</option>
-                <option value="Em Viagem">Em Viagem</option>
-                <option value="Entregue">Entregue</option>
-                <option value="Pago">Pago / Liquidado</option>
-                <option value="Cancelado">Cancelado</option>
+                    {FREIGHT_ORDER_STATUSES.map((statusOption) => {
+                      const meta = getFreightStatusMeta(statusOption);
+                      return (
+                        <option key={statusOption} value={statusOption}>
+                          {meta.icon} {meta.label}
+                        </option>
+                      );
+                    })}
               </select>
             </div>
           </div>
@@ -246,8 +246,8 @@ export default function ReportsPage() {
                           <td className="p-3 font-mono text-right text-slate-500">R$ {o.balance_value.toLocaleString('pt-BR')}</td>
                           <td className="p-3 font-mono text-right text-emerald-800 font-black">R$ {o.net_value.toLocaleString('pt-BR')}</td>
                           <td className="p-3 text-center">
-                            <span className="p-0.5 px-2 bg-slate-100 text-slate-700 rounded text-[9px] uppercase font-bold">
-                              {o.status}
+                            <span className={`p-0.5 px-2 rounded text-[9px] uppercase font-bold ${getFreightStatusMeta(o.status).className}`}>
+                              {getFreightStatusMeta(o.status).icon} {normalizeFreightOrderStatus(o.status)}
                             </span>
                           </td>
                         </tr>

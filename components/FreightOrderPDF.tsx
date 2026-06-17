@@ -3,6 +3,7 @@
 import React from 'react';
 import { Printer, ShieldCheck, XCircle, Share2, CornerDownRight } from 'lucide-react';
 import RBALogo from '@/components/RBALogo';
+import { normalizeFreightOrderStatus } from '@/lib/freightStatus';
 
 interface Props {
   order: {
@@ -161,7 +162,7 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
                   <span className="text-[9px] text-slate-400 font-extrabold block uppercase">Condutor Autorizado</span>
                   <p className="text-slate-900 font-black">{order.driver_name}</p>
                   <p className="text-slate-500 font-mono">CPF: {order.driver_cpf}</p>
-                  <p className="text-slate-500 font-mono">RG: {order.driver_rg}</p>
+                    <p className="text-slate-500 font-mono">RG: {order.driver_rg || 'N/A'}</p>
                   <p className="text-slate-500">Fone: {order.driver_phone}</p>
                 </div>
 
@@ -285,7 +286,7 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
                 <div className="flex items-center justify-between">
                   <span>Embarque:</span>
                   <span className="font-mono font-bold bg-slate-100 p-0.5 rounded text-slate-700">
-                    {order.shipment_release_status}
+                    {normalizeFreightOrderStatus(order.shipment_release_status)}
                   </span>
                 </div>
                 {order.notes && (

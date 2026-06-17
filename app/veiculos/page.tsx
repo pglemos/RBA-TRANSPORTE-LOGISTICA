@@ -141,7 +141,7 @@ export default function VehiclesPage() {
       setErrorMsg("Placa do cavalo inválida. Use formato antigo ABC1234 ou Mercosul ABC1D23.");
       return;
     }
-    if (vehicleType === 'Carreta' && !isValidBrazilianPlate(normalizedTrailerPlate)) {
+    if ((vehicleType === 'Carreta' || normalizedTrailerPlate) && !isValidBrazilianPlate(normalizedTrailerPlate)) {
       setErrorMsg("Placa da carreta inválida. Use formato antigo ABC1234 ou Mercosul ABC1D23.");
       return;
     }

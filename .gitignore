@@ -4,6 +4,13 @@ coverage/
 .DS_Store
 *.log
 tsconfig.tsbuildinfo
+public/uploads/
+supabase/.temp/
+.agents/
+.antigravity/
+.claude/
+.playwright-mcp/
+.vscode/
 .env*
 !.env.example
 .vercel

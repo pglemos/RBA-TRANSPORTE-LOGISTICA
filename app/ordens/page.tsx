@@ -6,9 +6,9 @@ import HeaderAndSidebar from '@/components/HeaderAndSidebar';
 import FreightOrderPDF from '@/components/FreightOrderPDF';
 import { getUniqueFilterOptions, matchesAllFilters, matchesSearchFields } from '@/lib/tableFilters';
 import { FREIGHT_ORDER_STATUSES, getFreightStatusMeta, normalizeFreightOrderStatus } from '@/lib/freightStatus';
-import {
-  Search,
-  Plus,
+import { 
+  Search, 
+  Plus, 
   FileText, 
   Edit3, 
   Trash2, 
@@ -185,17 +185,17 @@ export default function OrdersListPage() {
                 id="status-filter"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-transparent text-slate-700 outline-none font-bold"
-            >
-              <option value="">Todos os Status</option>
-              {FREIGHT_ORDER_STATUSES.map((statusOption) => {
-                const meta = getFreightStatusMeta(statusOption);
-                return (
-                  <option key={statusOption} value={statusOption}>
-                    {meta.icon} {meta.label}
-                  </option>
-                );
-              })}
+                className="bg-transparent text-slate-700 outline-none font-bold"
+              >
+                <option value="">Todos os Status</option>
+                {FREIGHT_ORDER_STATUSES.map((statusOption) => {
+                  const meta = getFreightStatusMeta(statusOption);
+                  return (
+                    <option key={statusOption} value={statusOption}>
+                      {meta.icon} {meta.label}
+                    </option>
+                  );
+                })}
             </select>
           </div>
 
@@ -304,7 +304,7 @@ export default function OrdersListPage() {
                       <td className="p-4 text-slate-800">
                         <div>
                           <p>{o.origin} ➔ {o.destination}</p>
-                          <p className="text-[9.5px] text-slate-450">Limite de Entrega: {o.delivery_date}</p>
+                          <p className="text-[9.5px] text-slate-450">Limite de Entrega: {o.delivery_date || 'N/A'}</p>
                         </div>
                       </td>
 
