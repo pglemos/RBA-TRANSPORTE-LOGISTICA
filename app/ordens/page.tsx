@@ -5,9 +5,10 @@ import Link from 'next/link';
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
 import FreightOrderPDF from '@/components/FreightOrderPDF';
 import { getUniqueFilterOptions, matchesAllFilters, matchesSearchFields } from '@/lib/tableFilters';
-import { 
-  Search, 
-  Plus, 
+import { FREIGHT_ORDER_STATUSES, getFreightStatusMeta, normalizeFreightOrderStatus } from '@/lib/freightStatus';
+import {
+  Search,
+  Plus,
   FileText, 
   Edit3, 
   Trash2, 
@@ -184,18 +185,17 @@ export default function OrdersListPage() {
                 id="status-filter"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-transparent text-slate-700 outline-none font-bold"
-              >
-                <option value="">Todos os Status</option>
-                <option value="Rascunho">🟡 Rascunho</option>
-                <option value="Em Análise">🔵 Em Análise de Crédito</option>
-                <option value="Aprovado">🟢 Aprovado Buonny</option>
-                <option value="Liberado para Embarque">🚛 Liberado para Embarque</option>
-                <option value="Carregando">📦 Carregando</option>
-                <option value="Em Viagem">🛣️ Em Viagem</option>
-                <option value="Entregue">✅ Entregue</option>
-                <option value="Pago">💵 Pago / Liquidado</option>
-                <option value="Cancelado">❌ Cancelado</option>
+              className="bg-transparent text-slate-700 outline-none font-bold"
+            >
+              <option value="">Todos os Status</option>
+              {FREIGHT_ORDER_STATUSES.map((statusOption) => {
+                const meta = getFreightStatusMeta(statusOption);
+                return (
+                  <option key={statusOption} value={statusOption}>
+                    {meta.icon} {meta.label}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -321,15 +321,8 @@ export default function OrdersListPage() {
 
                       {/* Status label */}
                       <td className="p-4">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wide ${
-                          o.status === 'Pago' ? 'bg-emerald-100 text-emerald-800' :
-                          o.status === 'Liberado para Embarque' ? 'bg-sky-100 text-sky-800' :
-                          o.status === 'Carregando' ? 'bg-orange-100 text-orange-800' :
-                          o.status === 'Em Análise' ? 'bg-blue-100 text-blue-800' :
-                          o.status === 'Cancelado' ? 'bg-red-100 text-red-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {o.status}
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wide ${getFreightStatusMeta(o.status).className}`}>
+                          {getFreightStatusMeta(o.status).icon} {normalizeFreightOrderStatus(o.status)}
                         </span>
                       </td>
 
