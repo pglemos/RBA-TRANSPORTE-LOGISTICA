@@ -3,8 +3,6 @@ import { RBADatabase } from '@/lib/db';
 import { RBAAuth } from '@/lib/auth';
 import { VehicleSchema, normalizeDocument, normalizePlate, normalizeUf } from '@/lib/validators';
 
-const canSeeVehicleSensitiveData = (role: string) => role === 'Administrador' || role === 'Financeiro';
-
 function vehiclePayload(body: any) {
   const manufactureYear = Number(body.manufacture_year || body.year);
   return {
@@ -38,11 +36,10 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Veículo não encontrado' }, { status: 404 });
     }
 
-    const role = guard.session.user!.role;
     return NextResponse.json({
       ...vehicle,
-      owner_document: RBAAuth.maskDocument(vehicle.owner_document, role),
-      renavam: canSeeVehicleSensitiveData(role) ? vehicle.renavam : `***${String(vehicle.renavam || '').slice(-3)}`,
+      owner_document: RBAAuth.maskDocument(vehicle.owner_document),
+      renavam: vehicle.renavam,
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

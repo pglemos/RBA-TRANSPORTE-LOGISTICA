@@ -3,8 +3,6 @@ import { RBADatabase } from '@/lib/db';
 import { RBAAuth } from '@/lib/auth';
 import { VehicleSchema, normalizeDocument, normalizePlate, normalizeUf } from '@/lib/validators';
 
-const canSeeVehicleSensitiveData = (role: string) => role === 'Administrador' || role === 'Financeiro';
-
 function vehiclePayload(body: any) {
   const manufactureYear = Number(body.manufacture_year || body.year);
   return {
@@ -29,12 +27,11 @@ export async function GET(req: NextRequest) {
     const guard = await RBAAuth.requireAuth(req);
     if (guard.response) return guard.response;
 
-    const role = guard.session.user!.role;
     const vehicles = await RBADatabase.getVehicles();
     const processed = vehicles.map((vehicle) => ({
       ...vehicle,
-      owner_document: RBAAuth.maskDocument(vehicle.owner_document, role),
-      renavam: canSeeVehicleSensitiveData(role) ? vehicle.renavam : `***${String(vehicle.renavam || '').slice(-3)}`,
+      owner_document: RBAAuth.maskDocument(vehicle.owner_document),
+      renavam: vehicle.renavam,
     }));
 
     return NextResponse.json(processed);

@@ -150,67 +150,39 @@ export class RBAAuth {
     return role === 'Consulta/Auditoria';
   }
 
-  public static maskCPF(cpf: string, role?: AppRole): string {
+  public static maskCPF(cpf: string, _role?: AppRole): string {
     if (!cpf) return '';
     const clean = cpf.replace(/\D/g, '');
-    if (role === 'Administrador' || role === 'Financeiro') {
+    if (clean.length === 11) {
       return clean.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
     }
-    return clean.replace(/(\d{3})\d{6}(\d{2})/, '$1.***.***-$2');
+    return cpf;
   }
 
-  public static maskDocument(document: string, role?: AppRole): string {
+  public static maskDocument(document: string, _role?: AppRole): string {
     if (!document) return '';
     const clean = document.replace(/\D/g, '');
     if (clean.length === 11) {
-      return this.maskCPF(clean, role);
+      return this.maskCPF(clean);
     }
     if (clean.length === 14) {
-      if (role === 'Administrador' || role === 'Financeiro') {
-        return clean.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
-      }
-      return clean.replace(/(\d{2})\d{6}(\d{4})(\d{2})/, '$1.***.***/$2-$3');
+      return clean.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
     }
-    return role === 'Administrador' || role === 'Financeiro' ? document : 'Documento protegido (LGPD)';
+    return document;
   }
 
-  public static maskRG(rg: string, role?: AppRole): string {
+  public static maskRG(rg: string, _role?: AppRole): string {
     if (!rg) return '';
-    const clean = rg.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (role === 'Administrador' || role === 'Financeiro') {
-      return rg;
-    }
-    if (clean.length >= 8) {
-      return `${clean.substring(0, 2)}.***.***-${clean.charAt(clean.length - 1)}`;
-    }
-    return '***-**';
+    return rg;
   }
 
-  public static maskBankDetails(account: string, role?: AppRole): string {
+  public static maskBankDetails(account: string, _role?: AppRole): string {
     if (!account) return '';
-    if (role === 'Administrador' || role === 'Financeiro') {
-      return account;
-    }
-    const clean = account.replace(/[^A-Za-z0-9]/g, '');
-    if (clean.length > 4) {
-      return `****-${clean.slice(-4)}`;
-    }
-    return '****';
+    return account;
   }
 
-  public static maskPixKey(key: string, role?: AppRole): string {
+  public static maskPixKey(key: string, _role?: AppRole): string {
     if (!key) return '';
-    if (role === 'Administrador' || role === 'Financeiro') {
-      return key;
-    }
-    if (key.includes('@')) {
-      const [name, domain] = key.split('@');
-      return `${name.slice(0, 2)}***@${domain}`;
-    }
-    const clean = key.replace(/\D/g, '');
-    if (clean.length > 4) {
-      return `***${clean.slice(-4)}`;
-    }
-    return '***';
+    return key;
   }
 }
