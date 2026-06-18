@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
 import { FREIGHT_ORDER_STATUSES, getFreightStatusMeta, normalizeFreightOrderStatus } from '@/lib/freightStatus';
 import { summarizeFreightOrders } from '@/lib/financialMetrics';
@@ -53,13 +54,30 @@ const emptySummary: SummaryData = {
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<SummaryData>(emptySummary);
   const [errorMsg, setErrorMsg] = useState('');
+  const [checkingAccess, setCheckingAccess] = useState(true);
+  const [redirectingOperational, setRedirectingOperational] = useState(false);
 
-  const loadData = async () => {
+  const loadData = React.useCallback(async () => {
+    setLoading(true);
+    setErrorMsg('');
+    setCheckingAccess(true);
+
     try {
+      const sessionRes = await fetch('/api/auth/me', { cache: 'no-store' });
+      const sessionData = await sessionRes.json();
+      if (sessionData?.user?.role === 'Operacional') {
+        setRedirectingOperational(true);
+        router.replace('/ordens');
+        return;
+      }
+
+      setRedirectingOperational(false);
+      setCheckingAccess(false);
       const res = await fetch('/api/orders');
       const data = await res.json();
       if (!res.ok || !Array.isArray(data)) throw new Error(data?.error || 'Erro ao carregar dashboard.');
@@ -67,11 +85,12 @@ export default function DashboardPage() {
       setOrders(data);
       setSummary(summarizeFreightOrders(data, (status) => normalizeFreightOrderStatus(status as any)));
     } catch (e) {
+      setCheckingAccess(false);
       setErrorMsg(e instanceof Error ? e.message : 'Erro ao carregar dashboard.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
 
   useEffect(() => {
     const timer = setTimeout(loadData, 0);
@@ -80,9 +99,22 @@ export default function DashboardPage() {
       clearTimeout(timer);
       window.removeEventListener('rba-auth-switch', loadData);
     };
-  }, []);
+  }, [loadData]);
 
   const formatCurrency = (value: number) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
+  if (checkingAccess || redirectingOperational) {
+    return (
+      <HeaderAndSidebar>
+        <div className="rounded-lg border border-slate-200 bg-[oklch(98.5%_0.006_83)] py-24 text-center shadow-sm">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-[#d8b45d] border-t-transparent" />
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+            {redirectingOperational ? 'Redirecionando para ordens...' : 'Verificando acesso...'}
+          </p>
+        </div>
+      </HeaderAndSidebar>
+    );
+  }
 
   const chartData = [
     { name: 'Jan', Fretes: summary.totalGrossRevenue * 0.38 || 20000, Margem: summary.totalNet * 0.34 || 12000 },

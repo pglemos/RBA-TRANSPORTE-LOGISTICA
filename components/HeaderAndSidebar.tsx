@@ -36,7 +36,7 @@ const navItems: Array<{
   icon: React.ComponentType<{ className?: string }>;
   roles: UserRole[];
 }> = [
-  { name: 'Dashboard', path: '/dashboard', icon: BarChart3, roles: ['Administrador', 'Operacional', 'Financeiro', 'Consulta/Auditoria'] },
+  { name: 'Dashboard', path: '/dashboard', icon: BarChart3, roles: ['Administrador', 'Financeiro', 'Consulta/Auditoria'] },
   { name: 'Ordens de Frete', path: '/ordens', icon: FileText, roles: ['Administrador', 'Operacional', 'Financeiro', 'Consulta/Auditoria'] },
   { name: 'Motoristas', path: '/motoristas', icon: Users, roles: ['Administrador', 'Operacional', 'Financeiro', 'Consulta/Auditoria'] },
   { name: 'Veículos', path: '/veiculos', icon: Truck, roles: ['Administrador', 'Operacional', 'Financeiro', 'Consulta/Auditoria'] },
@@ -90,7 +90,8 @@ export default function HeaderAndSidebar({ children }: { children: React.ReactNo
     router.refresh();
   };
 
-  const filteredNavItems = navItems.filter((item) => !currentUser || item.roles.includes(currentUser.role));
+  const filteredNavItems = currentUser ? navItems.filter((item) => item.roles.includes(currentUser.role)) : [];
+  const homePath = currentUser?.role === 'Operacional' ? '/ordens' : '/dashboard';
 
   const navLink = (item: (typeof navItems)[number], onClick?: () => void) => {
     const active = pathname === item.path || pathname?.startsWith(`${item.path}/`);
@@ -149,7 +150,7 @@ export default function HeaderAndSidebar({ children }: { children: React.ReactNo
       <div className="flex min-h-[calc(100vh-49px)]">
         <aside id="desktop-sidebar" className="sticky top-[49px] hidden h-[calc(100vh-49px)] w-72 shrink-0 flex-col border-r border-slate-200 bg-[oklch(98.5%_0.006_83)] md:flex">
           <div className="border-b border-slate-100 px-6 py-6">
-            <Link href="/dashboard" aria-label="Dashboard RBA">
+            <Link href={homePath} aria-label="Início RBA">
               <RBALogo className="h-24 w-44" />
             </Link>
             <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">

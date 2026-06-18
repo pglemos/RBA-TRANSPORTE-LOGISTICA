@@ -39,7 +39,11 @@ export default function LoginPage() {
         return;
       }
 
-      router.replace('/dashboard');
+      const sessionRes = await fetch('/api/auth/me', { cache: 'no-store' });
+      const sessionData = await sessionRes.json();
+      const destination = sessionData?.user?.role === 'Operacional' ? '/ordens' : '/dashboard';
+
+      router.replace(destination);
       router.refresh();
     } catch {
       setErrorMsg('Falha ao autenticar. Tente novamente.');

@@ -40,6 +40,7 @@ const id = params?.id;
   const [order, setOrder] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
+  const [currentRole, setCurrentRole] = useState<string | null>(null);
   
   // PDF Trigger
   const [showPDF, setShowPDF] = useState(false);
@@ -65,6 +66,16 @@ const id = params?.id;
     { key: 'cte', label: 'Documento do CTE', hint: 'Conhecimento de Transporte Eletrônico', icon: FileText, accent: 'text-yellow-600' },
     { key: 'manifesto', label: 'Documento do Manifesto', hint: 'MDF-e do transporte', icon: ClipboardList, accent: 'text-purple-600' },
   ] as const;
+
+  const fetchCurrentRole = React.useCallback(async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      setCurrentRole(data?.user?.role || null);
+    } catch {
+      setCurrentRole(null);
+    }
+  }, []);
 
   const handleUploadDoc = async (category: string, file: File | null) => {
     if (!file) return;
@@ -180,15 +191,18 @@ const id = params?.id;
     if (!id) return;
     const timer = setTimeout(() => {
       fetchOrderDetails();
+      fetchCurrentRole();
     }, 0);
-    
+
     // Refresh details if user changes simulated role (handles dynamic LGPD unmasking!)
     window.addEventListener('rba-auth-switch', fetchOrderDetails);
+    window.addEventListener('rba-auth-switch', fetchCurrentRole);
     return () => {
       clearTimeout(timer);
       window.removeEventListener('rba-auth-switch', fetchOrderDetails);
+      window.removeEventListener('rba-auth-switch', fetchCurrentRole);
     };
-  }, [id, fetchOrderDetails]);
+  }, [id, fetchOrderDetails, fetchCurrentRole]);
 
   if (loading) {
     return (
@@ -226,6 +240,8 @@ const id = params?.id;
     (Number(cteValueEdit) || 0) !== (Number(order.cte_value) || 0) ||
     (Number(cteDiscountEdit) || 0) !== (order.cte_discount_percent ?? 10);
   const statusDirty = statusEdit !== normalizeFreightOrderStatus(order.status);
+  const canManageFaturamento = currentRole === 'Administrador' || currentRole === 'Financeiro';
+  const canViewFreightFinancialDetails = currentRole !== null && currentRole !== 'Operacional';
 
   return (
     <HeaderAndSidebar>
@@ -348,6 +364,7 @@ const id = params?.id;
             </div>
 
             {/* 3. DADOS DE CUSTOS E VALORES */}
+            {canViewFreightFinancialDetails && (
             <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4">
               <div className="border-b pb-3">
                 <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
@@ -398,8 +415,10 @@ const id = params?.id;
                 </div>
               </div>
             </div>
+            )}
 
             {/* 4. FATURAMENTO (CTE) — MEMÓRIA DE CÁLCULO EDITÁVEL */}
+            {canManageFaturamento && (
             <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4">
               <div className="border-b pb-3 flex items-center justify-between">
                 <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
@@ -487,6 +506,7 @@ const id = params?.id;
                 </button>
               </div>
             </div>
+            )}
 
           </div>
 
