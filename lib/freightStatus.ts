@@ -25,6 +25,13 @@ export const FREIGHT_STATUS_META: Record<FreightOrderStatus, { icon: string; lab
   },
 };
 
+export const FREIGHT_STATUS_LIST_SORT_RANK: Record<FreightOrderStatus, number> = {
+  Carregando: 0,
+  'Em Trânsito': 1,
+  Entregue: 2,
+  Contratar: 3,
+};
+
 // Regra de negócio: Ordens/Fichas usam somente 4 etapas operacionais.
 export function normalizeFreightOrderStatus(status?: string | null): FreightOrderStatus {
   switch (status) {
@@ -44,6 +51,10 @@ export function normalizeFreightOrderStatus(status?: string | null): FreightOrde
 
 export function getFreightStatusMeta(status?: string | null) {
   return FREIGHT_STATUS_META[normalizeFreightOrderStatus(status)];
+}
+
+export function getFreightStatusListSortRank(status?: string | null) {
+  return FREIGHT_STATUS_LIST_SORT_RANK[normalizeFreightOrderStatus(status)];
 }
 
 export function syncFreightOrderStatuses(input: {

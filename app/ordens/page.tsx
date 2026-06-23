@@ -5,7 +5,7 @@ import Link from 'next/link';
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
 import FreightOrderPDF from '@/components/FreightOrderPDF';
 import { getUniqueFilterOptions, matchesAllFilters, matchesSearchFields } from '@/lib/tableFilters';
-import { FREIGHT_ORDER_STATUSES, getFreightStatusMeta, normalizeFreightOrderStatus } from '@/lib/freightStatus';
+import { FREIGHT_ORDER_STATUSES, getFreightStatusListSortRank, getFreightStatusMeta, normalizeFreightOrderStatus } from '@/lib/freightStatus';
 import { 
   Search, 
   Plus, 
@@ -120,6 +120,9 @@ export default function OrdersListPage() {
 
     return matchesSearch && matchesFilters;
   }).sort((a, b) => {
+    const statusDiff = getFreightStatusListSortRank(a.status) - getFreightStatusListSortRank(b.status);
+    if (statusDiff !== 0) return statusDiff;
+
     const cteDiff = getCteSortValue(b.cte_number) - getCteSortValue(a.cte_number);
     if (cteDiff !== 0) return cteDiff;
     return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();

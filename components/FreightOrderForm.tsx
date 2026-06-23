@@ -18,6 +18,114 @@ const MESES = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
 
+const VEHICLE_TYPES: NonNullable<Vehicle['vehicle_type']>[] = [
+  'Utilitário',
+  'VUC',
+  '3/4',
+  'Toco',
+  'Truck',
+  'Bitruck',
+  'Carreta',
+];
+
+type DriverDraft = Pick<
+  Driver,
+  | 'name'
+  | 'cpf'
+  | 'rg'
+  | 'phone'
+  | 'bank_name'
+  | 'bank_agency'
+  | 'bank_account'
+  | 'pix_key'
+  | 'beneficiary_name'
+  | 'beneficiary_document'
+  | 'status'
+  | 'notes'
+>;
+
+type VehicleDraft = Pick<
+  Vehicle,
+  | 'tractor_plate'
+  | 'trailer_plate'
+  | 'year'
+  | 'manufacture_year'
+  | 'model_year'
+  | 'vehicle_type'
+  | 'model'
+  | 'owner_name'
+  | 'owner_document'
+  | 'antt'
+  | 'renavam'
+  | 'uf'
+  | 'status'
+  | 'notes'
+>;
+
+const emptyDriverDraft = (): DriverDraft => ({
+  name: '',
+  cpf: '',
+  rg: '',
+  phone: '',
+  bank_name: '',
+  bank_agency: '',
+  bank_account: '',
+  pix_key: '',
+  beneficiary_name: '',
+  beneficiary_document: '',
+  status: 'Ativo',
+  notes: '',
+});
+
+const emptyVehicleDraft = (): VehicleDraft => ({
+  tractor_plate: '',
+  trailer_plate: '',
+  year: 0,
+  manufacture_year: 0,
+  model_year: 0,
+  vehicle_type: 'Carreta',
+  model: '',
+  owner_name: '',
+  owner_document: '',
+  antt: '',
+  renavam: '',
+  uf: '',
+  status: 'Ativo',
+  notes: '',
+});
+
+const driverToDraft = (driver: Driver): DriverDraft => ({
+  name: driver.name || '',
+  cpf: driver.cpf || '',
+  rg: driver.rg || '',
+  phone: driver.phone || '',
+  bank_name: driver.bank_name || '',
+  bank_agency: driver.bank_agency || '',
+  bank_account: driver.bank_account || '',
+  pix_key: driver.pix_key || '',
+  beneficiary_name: driver.beneficiary_name || driver.name || '',
+  beneficiary_document: driver.beneficiary_document || driver.cpf || '',
+  status: driver.status || 'Ativo',
+  notes: driver.notes || '',
+});
+
+const vehicleToDraft = (vehicle: Vehicle): VehicleDraft => ({
+  tractor_plate: vehicle.tractor_plate || '',
+  trailer_plate: vehicle.trailer_plate || '',
+  year: vehicle.year || vehicle.manufacture_year || 0,
+  manufacture_year: vehicle.manufacture_year || vehicle.year || 0,
+  model_year: vehicle.model_year || vehicle.year || 0,
+  vehicle_type: vehicle.vehicle_type || 'Carreta',
+  model: vehicle.model || '',
+  owner_name: vehicle.owner_name || '',
+  owner_document: vehicle.owner_document || '',
+  antt: vehicle.antt || '',
+  renavam: vehicle.renavam || '',
+  uf: vehicle.uf || '',
+  status: vehicle.status || 'Ativo',
+  notes: vehicle.notes || '',
+});
+
 function PrintedCheckbox({ checked, onClick }: { checked: boolean; onClick: () => void }) {
   return (
     <button
@@ -45,6 +153,8 @@ export default function FreightOrderForm({ initialData }: Props) {
   const [driverId, setDriverId] = useState(initialData?.driver_id || '');
   const [vehicleId, setVehicleId] = useState(initialData?.vehicle_id || '');
   const [clientId, setClientId] = useState(initialData?.client_id || '');
+  const [driverDraft, setDriverDraft] = useState<DriverDraft>(() => emptyDriverDraft());
+  const [vehicleDraft, setVehicleDraft] = useState<VehicleDraft>(() => emptyVehicleDraft());
 
   // Trip routing
   const [origin, setOrigin] = useState(initialData?.origin || '');
@@ -116,9 +226,19 @@ export default function FreightOrderForm({ initialData }: Props) {
           throw new Error(drvData?.error || vhcData?.error || cliData?.error || 'Erro ao carregar listas de cadastro.');
         }
 
-        setDrivers(Array.isArray(drvData) ? drvData : []);
-        setVehicles(Array.isArray(vhcData) ? vhcData : []);
-        setClients(Array.isArray(cliData) ? cliData : []);
+        const driverList = Array.isArray(drvData) ? drvData : [];
+        const vehicleList = Array.isArray(vhcData) ? vhcData : [];
+        const clientList = Array.isArray(cliData) ? cliData : [];
+
+        setDrivers(driverList);
+        setVehicles(vehicleList);
+        setClients(clientList);
+
+        const selectedDriver = driverList.find((driver) => driver.id === initialData?.driver_id);
+        if (selectedDriver) setDriverDraft(driverToDraft(selectedDriver));
+
+        const selectedVehicle = vehicleList.find((vehicle) => vehicle.id === initialData?.vehicle_id);
+        if (selectedVehicle) setVehicleDraft(vehicleToDraft(selectedVehicle));
       } catch (err) {
         setErrorMessage(err instanceof Error ? err.message : "Erro ao carregar motoristas, veículos e clientes.");
       } finally {
@@ -126,7 +246,7 @@ export default function FreightOrderForm({ initialData }: Props) {
       }
     }
     loadResources();
-  }, []);
+  }, [initialData?.driver_id, initialData?.vehicle_id]);
 
   // Autofill: o operador logado é o responsável padrão pela consulta Buonny
   useEffect(() => {
@@ -144,10 +264,27 @@ export default function FreightOrderForm({ initialData }: Props) {
   // DERIVED/CALCULATED VALUES
   const balanceValue = freightValue - advanceValue - cashValue;
 
-  // Selected details display objects
-  const activeDriver = drivers.find(d => d.id === driverId);
-  const activeVehicle = vehicles.find(v => v.id === vehicleId);
-  const activeClient = clients.find(c => c.id === clientId);
+  const selectDriver = (id: string) => {
+    setDriverId(id);
+    const selectedDriver = drivers.find(driver => driver.id === id);
+    if (selectedDriver) setDriverDraft(driverToDraft(selectedDriver));
+  };
+
+  const selectVehicle = (id: string) => {
+    setVehicleId(id);
+    const selectedVehicle = vehicles.find(vehicle => vehicle.id === id);
+    if (selectedVehicle) setVehicleDraft(vehicleToDraft(selectedVehicle));
+  };
+
+  const updateDriverDraft = (patch: Partial<DriverDraft>) => {
+    if (!isEdit && driverId) setDriverId('');
+    setDriverDraft(prev => ({ ...prev, ...patch }));
+  };
+
+  const updateVehicleDraft = (patch: Partial<VehicleDraft>) => {
+    if (!isEdit && vehicleId) setVehicleId('');
+    setVehicleDraft(prev => ({ ...prev, ...patch }));
+  };
 
   const fmt = (n: number) => n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -208,12 +345,12 @@ export default function FreightOrderForm({ initialData }: Props) {
       setErrorMessage("Aguarde carregar motoristas, veículos e clientes antes de salvar.");
       return;
     }
-    if (!driverId) {
-      setErrorMessage("Identificação do motorista é obrigatória.");
+    if (!driverId && (!driverDraft.name.trim() || !driverDraft.cpf.trim())) {
+      setErrorMessage("Selecione um motorista existente ou preencha nome e CPF para cadastrar direto na ficha.");
       return;
     }
-    if (!vehicleId) {
-      setErrorMessage("O cadastro do veículo conjugado (cavalo e carreta) é obrigatório.");
+    if (!vehicleId && (!vehicleDraft.tractor_plate.trim() || !vehicleDraft.owner_name.trim())) {
+      setErrorMessage("Selecione um veículo existente ou preencha placa do cavalo e proprietário para cadastrar direto na ficha.");
       return;
     }
     if (!clientId) {
@@ -254,6 +391,8 @@ export default function FreightOrderForm({ initialData }: Props) {
     const payload = {
       driver_id: driverId,
       vehicle_id: vehicleId,
+      driver: driverDraft,
+      vehicle: vehicleDraft,
       client_id: clientId,
       freight_value: freightValue,
       advance_value: advanceValue,
@@ -361,11 +500,13 @@ export default function FreightOrderForm({ initialData }: Props) {
               <DriverCombobox
                 drivers={drivers}
                 value={driverId}
-                onChange={setDriverId}
+                onChange={selectDriver}
                 display="name"
                 inputId="ip-driver-select"
                 inputClass={field}
                 placeholder="— buscar por nome —"
+                freeTextValue={driverDraft.name}
+                onFreeTextChange={(value) => updateDriverDraft({ name: value })}
               />
             </div>
             <div className={`flex items-stretch w-[42%] ${divider}`}>
@@ -373,11 +514,13 @@ export default function FreightOrderForm({ initialData }: Props) {
               <DriverCombobox
                 drivers={drivers}
                 value={driverId}
-                onChange={setDriverId}
+                onChange={selectDriver}
                 display="cpf"
                 inputId="ip-driver-cpf"
                 inputClass={field + ' font-mono'}
                 placeholder="— buscar por CPF —"
+                freeTextValue={driverDraft.cpf}
+                onFreeTextChange={(value) => updateDriverDraft({ cpf: value })}
               />
             </div>
           </div>
@@ -386,11 +529,28 @@ export default function FreightOrderForm({ initialData }: Props) {
           <div className={cell}>
             <div className="flex items-stretch flex-1 min-w-0">
               <span className={label}>Fones:</span>
-              <span className={field + ' flex items-center'}>{activeDriver?.phone || ''}</span>
+              <input
+                id="ip-driver-phone"
+                name="driver_phone"
+                type="text"
+                value={driverDraft.phone}
+                onChange={(e) => updateDriverDraft({ phone: e.target.value })}
+                placeholder="telefone do motorista"
+                className={field}
+                readOnly={isEdit && !!driverId}
+              />
             </div>
             <div className={`flex items-stretch w-[42%] ${divider}`}>
               <span className={label}>RG:</span>
-              <span className={field + ' flex items-center'}>{activeDriver?.rg || ''}</span>
+              <input
+                id="ip-driver-rg"
+                name="driver_rg"
+                type="text"
+                value={driverDraft.rg}
+                onChange={(e) => updateDriverDraft({ rg: e.target.value })}
+                className={field}
+                readOnly={isEdit && !!driverId}
+              />
             </div>
           </div>
 
@@ -455,15 +615,39 @@ export default function FreightOrderForm({ initialData }: Props) {
             <span className={label}>Dados Bancários:</span>
             <div className="flex items-stretch flex-1 min-w-0">
               <span className={label}>Banco:</span>
-              <span className={field + ' flex items-center'}>{activeDriver?.bank_name || ''}</span>
+              <input
+                id="ip-driver-bank"
+                name="driver_bank_name"
+                type="text"
+                value={driverDraft.bank_name}
+                onChange={(e) => updateDriverDraft({ bank_name: e.target.value })}
+                className={field}
+                readOnly={isEdit && !!driverId}
+              />
             </div>
             <div className={`flex items-stretch w-[26%] ${divider}`}>
               <span className={label}>AG.:</span>
-              <span className={field + ' flex items-center'}>{activeDriver?.bank_agency || ''}</span>
+              <input
+                id="ip-driver-agency"
+                name="driver_bank_agency"
+                type="text"
+                value={driverDraft.bank_agency}
+                onChange={(e) => updateDriverDraft({ bank_agency: e.target.value })}
+                className={field}
+                readOnly={isEdit && !!driverId}
+              />
             </div>
             <div className={`flex items-stretch w-[26%] ${divider}`}>
               <span className={label}>Conta:</span>
-              <span className={field + ' flex items-center'}>{activeDriver?.bank_account || ''}</span>
+              <input
+                id="ip-driver-account"
+                name="driver_bank_account"
+                type="text"
+                value={driverDraft.bank_account}
+                onChange={(e) => updateDriverDraft({ bank_account: e.target.value })}
+                className={field}
+                readOnly={isEdit && !!driverId}
+              />
             </div>
           </div>
 
@@ -471,11 +655,27 @@ export default function FreightOrderForm({ initialData }: Props) {
           <div className={cell}>
             <div className="flex items-stretch flex-1 min-w-0">
               <span className={label}>Favorecido:</span>
-              <span className={field + ' flex items-center'}>{activeDriver?.beneficiary_name || ''}</span>
+              <input
+                id="ip-driver-beneficiary"
+                name="driver_beneficiary_name"
+                type="text"
+                value={driverDraft.beneficiary_name}
+                onChange={(e) => updateDriverDraft({ beneficiary_name: e.target.value })}
+                className={field}
+                readOnly={isEdit && !!driverId}
+              />
             </div>
             <div className={`flex items-stretch w-[42%] ${divider}`}>
               <span className={label}>CPF/CNPJ:</span>
-              <span className={field + ' flex items-center'}>{activeDriver?.beneficiary_document || ''}</span>
+              <input
+                id="ip-driver-beneficiary-document"
+                name="driver_beneficiary_document"
+                type="text"
+                value={driverDraft.beneficiary_document}
+                onChange={(e) => updateDriverDraft({ beneficiary_document: e.target.value })}
+                className={field}
+                readOnly={isEdit && !!driverId}
+              />
             </div>
           </div>
 
@@ -614,12 +814,26 @@ export default function FreightOrderForm({ initialData }: Props) {
                 <VehicleCombobox
                   vehicles={vehicles}
                   value={vehicleId}
-                  onChange={setVehicleId}
+                  onChange={selectVehicle}
                   display="summary"
                   inputId="ip-vhc-select"
                   inputClass={selectField}
-                  placeholder="— buscar por placa cavalo —"
+                  placeholder="— buscar por placa ou modelo —"
+                  freeTextValue={vehicleDraft.model}
+                  onFreeTextChange={(value) => updateVehicleDraft({ model: value })}
                 />
+                <select
+                  id="ip-vehicle-type"
+                  name="vehicle_type"
+                  value={vehicleDraft.vehicle_type || 'Carreta'}
+                  onChange={(e) => updateVehicleDraft({ vehicle_type: e.target.value as VehicleDraft['vehicle_type'] })}
+                  className={`${selectField} w-[34%] flex-none border-l-2 border-slate-900`}
+                  disabled={isEdit && !!vehicleId}
+                >
+                  {VEHICLE_TYPES.map((type) => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
               </div>
               {/* PLACA CAV / CARR */}
               <div className="flex items-stretch border-b-2 border-slate-900">
@@ -628,27 +842,56 @@ export default function FreightOrderForm({ initialData }: Props) {
                   <VehicleCombobox
                     vehicles={vehicles}
                     value={vehicleId}
-                    onChange={setVehicleId}
+                    onChange={selectVehicle}
                     display="tractor"
                     inputId="ip-vhc-tractor-search"
                     inputClass={field + ' font-mono uppercase'}
                     placeholder="— buscar placa cav. —"
+                    freeTextValue={vehicleDraft.tractor_plate}
+                    onFreeTextChange={(value) => updateVehicleDraft({ tractor_plate: value })}
                   />
                 </div>
                 <div className={`flex items-stretch w-[42%] ${divider}`}>
                   <span className={label}>Carr.:</span>
-                  <span className={field + ' flex items-center font-mono'}>{activeVehicle?.trailer_plate || ''}</span>
+                  <input
+                    id="ip-vehicle-trailer"
+                    name="vehicle_trailer_plate"
+                    type="text"
+                    value={vehicleDraft.trailer_plate}
+                    onChange={(e) => updateVehicleDraft({ trailer_plate: e.target.value.toUpperCase() })}
+                    className={field + ' font-mono uppercase'}
+                    readOnly={isEdit && !!vehicleId}
+                  />
                 </div>
               </div>
               {/* ANO VEÍCULO / MOD */}
               <div className="flex items-stretch">
                 <div className="flex items-stretch flex-1 min-w-0">
                     <span className={label}>Ano Fab.:</span>
-                    <span className={field + ' flex items-center'}>{activeVehicle?.manufacture_year || activeVehicle?.year || ''}</span>
+                    <input
+                      id="ip-vehicle-manufacture-year"
+                      name="vehicle_manufacture_year"
+                      type="number"
+                      value={vehicleDraft.manufacture_year || ''}
+                      onChange={(e) => {
+                        const year = Number(e.target.value);
+                        updateVehicleDraft({ manufacture_year: year, year });
+                      }}
+                      className={field}
+                      readOnly={isEdit && !!vehicleId}
+                    />
                   </div>
                   <div className={`flex items-stretch w-[42%] ${divider}`}>
                     <span className={label}>Ano Mod.:</span>
-                    <span className={field + ' flex items-center'}>{activeVehicle?.model_year || activeVehicle?.year || ''}</span>
+                    <input
+                      id="ip-vehicle-model-year"
+                      name="vehicle_model_year"
+                      type="number"
+                      value={vehicleDraft.model_year || ''}
+                      onChange={(e) => updateVehicleDraft({ model_year: Number(e.target.value) })}
+                      className={field}
+                      readOnly={isEdit && !!vehicleId}
+                    />
                   </div>
                 </div>
             </div>
@@ -691,18 +934,43 @@ export default function FreightOrderForm({ initialData }: Props) {
           {/* PROPRIETÁRIO */}
           <div className={cell}>
             <span className={label}>Proprietário:</span>
-            <span className={field + ' flex items-center'}>{activeVehicle?.owner_name || ''}</span>
+            <input
+              id="ip-vehicle-owner"
+              name="vehicle_owner_name"
+              type="text"
+              value={vehicleDraft.owner_name}
+              onChange={(e) => updateVehicleDraft({ owner_name: e.target.value })}
+              className={field}
+              readOnly={isEdit && !!vehicleId}
+            />
           </div>
 
           {/* CPF/CNPJ + UF */}
           <div className={cell}>
             <div className="flex items-stretch flex-1 min-w-0">
               <span className={label}>CPF/CNPJ:</span>
-              <span className={field + ' flex items-center'}>{activeVehicle?.owner_document || ''}</span>
+              <input
+                id="ip-vehicle-owner-document"
+                name="vehicle_owner_document"
+                type="text"
+                value={vehicleDraft.owner_document}
+                onChange={(e) => updateVehicleDraft({ owner_document: e.target.value })}
+                className={field}
+                readOnly={isEdit && !!vehicleId}
+              />
             </div>
             <div className={`flex items-stretch w-[22%] ${divider}`}>
               <span className={label}>UF:</span>
-              <span className={field + ' flex items-center'}>{activeVehicle?.uf || ''}</span>
+              <input
+                id="ip-vehicle-uf"
+                name="vehicle_uf"
+                type="text"
+                maxLength={2}
+                value={vehicleDraft.uf}
+                onChange={(e) => updateVehicleDraft({ uf: e.target.value.toUpperCase() })}
+                className={field + ' uppercase'}
+                readOnly={isEdit && !!vehicleId}
+              />
             </div>
           </div>
 
@@ -710,11 +978,27 @@ export default function FreightOrderForm({ initialData }: Props) {
           <div className={cell}>
             <div className="flex items-stretch flex-1 min-w-0">
               <span className={label}>ANTT:</span>
-              <span className={field + ' flex items-center'}>{activeVehicle?.antt || ''}</span>
+              <input
+                id="ip-vehicle-antt"
+                name="vehicle_antt"
+                type="text"
+                value={vehicleDraft.antt}
+                onChange={(e) => updateVehicleDraft({ antt: e.target.value })}
+                className={field}
+                readOnly={isEdit && !!vehicleId}
+              />
             </div>
             <div className={`flex items-stretch w-[50%] ${divider}`}>
               <span className={label}>REN.:</span>
-              <span className={field + ' flex items-center'}>{activeVehicle?.renavam || ''}</span>
+              <input
+                id="ip-vehicle-renavam"
+                name="vehicle_renavam"
+                type="text"
+                value={vehicleDraft.renavam}
+                onChange={(e) => updateVehicleDraft({ renavam: e.target.value })}
+                className={field}
+                readOnly={isEdit && !!vehicleId}
+              />
             </div>
           </div>
 
@@ -813,6 +1097,8 @@ function DriverCombobox({
   inputClass,
   inputId,
   placeholder,
+  freeTextValue = '',
+  onFreeTextChange,
 }: {
   drivers: Driver[];
   value: string;
@@ -821,6 +1107,8 @@ function DriverCombobox({
   inputClass: string;
   inputId?: string;
   placeholder?: string;
+  freeTextValue?: string;
+  onFreeTextChange?: (value: string) => void;
 }) {
   const selected = drivers.find(d => d.id === value);
   const [query, setQuery] = useState('');
@@ -831,7 +1119,7 @@ function DriverCombobox({
     ? query
     : selected
       ? (display === 'cpf' ? (selected.cpf || '') : selected.name)
-      : '';
+      : freeTextValue;
 
   const onlyDigits = (s: string) => (s || '').replace(/\D/g, '');
   const q = query.trim();
@@ -861,8 +1149,14 @@ function DriverCombobox({
         autoComplete="off"
         value={shownValue}
         placeholder={placeholder}
-        onFocus={() => { setEditing(true); setOpen(true); setQuery(''); }}
-        onChange={(e) => { setQuery(e.target.value); setEditing(true); setOpen(true); }}
+        onFocus={() => { setEditing(true); setOpen(true); setQuery(selected ? '' : freeTextValue); }}
+        onChange={(e) => {
+          const nextValue = e.target.value;
+          setQuery(nextValue);
+          onFreeTextChange?.(nextValue);
+          setEditing(true);
+          setOpen(true);
+        }}
         className={inputClass}
       />
       {open && (
@@ -905,6 +1199,8 @@ function VehicleCombobox({
   inputClass,
   inputId,
   placeholder,
+  freeTextValue = '',
+  onFreeTextChange,
 }: {
   vehicles: Vehicle[];
   value: string;
@@ -913,6 +1209,8 @@ function VehicleCombobox({
   inputClass: string;
   inputId?: string;
   placeholder?: string;
+  freeTextValue?: string;
+  onFreeTextChange?: (value: string) => void;
 }) {
   const selected = vehicles.find(v => v.id === value);
   const [query, setQuery] = useState('');
@@ -926,7 +1224,7 @@ function VehicleCombobox({
     ? query
     : selected
       ? (display === 'tractor' ? (selected.tractor_plate || '') : formatSummary(selected))
-      : '';
+      : freeTextValue;
 
   const normalizePlate = (plate: string) => (plate || '').replace(/[^a-z0-9]/gi, '').toUpperCase();
   const q = query.trim();
@@ -961,8 +1259,14 @@ function VehicleCombobox({
         autoComplete="off"
         value={shownValue}
         placeholder={placeholder}
-        onFocus={() => { setEditing(true); setOpen(true); setQuery(''); }}
-        onChange={(e) => { setQuery(e.target.value.toUpperCase()); setEditing(true); setOpen(true); }}
+        onFocus={() => { setEditing(true); setOpen(true); setQuery(selected ? '' : freeTextValue); }}
+        onChange={(e) => {
+          const nextValue = display === 'tractor' ? e.target.value.toUpperCase() : e.target.value;
+          setQuery(nextValue);
+          onFreeTextChange?.(nextValue);
+          setEditing(true);
+          setOpen(true);
+        }}
         className={inputClass}
       />
       {open && (

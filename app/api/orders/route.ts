@@ -4,6 +4,12 @@ import { RBAAuth } from '@/lib/auth';
 import { FreightOrderSchema } from '@/lib/validators';
 import { signFreightOrderProof } from '@/lib/proof';
 import { normalizeFreightOrderStatus, syncFreightOrderStatuses } from '@/lib/freightStatus';
+import {
+  findDriverByCpf,
+  findVehicleByTractorPlate,
+  parseInlineDriverPayload,
+  parseInlineVehiclePayload,
+} from '@/lib/freightOrderInlineRegistration';
 
 export async function GET(req: NextRequest) {
   try {
@@ -61,8 +67,60 @@ export async function POST(req: NextRequest) {
 
     const session = guard.session.user!;
     const body = await req.json();
+
+    let matchedDriver = body.driver_id ? await RBADatabase.getDriverById(body.driver_id) : undefined;
+    if (!matchedDriver && body.driver) {
+      const parsedDriver = parseInlineDriverPayload(body.driver);
+      if (!parsedDriver.success) {
+        return NextResponse.json(
+          { success: false, error: parsedDriver.error.issues[0]?.message || 'Dados do motorista inválidos.' },
+          { status: 400 },
+        );
+      }
+
+      const existingDriver = findDriverByCpf(await RBADatabase.getDrivers(), parsedDriver.data.cpf);
+      matchedDriver = existingDriver || await RBADatabase.createDriver(
+        {
+          ...parsedDriver.data,
+          notes: parsedDriver.data.notes || '',
+          phone: parsedDriver.data.phone || '',
+          rg: parsedDriver.data.rg || '',
+          bank_name: parsedDriver.data.bank_name || '',
+          bank_agency: parsedDriver.data.bank_agency || '',
+          bank_account: parsedDriver.data.bank_account || '',
+        },
+        session.id,
+        session.name,
+      );
+    }
+
+    let matchedVehicle = body.vehicle_id ? await RBADatabase.getVehicleById(body.vehicle_id) : undefined;
+    if (!matchedVehicle && body.vehicle) {
+      const parsedVehicle = parseInlineVehiclePayload(body.vehicle);
+      if (!parsedVehicle.success) {
+        return NextResponse.json(
+          { success: false, error: parsedVehicle.error.issues[0]?.message || 'Dados do veículo inválidos.' },
+          { status: 400 },
+        );
+      }
+
+      const existingVehicle = findVehicleByTractorPlate(await RBADatabase.getVehicles(), parsedVehicle.data.tractor_plate);
+      matchedVehicle = existingVehicle || await RBADatabase.createVehicle(
+        {
+          ...parsedVehicle.data,
+          antt: parsedVehicle.data.antt || '',
+          renavam: parsedVehicle.data.renavam || '',
+          notes: parsedVehicle.data.notes || '',
+        },
+        session.id,
+        session.name,
+      );
+    }
+
     const payload = {
       ...body,
+      driver_id: matchedDriver?.id || body.driver_id,
+      vehicle_id: matchedVehicle?.id || body.vehicle_id,
       freight_value: Number(body.freight_value) || 0,
       advance_value: Number(body.advance_value) || 0,
       cash_value: Number(body.cash_value) || 0,
@@ -81,11 +139,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const [matchedDriver, matchedVehicle, matchedClient] = await Promise.all([
-      RBADatabase.getDriverById(parsed.data.driver_id),
-      RBADatabase.getVehicleById(parsed.data.vehicle_id),
-      RBADatabase.getClientById(parsed.data.client_id),
-    ]);
+    const matchedClient = await RBADatabase.getClientById(parsed.data.client_id);
 
     if (!matchedDriver) {
       return NextResponse.json({ success: false, error: 'Motorista informado não existe ou foi removido.' }, { status: 400 });
