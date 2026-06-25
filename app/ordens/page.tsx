@@ -317,7 +317,7 @@ export default function OrdersListPage() {
                       <td className="p-4 text-slate-550 truncate max-w-[120px]">{o.client_name}</td>
 
                       {/* CTE value and residual driver balance */}
-                      <td className="p-4 font-mono font-bold text-slate-900">
+                      <td className="p-4 min-w-[108px] whitespace-nowrap text-[11px] font-bold leading-tight tracking-normal text-slate-900">
                         R$ {(Number(o.cte_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </td>
                     <td className="p-4 min-w-[128px] font-bold text-slate-900">
