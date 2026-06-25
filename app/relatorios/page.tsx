@@ -221,7 +221,7 @@ export default function ReportsPage() {
                   <table className="w-full text-left text-[11px] font-medium text-slate-700">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-200 font-bold text-slate-400 text-[9.5px]">
-                        <th className="p-3">Ficha Nº</th>
+                        <th className="p-3">CTE</th>
                         <th className="p-3">Data Emissão</th>
                         <th className="p-3">Motorista</th>
                         <th className="p-3">Origem ➔ Destino</th>
@@ -236,7 +236,7 @@ export default function ReportsPage() {
                     <tbody className="divide-y divide-slate-150">
                       {filteredOrders.map(o => (
                         <tr key={o.id} className="hover:bg-slate-50">
-                          <td className="p-3 font-extrabold text-slate-900">{o.order_number}</td>
+                          <td className="p-3 font-extrabold text-slate-900">{o.cte_number || 'Sem CTE'}</td>
                           <td className="p-3 font-mono text-slate-450">
                             {o.created_at ? new Date(o.created_at).toLocaleDateString('pt-BR') : 'N/A'}
                           </td>

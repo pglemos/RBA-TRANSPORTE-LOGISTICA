@@ -682,12 +682,19 @@ const id = params?.id;
                 
                 <div className="border-l-2 border-yellow-500 pl-3 relative">
                   <span className="absolute -left-1.5 top-1 h-3 w-3 rounded-full bg-yellow-500" />
-                  <span className="text-[9px] text-slate-500 block">Hoje • Carimbo Oficial</span>
-                  <span className="text-white font-bold block">{order.responsible_name}</span>
-                  <span className="text-slate-400">Ação: Gerou a Ficha Securitária CTE {order.cte_number || order.order_number}</span>
-                </div>
+<span className="text-[9px] text-slate-500 block">Criado por</span>
+<span className="text-white font-bold block">{order.created_by || order.responsible_name || 'Não informado'}</span>
+<span className="text-slate-400">Ação: Gerou a Ficha Securitária CTE {order.cte_number || order.order_number}</span>
+</div>
 
-                <div className="border-l-2 border-slate-800 pl-3 relative">
+<div className="border-l-2 border-slate-700 pl-3 relative">
+<span className="absolute -left-1.5 top-1 h-3 w-3 rounded-full bg-slate-700 border border-slate-600" />
+<span className="text-[9px] text-slate-500 block">Editado por</span>
+<span className="text-white font-bold block">{order.updated_by || order.created_by || order.responsible_name || 'Não informado'}</span>
+<span className="text-slate-400">Ação: Última alteração registrada na ficha.</span>
+</div>
+
+<div className="border-l-2 border-slate-800 pl-3 relative">
                   <span className="absolute -left-1.5 top-1 h-3 w-3 rounded-full bg-slate-800 border border-slate-700" />
                   <span className="text-[9px] text-slate-500 block">Auto-Sync</span>
                   <span className="text-slate-400">Ação: Dados bancários do condutor congelados de forma criptografada.</span>

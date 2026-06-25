@@ -110,6 +110,7 @@ export interface FreightOrder {
   status: FreightOrderStatus;
   notes: string;
   created_by: string;
+  updated_by: string;
   approved_by: string;
   approved_at: string;
   created_at: string;
@@ -201,6 +202,8 @@ const withFreightOrderDefaults = (order: any): FreightOrder => {
     emission_day: '',
     emission_month: '',
     emission_year: '',
+    created_by: '',
+    updated_by: '',
     ...order
   };
   return {
@@ -492,6 +495,7 @@ const initialDB: Database = {
       status: "Carregando",
       notes: "Carregamento de bebidas Ambev. Liberação autorizada Buonny ativa.",
       created_by: "Ana Costa",
+      updated_by: "Morgan Ribeiro (Admin)",
       approved_by: "Morgan Ribeiro (Admin)",
       approved_at: "2026-05-30T14:00:00Z",
       created_at: "2026-05-30T10:00:00Z",
@@ -538,6 +542,7 @@ const initialDB: Database = {
       status: "Contratar",
       notes: "Aguardando liberação do sinistro.",
       created_by: "Ana Costa",
+      updated_by: "Ana Costa",
       approved_by: "",
       approved_at: "",
       created_at: "2026-05-31T09:30:00Z",
@@ -800,6 +805,79 @@ export class RBADatabase {
       return db.profiles[idx];
     }
     throw new Error("Perfil não encontrado");
+  }
+
+  public static async createProfile(
+    profileData: Omit<Profile, 'id' | 'user_id' | 'created_at' | 'updated_at'> & { password?: string },
+    operatorId: string,
+    operatorName: string,
+  ) {
+    const email = profileData.email.toLowerCase().trim();
+    const newId = generateId('prof');
+    const now = new Date().toISOString();
+
+    if (isSupabaseServerConfigured) {
+      if (!profileData.password || profileData.password.length < 6) {
+        throw new Error('Informe uma senha com pelo menos 6 caracteres para criar o login no Supabase.');
+      }
+
+      const { data: authData, error: authError } = await supabaseServer.auth.admin.createUser({
+        email,
+        password: profileData.password,
+        email_confirm: true,
+        user_metadata: { name: profileData.name },
+      });
+
+      if (authError || !authData.user) {
+        throw new Error(`Erro ao criar login no Supabase: ${authError?.message || 'usuário não retornado'}`);
+      }
+
+      const cleanPayload: Profile = {
+        id: newId,
+        user_id: authData.user.id,
+        name: profileData.name,
+        email,
+        role: profileData.role,
+        active: profileData.active,
+        created_at: now,
+        updated_at: now,
+      };
+
+      const { data, error } = await supabaseServer
+        .from('profiles')
+        .insert(cleanPayload)
+        .select()
+        .single();
+
+      if (!error && data) {
+        await this.addAuditLog(operatorId, operatorName, 'Criar Perfil', 'Perfil de Usuário', newId, null, data);
+        return data as Profile;
+      }
+
+      await supabaseServer.auth.admin.deleteUser(authData.user.id);
+      throwSupabaseError('Erro ao criar perfil', error);
+    }
+
+    const db = this.load();
+    if (db.profiles.some((profile) => profile.email.toLowerCase() === email)) {
+      throw new Error('Já existe um perfil cadastrado com este e-mail.');
+    }
+
+    const newProfile: Profile = {
+      id: newId,
+      user_id: randomUUID(),
+      name: profileData.name,
+      email,
+      role: profileData.role,
+      active: profileData.active,
+      created_at: now,
+      updated_at: now,
+    };
+
+    db.profiles.push(newProfile);
+    await this.addAuditLog(operatorId, operatorName, 'Criar Perfil', 'Perfil de Usuário', newProfile.id, null, newProfile);
+    this.save(db);
+    return newProfile;
   }
 
   public static async getProfileByEmail(email: string) {
@@ -1366,13 +1444,14 @@ export class RBADatabase {
       approvedAt = new Date().toISOString();
     }
 
-      const updatePayload = {
-        ...orderData,
-        ...persistedFinancials,
-        approved_by: approvedBy,
-        approved_at: approvedAt,
-        updated_at: new Date().toISOString()
-      };
+    const updatePayload = {
+      ...orderData,
+      ...persistedFinancials,
+      approved_by: approvedBy,
+      approved_at: approvedAt,
+      updated_by: operatorName,
+      updated_at: new Date().toISOString()
+    };
 
       const { data, error } = await supabaseServer
         .from('freight_orders')
@@ -1405,11 +1484,12 @@ export class RBADatabase {
 
       db.freight_orders[idx] = {
         ...baseObj,
-        ...persistedFinancials,
-        approved_by: approvedBy,
-        approved_at: approvedAt,
-        updated_at: new Date().toISOString()
-      };
+      ...persistedFinancials,
+      approved_by: approvedBy,
+      approved_at: approvedAt,
+      updated_by: operatorName,
+      updated_at: new Date().toISOString()
+    };
 
       await this.addAuditLog(operatorId, operatorName, "Editar Ordem Frete", "Ordem de Frete", id, oldVal, db.freight_orders[idx]);
       this.save(db);

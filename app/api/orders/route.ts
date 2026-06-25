@@ -167,6 +167,7 @@ export async function POST(req: NextRequest) {
         ...syncedStatuses,
         bank_data_snapshot: bankSnapshot,
         created_by: session.name,
+        updated_by: session.name,
         approved_by: '',
         approved_at: '',
         responsible_name: parsed.data.responsible_name || session.name,
