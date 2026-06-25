@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto';
 import { supabaseServer, isSupabaseServerConfigured } from './supabase/server';
 import { getRBADataClient } from './dbContext';
 import type { FreightOrderStatus } from './freightStatus';
-import { calculateFreightOrderFinancials } from './financialMetrics';
+import { calculateFreightOrderFinancials, type FreightOrderFinancials } from './financialMetrics';
 
 // Define DB Types based on PRD
 
@@ -207,6 +207,42 @@ const withFreightOrderDefaults = (order: any): FreightOrder => {
     ...defaults,
     ...calculateFreightOrderFinancials(defaults)
   } as FreightOrder;
+};
+
+const buildAutomaticFreightPayments = (orderId: string, financials: FreightOrderFinancials): FreightPayment[] => {
+  const now = new Date().toISOString();
+  const paymentDate = now.split('T')[0];
+  const makePayment = (
+    type: string,
+    amount: number,
+    status: FreightPayment['status'],
+    payment_method: string,
+    notes: string,
+  ): FreightPayment => ({
+    id: generateId('pay'),
+    freight_order_id: orderId,
+    type,
+    amount,
+    payment_date: paymentDate,
+    payment_method,
+    proof_url: '',
+    status,
+    notes,
+    created_at: now,
+    updated_at: now,
+  });
+
+  return [
+    financials.advance_value > 0
+      ? makePayment('Adiantamento', financials.advance_value, 'Pendente', 'Pix', 'Adiantamento gerado automaticamente para aprovar.')
+      : null,
+    financials.cash_value > 0
+      ? makePayment('À Vista', financials.cash_value, 'Pago', 'Dinheiro', 'Pagamento à vista lançado automaticamente como liquidado.')
+      : null,
+    financials.balance_value > 0
+      ? makePayment('Saldo', financials.balance_value, 'Pago', 'Pix', 'Saldo lançado automaticamente como liquidado.')
+      : null,
+  ].filter(Boolean) as FreightPayment[];
 };
 
 const throwSupabaseError = (action: string, error: any): never => {
@@ -1202,7 +1238,7 @@ export class RBADatabase {
     return order ? withFreightOrderDefaults(order) : undefined;
   }
 
-  public static async createFreightOrder(orderData: Omit<FreightOrder, 'id' | 'order_number' | 'created_at' | 'updated_at' | 'balance_value' | 'total_expenses' | 'net_value'>, operatorId: string, operatorName: string) {
+  public static async createFreightOrder(orderData: Omit<FreightOrder, 'id' | 'order_number' | 'created_at' | 'updated_at' | 'total_expenses' | 'net_value'>, operatorId: string, operatorName: string) {
     const financials = calculateFreightOrderFinancials(orderData);
     const { cte_discount_value: _cteDiscountValue, net_revenue: _netRevenue, ...persistedFinancials } = financials;
     const newId = generateId('ord');
@@ -1260,6 +1296,13 @@ export class RBADatabase {
               updated_at: new Date().toISOString()
             });
           }
+          const paidAutomaticPayments = buildAutomaticFreightPayments(newId, {
+            ...financials,
+            advance_value: 0,
+          });
+          if (paidAutomaticPayments.length > 0) {
+            await supabaseDataClient().from('freight_payments').insert(paidAutomaticPayments);
+          }
           await this.addAuditLog(operatorId, operatorName, "Criar Ordem Frete", "Ordem de Frete", newId, null, data);
           return data as FreightOrder;
         }
@@ -1298,6 +1341,10 @@ export class RBADatabase {
       };
       db.freight_payments.push(newPay);
     }
+    db.freight_payments.push(...buildAutomaticFreightPayments(newOrder.id, {
+      ...financials,
+      advance_value: 0,
+    }));
 
     await this.addAuditLog(operatorId, operatorName, "Criar Ordem Frete", "Ordem de Frete", newOrder.id, null, newOrder);
     this.save(db);

@@ -34,6 +34,7 @@ interface SummaryData {
   totalGrossRevenue: number;
   totalDriverFreight: number;
   totalAdvance: number;
+  totalDriverPaid: number;
   totalBalanceToPay: number;
   totalExpenses: number;
   totalCteDiscount: number;
@@ -46,6 +47,7 @@ const emptySummary: SummaryData = {
   totalGrossRevenue: 0,
   totalDriverFreight: 0,
   totalAdvance: 0,
+  totalDriverPaid: 0,
   totalBalanceToPay: 0,
   totalExpenses: 0,
   totalCteDiscount: 0,
@@ -201,16 +203,16 @@ export default function DashboardPage() {
                 tone="emerald"
               />
               <KpiCard
-                label="Adiantamentos"
-                value={formatCurrency(summary.totalAdvance)}
-                detail={`Despesas: ${formatCurrency(summary.totalExpenses)}`}
+                label="Pago ao motorista"
+                value={formatCurrency(summary.totalDriverPaid)}
+                detail={`Adiantamentos: ${formatCurrency(summary.totalAdvance)}`}
                 icon={Activity}
                 tone="blue"
               />
               <KpiCard
                 label="Saldos pendentes"
                 value={formatCurrency(summary.totalBalanceToPay)}
-                detail="A liquidar na entrega do CTE"
+                detail="Frete ainda não liquidado"
                 icon={Clock}
                 tone="gold"
               />

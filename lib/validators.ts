@@ -144,6 +144,7 @@ export const FreightOrderSchema = z.object({
   freight_value: z.number().positive("Valor do frete deve ser positivo"),
   advance_value: z.number().nonnegative(),
   cash_value: z.number().nonnegative(),
+  balance_value: z.number().nonnegative().optional().default(0),
   loading_expense: z.number().nonnegative().optional().default(0),
   unloading_expense: z.number().nonnegative().optional().default(0),
   other_expenses: z.number().nonnegative().optional().default(0),

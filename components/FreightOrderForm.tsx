@@ -167,6 +167,7 @@ export default function FreightOrderForm({ initialData }: Props) {
   const [freightValue, setFreightValue] = useState(initialData?.freight_value || 0);
   const [advanceValue, setAdvanceValue] = useState(initialData?.advance_value || 0);
   const [cashValue, setCashValue] = useState(initialData?.cash_value || 0);
+  const [balanceValue, setBalanceValue] = useState(initialData?.balance_value || 0);
   const [loadingExpense, setLoadingExpense] = useState(initialData?.loading_expense || 0);
   const [unloadingExpense, setUnloadingExpense] = useState(initialData?.unloading_expense || 0);
   const [otherExpenses, setOtherExpenses] = useState(initialData?.other_expenses || 0);
@@ -260,9 +261,6 @@ export default function FreightOrderForm({ initialData }: Props) {
         });
     }
   }, [buonnyResponsible]);
-
-  // DERIVED/CALCULATED VALUES
-  const balanceValue = freightValue - advanceValue - cashValue;
 
   const selectDriver = (id: string) => {
     setDriverId(id);
@@ -397,6 +395,7 @@ export default function FreightOrderForm({ initialData }: Props) {
       freight_value: freightValue,
       advance_value: advanceValue,
       cash_value: cashValue,
+      balance_value: balanceValue,
       loading_expense: loadingExpense,
       unloading_expense: unloadingExpense,
       other_expenses: otherExpenses,
@@ -575,12 +574,19 @@ export default function FreightOrderForm({ initialData }: Props) {
               <span className={label}>A Vista:</span>
               <input id="ip-cash" name="cash_value" type="number" step="0.01" min="0" value={cashValue || ''} onChange={(e) => setCashValue(Number(e.target.value))} className={field} />
             </div>
-            <div className={`flex items-stretch w-[24%] ${divider}`}>
-              <span className={label}>Saldo:</span>
-              <span className={`${field} flex items-center font-black ${balanceValue < 0 ? 'text-red-600' : 'text-blue-800'}`}>
-                {fmt(balanceValue)}
-              </span>
-            </div>
+              <div className={`flex items-stretch w-[24%] ${divider}`}>
+                <span className={label}>Saldo:</span>
+                <input
+                  id="ip-balance"
+                  name="balance_value"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={balanceValue || ''}
+                  onChange={(e) => setBalanceValue(Number(e.target.value))}
+                  className={`${field} font-black ${balanceValue < 0 ? 'text-red-600' : 'text-blue-800'}`}
+                />
+              </div>
           </div>
 
           {/* Override saldo negativo */}
@@ -610,20 +616,20 @@ export default function FreightOrderForm({ initialData }: Props) {
             </div>
           </div>
 
-          {/* DADOS BANCÁRIOS: BANCO / AG. / CONTA */}
-          <div className={cell}>
-            <span className={label}>Dados Bancários:</span>
-            <div className="flex items-stretch flex-1 min-w-0">
-              <span className={label}>Banco:</span>
-              <input
-                id="ip-driver-bank"
-                name="driver_bank_name"
-                type="text"
-                value={driverDraft.bank_name}
-                onChange={(e) => updateDriverDraft({ bank_name: e.target.value })}
-                className={field}
-                readOnly={isEdit && !!driverId}
-              />
+              {/* DADOS BANCÁRIOS: PIX/BANCO / AG. / CONTA */}
+              <div className={cell}>
+                <span className={label}>Dados Bancários:</span>
+                <div className="flex items-stretch flex-1 min-w-0">
+                  <span className={label}>Pix/Banco:</span>
+                  <input
+                    id="ip-driver-pix-key"
+                    name="driver_pix_key"
+                    type="text"
+                    value={driverDraft.pix_key}
+                    onChange={(e) => updateDriverDraft({ pix_key: e.target.value })}
+                    className={field}
+                    readOnly={isEdit && !!driverId}
+                  />
             </div>
             <div className={`flex items-stretch w-[26%] ${divider}`}>
               <span className={label}>AG.:</span>
@@ -819,8 +825,6 @@ export default function FreightOrderForm({ initialData }: Props) {
                   inputId="ip-vhc-select"
                   inputClass={selectField}
                   placeholder="— buscar por placa ou modelo —"
-                  freeTextValue={vehicleDraft.model}
-                  onFreeTextChange={(value) => updateVehicleDraft({ model: value })}
                 />
                 <select
                   id="ip-vehicle-type"
@@ -864,35 +868,49 @@ export default function FreightOrderForm({ initialData }: Props) {
                   />
                 </div>
               </div>
-              {/* ANO VEÍCULO / MOD */}
+              {/* ANO VEÍCULO / MODELO */}
               <div className="flex items-stretch">
                 <div className="flex items-stretch flex-1 min-w-0">
-                    <span className={label}>Ano Fab.:</span>
-                    <input
-                      id="ip-vehicle-manufacture-year"
-                      name="vehicle_manufacture_year"
-                      type="number"
-                      value={vehicleDraft.manufacture_year || ''}
-                      onChange={(e) => {
-                        const year = Number(e.target.value);
-                        updateVehicleDraft({ manufacture_year: year, year });
-                      }}
-                      className={field}
-                      readOnly={isEdit && !!vehicleId}
-                    />
-                  </div>
-                  <div className={`flex items-stretch w-[42%] ${divider}`}>
-                    <span className={label}>Ano Mod.:</span>
-                    <input
-                      id="ip-vehicle-model-year"
-                      name="vehicle_model_year"
-                      type="number"
-                      value={vehicleDraft.model_year || ''}
-                      onChange={(e) => updateVehicleDraft({ model_year: Number(e.target.value) })}
-                      className={field}
-                      readOnly={isEdit && !!vehicleId}
-                    />
-                  </div>
+                  <span className={label}>Ano Fab.:</span>
+                  <input
+                    id="ip-vehicle-manufacture-year"
+                    name="vehicle_manufacture_year"
+                    type="number"
+                    value={vehicleDraft.manufacture_year || ''}
+                    onChange={(e) => {
+                      const year = Number(e.target.value);
+                      updateVehicleDraft({ manufacture_year: year, year });
+                    }}
+                    className={`${field} max-w-[5.25rem] text-center`}
+                    placeholder="Fab."
+                    readOnly={isEdit && !!vehicleId}
+                  />
+                  <span className="flex items-center border-l-2 border-r-2 border-slate-900 px-2 text-sm font-black text-slate-900">/</span>
+                  <input
+                    id="ip-vehicle-model-year"
+                    name="vehicle_model_year"
+                    type="number"
+                    value={vehicleDraft.model_year || ''}
+                    onChange={(e) => updateVehicleDraft({ model_year: Number(e.target.value) })}
+                    className={`${field} max-w-[5.25rem] text-center`}
+                    placeholder="Mod."
+                    aria-label="Ano modelo"
+                    readOnly={isEdit && !!vehicleId}
+                  />
+                </div>
+                <div className={`flex items-stretch w-[42%] ${divider}`}>
+                  <span className={label}>Modelo:</span>
+                  <input
+                    id="ip-vehicle-model"
+                    name="vehicle_model"
+                    type="text"
+                    value={vehicleDraft.model}
+                    onChange={(e) => updateVehicleDraft({ model: e.target.value })}
+                    placeholder="DAF/XF FTS 480"
+                    className={field}
+                    readOnly={isEdit && !!vehicleId}
+                  />
+                </div>
                 </div>
             </div>
           </div>

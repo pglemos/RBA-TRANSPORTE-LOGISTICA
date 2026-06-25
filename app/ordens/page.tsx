@@ -282,7 +282,10 @@ export default function OrdersListPage() {
                       
                       {/* Order and CTE link */}
                       <td className="p-4">
-                        <Link href={`/ordens/${o.id}`} className="font-extrabold text-xs text-yellow-650 hover:underline">
+                        <Link
+                          href={`/ordens/${o.id}`}
+                          className={`font-extrabold text-xs hover:underline ${o.cte_number ? 'text-yellow-650' : 'text-red-600'}`}
+                        >
                           {o.cte_number || 'A emitir'}
                         </Link>
                       </td>
@@ -298,8 +301,8 @@ export default function OrdersListPage() {
                       {/* Vehicle Plates */}
                       <td className="p-4">
                         <div>
-                          <p className="text-slate-800">{o.vehicle_model}</p>
-                          <p className="text-[10px] text-slate-450 font-mono">Placa: {o.vehicle_tractor_plate} | {o.vehicle_trailer_plate}</p>
+                          <p className="font-extrabold text-xs text-slate-900 font-mono">{o.vehicle_tractor_plate} | {o.vehicle_trailer_plate}</p>
+                          <p className="text-[10px] text-slate-450">{o.vehicle_model}</p>
                         </div>
                       </td>
 
@@ -307,7 +310,6 @@ export default function OrdersListPage() {
                       <td className="p-4 text-slate-800">
                         <div>
                           <p>{o.origin} ➔ {o.destination}</p>
-                          <p className="text-[9.5px] text-slate-450">Limite de Entrega: {o.delivery_date || 'N/A'}</p>
                         </div>
                       </td>
 
@@ -318,8 +320,13 @@ export default function OrdersListPage() {
                       <td className="p-4 font-mono font-bold text-slate-900">
                         R$ {(Number(o.cte_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </td>
-                      <td className={`p-4 font-mono font-bold ${o.balance_value < 0 ? 'text-red-600' : 'text-slate-900'}`}>
-                        R$ {o.balance_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      <td className="p-4 font-mono font-bold text-slate-900">
+                        <div className="space-y-0.5 leading-tight">
+                          <p>AD R$ {(Number(o.advance_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                          <p className={o.balance_value < 0 ? 'text-red-600' : 'text-slate-900'}>
+                            SD R$ {o.balance_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </p>
+                        </div>
                       </td>
 
                       {/* Status label */}

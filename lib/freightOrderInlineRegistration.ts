@@ -79,7 +79,7 @@ export function normalizeInlineVehiclePayload(input: InlineVehicleInput = {}) {
     manufacture_year: manufactureYear,
     model_year: modelYear,
     vehicle_type: vehicleType,
-    model: String(input.model || vehicleType || tractorPlate).trim(),
+    model: String(input.model || '').trim(),
     owner_name: String(input.owner_name || '').trim(),
     owner_document: normalizeDocument(input.owner_document || ''),
     antt: String(input.antt || '').trim(),

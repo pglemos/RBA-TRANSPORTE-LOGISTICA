@@ -33,6 +33,7 @@ export interface FreightOrdersSummary {
   totalGrossRevenue: number;
   totalDriverFreight: number;
   totalAdvance: number;
+  totalDriverPaid: number;
   totalBalanceToPay: number;
   totalExpenses: number;
   totalCteDiscount: number;
@@ -55,6 +56,9 @@ export function calculateFreightOrderFinancials(order: FreightFinancialInput): F
   const freightValue = toNumber(order.freight_value);
   const advanceValue = toNumber(order.advance_value);
   const cashValue = toNumber(order.cash_value);
+  const balanceValue = hasValue(order.balance_value)
+    ? toNumber(order.balance_value)
+    : freightValue - advanceValue - cashValue;
   const loadingExpense = toNumber(order.loading_expense);
   const unloadingExpense = toNumber(order.unloading_expense);
   const otherExpenses = toNumber(order.other_expenses);
@@ -70,7 +74,7 @@ export function calculateFreightOrderFinancials(order: FreightFinancialInput): F
     freight_value: roundCurrency(freightValue),
     advance_value: roundCurrency(advanceValue),
     cash_value: roundCurrency(cashValue),
-    balance_value: roundCurrency(freightValue - advanceValue - cashValue),
+    balance_value: roundCurrency(balanceValue),
     loading_expense: roundCurrency(loadingExpense),
     unloading_expense: roundCurrency(unloadingExpense),
     other_expenses: roundCurrency(otherExpenses),
@@ -92,7 +96,11 @@ export function summarizeFreightOrders(
     summary.totalGrossRevenue += financials.cte_value;
     summary.totalDriverFreight += financials.freight_value;
     summary.totalAdvance += financials.advance_value;
-    summary.totalBalanceToPay += financials.balance_value;
+    summary.totalDriverPaid += financials.advance_value + financials.cash_value + financials.balance_value;
+    summary.totalBalanceToPay += Math.max(
+      financials.freight_value - financials.advance_value - financials.cash_value - financials.balance_value,
+      0,
+    );
     summary.totalExpenses += financials.total_expenses;
     summary.totalCteDiscount += financials.cte_discount_value;
     summary.totalNet += financials.net_value;
@@ -106,6 +114,7 @@ export function summarizeFreightOrders(
     totalGrossRevenue: 0,
     totalDriverFreight: 0,
     totalAdvance: 0,
+    totalDriverPaid: 0,
     totalBalanceToPay: 0,
     totalExpenses: 0,
     totalCteDiscount: 0,
