@@ -270,7 +270,7 @@ export default function OrdersListPage() {
                     <th className="p-4">Origem ➔ Destino</th>
                     <th className="p-4">Cliente Pagador</th>
                     <th className="p-4">Valor CTE</th>
-                    <th className="p-4">Saldo do Frete</th>
+                    <th className="p-4 min-w-[128px]">Saldo do Frete</th>
                     <th className="p-4">Status Geral</th>
                     <th className="p-4 text-center">Imprimir</th>
                     <th className="p-4 text-right">Ações de Pátio</th>
@@ -320,10 +320,12 @@ export default function OrdersListPage() {
                       <td className="p-4 font-mono font-bold text-slate-900">
                         R$ {(Number(o.cte_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </td>
-                      <td className="p-4 font-mono font-bold text-slate-900">
-                        <div className="space-y-0.5 leading-tight">
-                          <p>AD R$ {(Number(o.advance_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                          <p className={o.balance_value < 0 ? 'text-red-600' : 'text-slate-900'}>
+                      <td className="p-4 min-w-[128px] font-bold text-slate-900">
+                        <div className="w-max min-w-[108px] text-[11px] leading-tight tracking-normal">
+                          <p className="whitespace-nowrap border-b border-slate-200 pb-1">
+                            AD R$ {(Number(o.advance_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </p>
+                          <p className={`whitespace-nowrap pt-1 ${o.balance_value < 0 ? 'text-red-600' : 'text-slate-900'}`}>
                             SD R$ {o.balance_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </p>
                         </div>
