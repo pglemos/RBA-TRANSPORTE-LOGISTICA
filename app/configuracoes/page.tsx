@@ -157,7 +157,7 @@ export default function SettingsPage() {
                   required
                   value={companyDocument}
                   onChange={(e) => setCompanyDocument(e.target.value)}
-                  className="w-full text-xs font-mono font-bold px-3 py-2 bg-slate-100 border border-slate-100 text-slate-500 rounded-lg outline-none cursor-not-allowed"
+                  className="w-full text-xs font-bold px-3 py-2 bg-slate-100 border border-slate-100 text-slate-500 rounded-lg outline-none cursor-not-allowed"
                   readOnly
                 />
               </div>
@@ -178,7 +178,7 @@ export default function SettingsPage() {
                   type="text"
                   value={insurancePolicyNumber}
                   onChange={(e) => setInsurancePolicyNumber(e.target.value)}
-                  className="w-full text-xs font-mono font-bold px-3 py-2 bg-slate-55 border border-slate-200 rounded-lg outline-none text-slate-800"
+                  className="w-full text-xs font-bold px-3 py-2 bg-slate-55 border border-slate-200 rounded-lg outline-none text-slate-800"
                 />
               </div>
 
@@ -218,26 +218,26 @@ export default function SettingsPage() {
                 <Terminal className="h-5 w-5 text-yellow-400 shrink-0" />
                 <div>
                   <h3 className="text-xs font-black text-white uppercase tracking-widest leading-none">Console RBA Access Logs (LGPD)</h3>
-                  <span className="text-[10px] text-slate-400 font-mono mt-1 block">Rastreamento de acessos e CRUDs às tabelas de dados.</span>
+                  <span className="text-[10px] text-slate-400 mt-1 block">Rastreamento de acessos e CRUDs às tabelas de dados.</span>
                 </div>
               </div>
-              <span className="text-[9px] bg-red-500/10 text-red-400 rounded px-2 py-0.5 font-mono uppercase font-bold tracking-wider">
+              <span className="text-[9px] bg-red-500/10 text-red-400 rounded px-2 py-0.5 uppercase font-bold tracking-wider">
                 Imutável
               </span>
             </div>
 
             {loading ? (
-              <div className="py-24 text-center font-mono text-slate-500 text-xs">
+              <div className="py-24 text-center text-slate-500 text-xs">
                 Resgatando log do pátio securitário...
               </div>
             ) : auditLogs.length === 0 ? (
-              <div className="py-24 text-center font-mono text-slate-500 text-xs">
+              <div className="py-24 text-center text-slate-500 text-xs">
                 Sem logs registrados no sistema.
               </div>
             ) : (
               <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                 {auditLogs.map((log) => (
-                  <div key={log.id} className="p-3.5 bg-slate-900/60 border border-slate-850 hover:bg-slate-900 rounded-xl space-y-1.5 transition-colors text-[11px] font-mono leading-relaxed">
+                  <div key={log.id} className="p-3.5 bg-slate-900/60 border border-slate-850 hover:bg-slate-900 rounded-xl space-y-1.5 transition-colors text-[11px] leading-relaxed">
                     
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[10px] text-slate-500 gap-1">
                       <span className="text-yellow-450 block font-bold uppercase tracking-wider">{log.action}</span>
@@ -256,7 +256,7 @@ export default function SettingsPage() {
               </div>
             )}
 
-            <div className="pt-2 border-t border-white/5 text-[9px] text-slate-500 font-mono flex items-center justify-between">
+            <div className="pt-2 border-t border-white/5 text-[9px] text-slate-500 flex items-center justify-between">
               <span>RBA LOG ENGINE V1.0</span>
               <span>ESTE HISTÓRICO NÃO PODE SER EXCLUÍDO MESMO POR ADMINISTRADORES</span>
             </div>

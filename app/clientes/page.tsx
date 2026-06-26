@@ -249,7 +249,7 @@ export default function ClientsPage() {
                     placeholder="Ex: 12.345.678/0001-90"
                     value={document}
                     onChange={(e) => setDocument(e.target.value)}
-                    className="w-full text-xs font-mono font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
                   />
                 </div>
               </div>
@@ -373,8 +373,8 @@ export default function ClientsPage() {
                   {filteredClients.map((c) => (
                     <tr key={c.id} className="hover:bg-slate-50">
                       <td className="p-4 font-black text-slate-900">{c.name}</td>
-                      <td className="p-4 font-mono font-bold text-slate-650">{c.document}</td>
-                      <td className="p-4 font-mono text-slate-550">{c.email || 'N/A'}</td>
+                      <td className="p-4 font-bold text-slate-650">{c.document}</td>
+                      <td className="p-4 text-slate-550">{c.email || 'N/A'}</td>
                       <td className="p-4">{c.phone || 'N/A'}</td>
                       <td className="p-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">

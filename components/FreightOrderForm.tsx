@@ -249,18 +249,22 @@ export default function FreightOrderForm({ initialData }: Props) {
     loadResources();
   }, [initialData?.driver_id, initialData?.vehicle_id]);
 
-  // Autofill: o operador logado é o responsável padrão pela consulta Buonny
+  // Autofill: o operador logado é o responsável padrão pela consulta Buonny e pela contratação
   useEffect(() => {
-    if (!buonnyResponsible) {
-      fetch('/api/auth/me')
-        .then(r => r.json())
-        .then(d => {
-          if (d?.user) {
+    fetch('/api/auth/me')
+      .then(r => r.json())
+      .then(d => {
+        if (d?.user) {
+          if (!buonnyResponsible) {
             setBuonnyResponsible(d.user.name);
           }
-        });
-    }
-  }, [buonnyResponsible]);
+          if (!responsibleName) {
+            setResponsibleName(d.user.name);
+          }
+        }
+      })
+      .catch(() => {});
+  }, [buonnyResponsible, responsibleName]);
 
   const selectDriver = (id: string) => {
     setDriverId(id);
@@ -516,7 +520,7 @@ export default function FreightOrderForm({ initialData }: Props) {
                 onChange={selectDriver}
                 display="cpf"
                 inputId="ip-driver-cpf"
-                inputClass={field + ' font-mono'}
+                inputClass={field}
                 placeholder="— buscar por CPF —"
                 freeTextValue={driverDraft.cpf}
                 onFreeTextChange={(value) => updateDriverDraft({ cpf: value })}
@@ -732,7 +736,7 @@ export default function FreightOrderForm({ initialData }: Props) {
                         maxLength={20}
                         placeholder="Código Buonny"
                         aria-label="Código da consulta Buonny"
-                        className={`${field} w-[45%] flex-none border-l-2 border-slate-900 font-mono tracking-wide placeholder:font-semibold placeholder:tracking-normal placeholder:text-slate-400`}
+                        className={`${field} w-[45%] flex-none border-l-2 border-slate-900 tracking-wide placeholder:font-semibold placeholder:tracking-normal placeholder:text-slate-400`}
                       />
                     )}
                   </div>
@@ -849,7 +853,7 @@ export default function FreightOrderForm({ initialData }: Props) {
                     onChange={selectVehicle}
                     display="tractor"
                     inputId="ip-vhc-tractor-search"
-                    inputClass={field + ' font-mono uppercase'}
+                    inputClass={field + ' uppercase'}
                     placeholder="— buscar placa cav. —"
                     freeTextValue={vehicleDraft.tractor_plate}
                     onFreeTextChange={(value) => updateVehicleDraft({ tractor_plate: value })}
@@ -863,7 +867,7 @@ export default function FreightOrderForm({ initialData }: Props) {
                     type="text"
                     value={vehicleDraft.trailer_plate}
                     onChange={(e) => updateVehicleDraft({ trailer_plate: e.target.value.toUpperCase() })}
-                    className={field + ' font-mono uppercase'}
+                    className={field + ' uppercase'}
                     readOnly={isEdit && !!vehicleId}
                   />
                 </div>
@@ -1194,7 +1198,7 @@ function DriverCombobox({
                 <span className="block text-xs font-bold text-slate-900">
                   {d.name}{d.status === 'Bloqueado' ? ' ⚠ (BLOQUEADO)' : ''}
                 </span>
-                <span className="block text-[11px] font-mono text-blue-700">CPF: {d.cpf || '—'}</span>
+                <span className="block text-[11px] text-blue-700">CPF: {d.cpf || '—'}</span>
               </button>
             ))
           )}

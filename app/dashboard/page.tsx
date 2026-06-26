@@ -342,7 +342,7 @@ export default function DashboardPage() {
                               <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">Entrega: {order.delivery_date}</p>
                             </td>
                             <td className="p-4 font-semibold text-slate-600">{order.client_name}</td>
-                            <td className="p-4 font-mono font-black text-slate-950">{formatCurrency(Number(order.cte_value) || 0)}</td>
+                            <td className="p-4 font-black text-slate-950">{formatCurrency(Number(order.cte_value) || 0)}</td>
                             <td className="p-4">
                               <StatusBadge status={order.status} />
                             </td>

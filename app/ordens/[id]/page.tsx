@@ -309,7 +309,7 @@ const id = params?.id;
                 </div>
                 <div>
                   <span className="text-[9px] text-slate-450 block font-bold uppercase mb-0.5">Data de Entrega Limite</span>
-                  <p className="text-slate-900 font-bold font-mono">{order.delivery_date || 'N/A'}</p>
+                  <p className="text-slate-900 font-bold">{order.delivery_date || 'N/A'}</p>
                 </div>
               </div>
 
@@ -317,7 +317,7 @@ const id = params?.id;
                 <div>
                   <span className="text-[9px] text-slate-450 block font-bold uppercase">Cliente Tomador / Pagador</span>
                   <p className="text-slate-900 font-bold mt-1 text-sm leading-none">{order.client_name}</p>
-                  <p className="text-slate-500 font-mono mt-1">CNPJ: {order.client_document}</p>
+                  <p className="text-slate-500 mt-1">CNPJ: {order.client_document}</p>
                 </div>
 
                 {order.notes && (
@@ -348,8 +348,8 @@ const id = params?.id;
                 <div className="space-y-1.5">
                   <span className="text-[9px] text-slate-450 block font-bold">CONTA E CHAVE CONTROLE</span>
                   <p className="text-slate-900 font-black">{order.driver_name}</p>
-                  <p className="text-slate-500 font-mono">CPF: {order.driver_cpf}</p>
-                  <p className="text-slate-500 font-mono">RG: {order.driver_rg}</p>
+                  <p className="text-slate-500">CPF: {order.driver_cpf}</p>
+                  <p className="text-slate-500">RG: {order.driver_rg}</p>
                   <p className="text-slate-500">Contato: {order.driver_phone}</p>
                 </div>
 
@@ -358,7 +358,7 @@ const id = params?.id;
                   <p className="text-slate-800 font-bold">{order.bank_data_snapshot.beneficiary_name}</p>
                   <p className="text-slate-500">Banco: {order.bank_data_snapshot.bank_name}</p>
                   <p className="text-slate-500">Ag: {order.bank_data_snapshot.bank_agency} | CC: {order.bank_data_snapshot.bank_account}</p>
-                  <p className="text-emerald-700 font-bold font-mono">Pix: {order.bank_data_snapshot.pix_key}</p>
+                  <p className="text-emerald-700 font-bold">Pix: {order.bank_data_snapshot.pix_key}</p>
                 </div>
               </div>
             </div>
@@ -378,19 +378,19 @@ const id = params?.id;
                   <h4 className="text-[9px] font-black uppercase tracking-wider text-slate-400">Fluxos de Pagamentos</h4>
                   <div className="flex justify-between border-b pb-1.5 text-slate-600">
                     <span>Valor do Frete ao Motorista:</span>
-                    <strong className="text-slate-900 font-mono">R$ {order.freight_value.toLocaleString('pt-BR')}</strong>
+                    <strong className="text-slate-900">R$ {order.freight_value.toLocaleString('pt-BR')}</strong>
                   </div>
                   <div className="flex justify-between border-b pb-1.5 text-red-700">
                     <span>(-) Adiantamento faturado:</span>
-                    <strong className="font-mono">R$ {order.advance_value.toLocaleString('pt-BR')}</strong>
+                    <strong>R$ {order.advance_value.toLocaleString('pt-BR')}</strong>
                   </div>
                   <div className="flex justify-between border-b pb-1.5 text-red-700">
                     <span>(-) Pedágio / Pago à Vista:</span>
-                    <strong className="font-mono">R$ {order.cash_value.toLocaleString('pt-BR')}</strong>
+                    <strong>R$ {order.cash_value.toLocaleString('pt-BR')}</strong>
                   </div>
                   <div className="flex justify-between text-slate-950 font-black pt-1.5 bg-yellow-500/10 p-2.5 rounded-lg border border-yellow-500/20">
                     <span>SALDO DE FRETE A PAGAR:</span>
-                    <strong className="font-mono">R$ {order.balance_value.toLocaleString('pt-BR')}</strong>
+                    <strong>R$ {order.balance_value.toLocaleString('pt-BR')}</strong>
                   </div>
                 </div>
 
@@ -398,19 +398,19 @@ const id = params?.id;
                   <h4 className="text-[9px] font-black uppercase tracking-wider text-slate-400">Custos e Ajustes de Carga</h4>
                   <div className="flex justify-between border-b pb-1.5 text-slate-550">
                     <span>Ajudante de Carga:</span>
-                    <span className="font-mono">R$ {order.loading_expense.toLocaleString('pt-BR')}</span>
+                    <span>R$ {order.loading_expense.toLocaleString('pt-BR')}</span>
                   </div>
                   <div className="flex justify-between border-b pb-1.5 text-slate-550">
                     <span>Pedágio / Descarga duto:</span>
-                    <span className="font-mono">R$ {order.unloading_expense.toLocaleString('pt-BR')}</span>
+                    <span>R$ {order.unloading_expense.toLocaleString('pt-BR')}</span>
                   </div>
                   <div className="flex justify-between border-b pb-1.5 text-slate-550">
                     <span>Outros custos operacionais:</span>
-                    <span className="font-mono">R$ {order.other_expenses.toLocaleString('pt-BR')}</span>
+                    <span>R$ {order.other_expenses.toLocaleString('pt-BR')}</span>
                   </div>
                   <div className="flex justify-between text-emerald-900 font-black pt-1.5 bg-emerald-500/10 p-2.5 rounded-lg border border-emerald-500/20">
                     <span>VALOR LÍQUIDO RBA:</span>
-                    <strong className="font-mono">R$ {order.net_value.toLocaleString('pt-BR')}</strong>
+                    <strong>R$ {order.net_value.toLocaleString('pt-BR')}</strong>
                   </div>
                 </div>
               </div>
@@ -426,7 +426,7 @@ const id = params?.id;
                   Faturamento (CTE) — Memória de Cálculo
                 </h2>
                 {order.cte_number && (
-                  <span className="text-[10px] bg-slate-100 p-1 px-2.5 rounded-full font-bold text-slate-600 font-mono">
+                  <span className="text-[10px] bg-slate-100 p-1 px-2.5 rounded-full font-bold text-slate-600">
                     CTE {order.cte_number}
                   </span>
                 )}
@@ -468,23 +468,23 @@ const id = params?.id;
               <div className="bg-emerald-50/60 border border-emerald-200 rounded-xl p-4 space-y-1.5 text-xs font-medium">
                 <div className="flex justify-between text-slate-700">
                   <span>Receita Bruta (CTE)</span>
-                  <strong className="font-mono text-blue-800">R$ {fmtBR(cteValueEdit)}</strong>
+                  <strong className="text-blue-800">R$ {fmtBR(cteValueEdit)}</strong>
                 </div>
                 <div className="flex justify-between text-red-700">
                   <span>(−) Desconto ({Number(cteDiscountEdit) || 0}%)</span>
-                  <strong className="font-mono">− R$ {fmtBR(fatDescontoValor)}</strong>
+                  <strong>− R$ {fmtBR(fatDescontoValor)}</strong>
                 </div>
                 <div className="flex justify-between text-red-700">
                   <span>(−) Valor de Frete <span className="text-slate-400">(motorista: AD. + saldo)</span></span>
-                  <strong className="font-mono">− R$ {fmtBR(fatFrete)}</strong>
+                  <strong>− R$ {fmtBR(fatFrete)}</strong>
                 </div>
                 <div className="flex justify-between text-red-700">
                   <span>(−) Despesas <span className="text-slate-400">(carga / descarga / outros)</span></span>
-                  <strong className="font-mono">− R$ {fmtBR(fatDespesas)}</strong>
+                  <strong>− R$ {fmtBR(fatDespesas)}</strong>
                 </div>
                 <div className={`flex justify-between font-black pt-2 mt-1 border-t border-emerald-200 ${fatLiquido < 0 ? 'text-red-600' : 'text-emerald-800'}`}>
                   <span className="uppercase">Resultado Líquido RBA</span>
-                  <strong className="font-mono text-sm">R$ {fmtBR(fatLiquido)}</strong>
+                  <strong className="text-sm">R$ {fmtBR(fatLiquido)}</strong>
                 </div>
               </div>
 
@@ -678,7 +678,7 @@ const id = params?.id;
               </div>
 
               {/* Timber timeline events list */}
-              <div className="space-y-3 text-[11px] font-mono leading-relaxed">
+              <div className="space-y-3 text-[11px] leading-relaxed">
                 
                 <div className="border-l-2 border-yellow-500 pl-3 relative">
                   <span className="absolute -left-1.5 top-1 h-3 w-3 rounded-full bg-yellow-500" />

@@ -294,14 +294,14 @@ export default function OrdersListPage() {
                       <td className="p-4">
                         <div>
                           <p className="font-bold text-slate-900">{o.driver_name}</p>
-                          <p className="text-[10px] text-slate-500 font-mono">CPF: {o.driver_cpf}</p>
+                          <p className="text-[10px] text-slate-500">CPF: {o.driver_cpf}</p>
                         </div>
                       </td>
 
                       {/* Vehicle Plates */}
                       <td className="p-4">
                         <div>
-                          <p className="font-extrabold text-xs text-slate-900 font-mono">{o.vehicle_tractor_plate} | {o.vehicle_trailer_plate}</p>
+                          <p className="font-extrabold text-xs text-slate-900">{o.vehicle_tractor_plate} | {o.vehicle_trailer_plate}</p>
                           <p className="text-[10px] text-slate-450">{o.vehicle_model}</p>
                         </div>
                       </td>

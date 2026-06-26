@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
 import RBALogo from '@/components/RBALogo';
 import { Search, Printer, DollarSign, BarChart3, Filter, ShieldCheck, FileCheck, ArrowDownToLine } from 'lucide-react';
@@ -105,7 +106,7 @@ export default function ReportsPage() {
           <div className="space-y-1.5">
             <label className="text-[10px] uppercase font-bold text-slate-500 block">Filtrar por Cliente Tomador</label>
             <div className="flex items-center gap-2 bg-slate-50 border border-slate-250 rounded-xl px-3 py-2.5">
-              <Filter className="h-4 w-4 text-slate-400 shrink-0" />
+              <Filter className="h-4 w-4 text-slate-450 shrink-0" />
               <select
                 value={selectedClient}
                 onChange={(e) => setSelectedClient(e.target.value)}
@@ -167,14 +168,12 @@ export default function ReportsPage() {
               <h1 className="text-lg font-black tracking-tight">RBA TRANSPORTE & LOGÍSTICA S.A.</h1>
               <p className="text-xs uppercase font-bold text-slate-500">Relatório Consolidado de Contratos de Fretes e Custos Fiscais</p>
               <p className="text-[10px] text-slate-450">Filtro Cliente: {selectedClient ? 'Filtro Ativo' : 'Todos'} | Status: {statusFilter || 'Todos'}</p>
-            </div>
-
-            {/* FINANCIAL BLOCKS VIEW */}
+                       {/* FINANCIAL BLOCKS VIEW */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               
               <div className="bg-white border rounded-2xl p-4 text-center">
                 <span className="text-[9px] text-slate-450 font-black block uppercase tracking-wider mb-2">Faturamento Bruto</span>
-                <span className="text-md md:text-lg font-black font-mono text-slate-900 block">
+                <span className="text-md md:text-lg font-black text-slate-900 block">
                   R$ {totalGrossRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
                 <span className="text-[8px] text-slate-400 block mt-1">Soma do valor bruto do CTE</span>
@@ -182,29 +181,29 @@ export default function ReportsPage() {
 
               <div className="bg-white border rounded-2xl p-4 text-center">
                 <span className="text-[9px] text-slate-450 font-black block uppercase tracking-wider mb-2">Adiantamentos Faturados</span>
-                <span className="text-md md:text-lg font-black font-mono text-slate-900 block text-sky-700">
+                <span className="text-md md:text-lg font-black text-slate-900 block text-sky-700">
                   R$ {totalAdvance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
-                <span className="text-[8px] text-slate-400 block mt-1">Adiantamentos já repassados em Pix</span>
+                <span className="text-[8px] text-slate-400 block mt-1">Adiantamentos já repassados in Pix</span>
               </div>
 
               <div className="bg-white border rounded-2xl p-4 text-center bg-yellow-500/5 border-yellow-500/10">
                 <span className="text-[9px] text-slate-450 font-black block uppercase tracking-wider mb-2">Saldos Residuais Restantes</span>
-                <span className="text-md md:text-lg font-black font-mono text-yellow-800 block">
+                <span className="text-md md:text-lg font-black text-yellow-800 block">
                   R$ {totalBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
-                <span className="text-[8px] text-slate-450 block mt-1">A pagar na entrega do romaneio</span>
+                <span className="text-[8px] text-slate-455 block mt-1">A pagar na entrega do romaneio</span>
               </div>
 
               <div className="bg-white border rounded-2xl p-4 text-center bg-emerald-500/5 border-emerald-500/10">
                 <span className="text-[9px] text-slate-450 font-black block uppercase tracking-wider mb-2">Lucro Líquido Estimado</span>
-                <span className="text-md md:text-lg font-black font-mono text-emerald-800 block">
+                <span className="text-md md:text-lg font-black text-emerald-800 block">
                   R$ {totalNet.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
                   <span className="text-[8px] text-slate-450 block mt-1">CTE líquido - motorista - despesas</span>
               </div>
 
-            </div>
+            </div>      </div>
 
             {/* DETAILED SPREADSHEET */}
             <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xs">
@@ -220,33 +219,40 @@ export default function ReportsPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-[11px] font-medium text-slate-700">
                     <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200 font-bold text-slate-400 text-[9.5px]">
-                        <th className="p-3">CTE</th>
+                      <tr className="bg-slate-55 border-b border-slate-200 font-bold text-slate-400 text-[9.5px]">
+                        <th className="p-3">CTE/MANIFESTO</th>
                         <th className="p-3">Data Emissão</th>
                         <th className="p-3">Motorista</th>
                         <th className="p-3">Origem ➔ Destino</th>
                         <th className="p-3">Cliente</th>
-                        <th className="p-3 font-mono text-right">CTE (R$)</th>
-                        <th className="p-3 font-mono text-right">Adiantamento (R$)</th>
-                        <th className="p-3 font-mono text-right">Saldo (R$)</th>
-                        <th className="p-3 font-mono text-right">Líquido (R$)</th>
+                        <th className="p-3 text-right">CTE (R$)</th>
+                        <th className="p-3 text-right">Adiantamento (R$)</th>
+                        <th className="p-3 text-right">Saldo (R$)</th>
+                        <th className="p-3 text-right">Líquido (R$)</th>
                         <th className="p-3 text-center">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-150">
                       {filteredOrders.map(o => (
                         <tr key={o.id} className="hover:bg-slate-50">
-                          <td className="p-3 font-extrabold text-slate-900">{o.cte_number || 'Sem CTE'}</td>
-                          <td className="p-3 font-mono text-slate-450">
+                          <td className="p-3">
+                            <Link
+                              href={`/ordens/${o.id}`}
+                              className={`font-extrabold text-xs hover:underline ${o.cte_number ? 'text-yellow-650' : 'text-red-600'}`}
+                            >
+                              {o.cte_number || 'A emitir'}
+                            </Link>
+                          </td>
+                          <td className="p-3 text-slate-450">
                             {o.created_at ? new Date(o.created_at).toLocaleDateString('pt-BR') : 'N/A'}
                           </td>
                           <td className="p-3 font-bold text-slate-900">{o.driver_name}</td>
                           <td className="p-3 truncate max-w-[120px]">{o.origin} ➔ {o.destination}</td>
                           <td className="p-3 truncate max-w-[110px] text-slate-500">{o.client_name}</td>
-                          <td className="p-3 font-mono text-right font-bold text-slate-900">R$ {(Number(o.cte_value) || 0).toLocaleString('pt-BR')}</td>
-                          <td className="p-3 font-mono text-right text-slate-500">R$ {o.advance_value.toLocaleString('pt-BR')}</td>
-                          <td className="p-3 font-mono text-right text-slate-500">R$ {o.balance_value.toLocaleString('pt-BR')}</td>
-                          <td className="p-3 font-mono text-right text-emerald-800 font-black">R$ {o.net_value.toLocaleString('pt-BR')}</td>
+                          <td className="p-3 text-right font-bold text-slate-900">R$ {(Number(o.cte_value) || 0).toLocaleString('pt-BR')}</td>
+                          <td className="p-3 text-right text-slate-500">R$ {o.advance_value.toLocaleString('pt-BR')}</td>
+                          <td className="p-3 text-right text-slate-500">R$ {o.balance_value.toLocaleString('pt-BR')}</td>
+                          <td className="p-3 text-right text-emerald-800 font-black">R$ {o.net_value.toLocaleString('pt-BR')}</td>
                           <td className="p-3 text-center">
                             <span className={`p-0.5 px-2 rounded text-[9px] uppercase font-bold ${getFreightStatusMeta(o.status).className}`}>
                               {getFreightStatusMeta(o.status).icon} {normalizeFreightOrderStatus(o.status)}
@@ -268,7 +274,7 @@ export default function ReportsPage() {
               </div>
               <div className="text-right">
                 <p>Relatório gerado via sistema RBA Fretes Digital em {new Date().toLocaleString('pt-BR')}</p>
-                <p className="font-mono text-[8px] text-slate-400">HASH-SECURE: SHA-256/ANALYSIS-SYSTEM-ROUTINES</p>
+                <p className="text-[8px] text-slate-400">HASH-SECURE: SHA-256/ANALYSIS-SYSTEM-ROUTINES</p>
               </div>
             </div>
 

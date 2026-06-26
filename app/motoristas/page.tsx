@@ -285,7 +285,7 @@ export default function DriversPage() {
                     placeholder="Ex: 123.456.789-00"
                     value={cpf}
                     onChange={(e) => setCpf(e.target.value)}
-                    className="w-full text-xs font-mono font-bold px-3 py-2.5 bg-slate-50 border border-slate-250 rounded-lg outline-none"
+                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
                   />
                 </div>
 
@@ -297,7 +297,7 @@ export default function DriversPage() {
                     placeholder="Ex: 50.123.456-7"
                     value={rg}
                     onChange={(e) => setRg(e.target.value)}
-                    className="w-full text-xs font-mono font-bold px-3 py-2.5 bg-slate-50 border border-slate-250 rounded-lg outline-none"
+                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
                   />
                 </div>
               </div>
@@ -352,7 +352,7 @@ export default function DriversPage() {
                       placeholder="Ex: 0001"
                       value={bankAgency}
                       onChange={(e) => setBankAgency(e.target.value)}
-                      className="w-full text-xs font-mono font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                      className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
                     />
                   </div>
 
@@ -363,7 +363,7 @@ export default function DriversPage() {
                       placeholder="Ex: 12345-6"
                       value={bankAccount}
                       onChange={(e) => setBankAccount(e.target.value)}
-                      className="w-full text-xs font-mono font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                      className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
                     />
                   </div>
 
@@ -399,7 +399,7 @@ export default function DriversPage() {
                       placeholder="Deixe em branco se for o próprio motorista"
                       value={beneficiaryDocument}
                       onChange={(e) => setBeneficiaryDocument(e.target.value)}
-                      className="w-full text-xs font-mono font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                      className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
                     />
                   </div>
                 </div>
@@ -500,11 +500,11 @@ export default function DriversPage() {
                   {filteredDrivers.map((d) => (
                     <tr key={d.id} className="hover:bg-slate-50 transition-colors">
                       <td className="p-4 font-extrabold text-slate-900">{d.name}</td>
-                      <td className="p-4 font-mono font-bold text-slate-650">{d.cpf}</td>
-                      <td className="p-4 font-mono text-slate-500">{d.rg || 'N/A'}</td>
+                      <td className="p-4 font-bold text-slate-650">{d.cpf}</td>
+                      <td className="p-4 text-slate-500">{d.rg || 'N/A'}</td>
                       <td className="p-4">{d.phone || 'N/A'}</td>
                       <td className="p-4">
-                        <div className="text-[11px] font-mono leading-none">
+                        <div className="text-[11px] leading-none">
                           <p>{d.bank_name || 'N/A'}</p>
                           <p className="text-[9.5px] text-emerald-800 mt-1 font-bold">Pix: {d.pix_key || 'N/A'}</p>
                         </div>

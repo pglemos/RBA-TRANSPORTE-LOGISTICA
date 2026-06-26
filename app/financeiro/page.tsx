@@ -203,7 +203,7 @@ export default function FinancePage() {
               <span className="text-[10px] text-emerald-700 uppercase font-black tracking-wider">Total Pago Liquidado</span>
               <Wallet className="h-4.5 w-4.5 text-emerald-600" />
             </div>
-            <h4 className="text-lg font-black text-emerald-950 mt-3 font-mono">
+            <h4 className="text-lg font-black text-emerald-950 mt-3">
               R$ {stats.totalPaid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </h4>
             <span className="text-[9px] text-emerald-650 block mt-1">Transações finalizadas no banco de dados</span>
@@ -214,7 +214,7 @@ export default function FinancePage() {
               <span className="text-[10px] text-yellow-700 uppercase font-black tracking-wider">Total Pendente de Entrega</span>
               <DollarSign className="h-4.5 w-4.5 text-yellow-600" />
             </div>
-            <h4 className="text-lg font-black text-yellow-950 mt-3 font-mono">
+            <h4 className="text-lg font-black text-yellow-950 mt-3">
               R$ {stats.totalPending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </h4>
             <span className="text-[9px] text-yellow-650 block mt-1">Liquidações que dependem do canhoto assinado</span>
@@ -225,7 +225,7 @@ export default function FinancePage() {
               <span className="text-[10px] text-slate-400 uppercase font-black tracking-wider">Desembolso Geral Acumulado</span>
               <ArrowUpRight className="h-4.5 w-4.5 text-yellow-500" />
             </div>
-            <h4 className="text-lg font-black mt-3 font-mono text-white">
+            <h4 className="text-lg font-black mt-3 text-white">
               R$ {stats.totalBudget.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </h4>
             <span className="text-[9px] text-slate-400 block mt-1">Soma de adiantas + parcelas residuais</span>
@@ -384,7 +384,7 @@ export default function FinancePage() {
                     <th className="p-4">Ficha / Ordem Associada</th>
                     <th className="p-4">Motorista Beneficiário</th>
                     <th className="p-4">Tipo de Baixa</th>
-                    <th className="p-4 font-mono">Valor Sacado</th>
+                    <th className="p-4">Valor Sacado</th>
                     <th className="p-4">Status de Liquidação</th>
                     <th className="p-4">Data Registro</th>
                     <th className="p-4 text-right">Ação</th>
@@ -393,12 +393,12 @@ export default function FinancePage() {
                 <tbody className="divide-y divide-slate-150 font-semibold text-slate-700">
                   {filteredPayments.map((p) => (
                     <tr key={p.id} className="hover:bg-slate-50">
-                      <td className="p-4 font-mono text-slate-500">{p.id.slice(0, 8)}</td>
+                      <td className="p-4 text-slate-500">{p.id.slice(0, 8)}</td>
                       <td className="p-4 font-black text-slate-900">#{p.order_number}</td>
                       <td className="p-4">
                         <div>
-                          <p>{p.driver_name}</p>
-                          <p className="text-[10px] text-slate-450 font-mono">Chave Pix: {p.pix_key}</p>
+                           <p>{p.driver_name}</p>
+                           <p className="text-[10px] text-slate-450">Chave Pix: {p.pix_key}</p>
                         </div>
                       </td>
                       <td className="p-4">
@@ -406,7 +406,7 @@ export default function FinancePage() {
                           {p.type}
                         </span>
                       </td>
-                      <td className="p-4 font-mono font-bold text-slate-900">R$ {p.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                      <td className="p-4 font-bold text-slate-900">R$ {p.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                       <td className="p-4">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
                           p.status === 'Pago' ? 'bg-emerald-100 text-emerald-800' :
@@ -416,7 +416,7 @@ export default function FinancePage() {
                           {p.status}
                         </span>
                       </td>
-                      <td className="p-4 font-mono text-[10.5px] text-slate-450">
+                      <td className="p-4 text-[10.5px] text-slate-450">
                         {p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : 'Hoje'}
                       </td>
                       <td className="p-4 text-right">

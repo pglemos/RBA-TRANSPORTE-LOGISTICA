@@ -381,7 +381,7 @@ export default function VehiclesPage() {
                     placeholder="Ex: ABC1D23"
                     value={tractorPlate}
                     onChange={(e) => setTractorPlate(normalizePlate(e.target.value).slice(0, 7))}
-                    className="w-full text-xs font-mono font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
                   />
                 </div>
 
@@ -397,7 +397,7 @@ export default function VehiclesPage() {
                     placeholder="Ex: XYZ9W87"
                     value={trailerPlate}
                     onChange={(e) => setTrailerPlate(normalizePlate(e.target.value).slice(0, 7))}
-                    className="w-full text-xs font-mono font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
                   />
                 </div>
 
@@ -409,7 +409,7 @@ export default function VehiclesPage() {
                     placeholder="Ex: ANTT-9034123"
                     value={antt}
                     onChange={(e) => setAntt(e.target.value)}
-                    className="w-full text-xs font-mono font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                    className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
                   />
                 </div>
 
@@ -421,7 +421,7 @@ export default function VehiclesPage() {
                     placeholder="Ex: 12345678901"
                     value={renavam}
                     onChange={(e) => setRenavam(e.target.value)}
-                    className="w-full text-xs font-mono font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                    className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
                   />
                 </div>
               </div>
@@ -445,7 +445,7 @@ export default function VehiclesPage() {
                     placeholder="Ex: 12.345.678/0001-90"
                     value={ownerDocument}
                     onChange={(e) => setOwnerDocument(e.target.value)}
-                    className="w-full text-xs font-mono font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                    className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
                   />
                 </div>
               </div>
@@ -565,21 +565,21 @@ export default function VehiclesPage() {
                         <p>{v.model}</p>
                         <p className="text-[9.5px] text-slate-500">{v.vehicle_type || 'Truck'}</p>
                       </td>
-                      <td className="p-4 font-mono text-slate-700">
+                      <td className="p-4 text-slate-700">
                         {v.manufacture_year || v.year || 'N/A'} / {v.model_year || v.year || 'N/A'}
                       </td>
                       <td className="p-4">
-                        <span className="font-mono font-bold border-2 border-slate-600 bg-slate-55 rounded p-1 px-2.5 text-slate-900 text-[11px]">
+                        <span className="font-bold border-2 border-slate-600 bg-slate-55 rounded p-1 px-2.5 text-slate-900 text-[11px]">
                           {v.tractor_plate}
                         </span>
                       </td>
                       <td className="p-4">
-                        <span className="font-mono font-bold border-2 border-slate-450 bg-slate-55 rounded p-1 px-2.5 text-slate-600 text-[11px]">
+                        <span className="font-bold border-2 border-slate-450 bg-slate-55 rounded p-1 px-2.5 text-slate-600 text-[11px]">
                           {v.trailer_plate || 'Sem carreta'}
                         </span>
                       </td>
-                      <td className="p-4 font-mono text-slate-600 font-bold">{v.antt || 'Isento'}</td>
-                      <td className="p-4 font-mono text-slate-450">{v.renavam || 'N/A'}</td>
+                      <td className="p-4 text-slate-600 font-bold">{v.antt || 'Isento'}</td>
+                      <td className="p-4 text-slate-450">{v.renavam || 'N/A'}</td>
                       <td className="p-4">
                         <div className="text-[11px]">
                           <p>{v.owner_name}</p>

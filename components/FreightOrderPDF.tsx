@@ -76,7 +76,7 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
         <div id="pdf-header" className="bg-slate-950 text-slate-100 p-4 px-6 flex items-center justify-between border-b border-white/10 print:hidden">
           <div>
             <h3 className="font-extrabold text-xs tracking-wider uppercase text-yellow-400">Ficha de Frete Digital Gerada</h3>
-            <p className="text-[10px] text-slate-400 mt-0.5 font-mono">ID Único: {order.id}</p>
+            <p className="text-[10px] text-slate-400 mt-0.5">ID Único: {order.id}</p>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -113,10 +113,10 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
 
             <div className="text-right flex flex-col items-end gap-1.5 md:self-stretch justify-between">
               <div className="bg-slate-100 p-2.5 rounded-xl border border-slate-300 text-center min-w-[200px]">
-                <span className="text-[9px] uppercase font-mono tracking-wider font-extrabold text-slate-400 block">CTE</span>
+                <span className="text-[9px] uppercase tracking-wider font-extrabold text-slate-400 block">CTE</span>
                 <span className="text-md font-black text-slate-950">{order.cte_number || order.order_number}</span>
               </div>
-              <span className="text-[9px] font-mono p-1 bg-yellow-500/10 text-yellow-800 rounded border border-yellow-500/20 uppercase font-extrabold tracking-wider">
+              <span className="text-[9px] p-1 bg-yellow-500/10 text-yellow-800 rounded border border-yellow-500/20 uppercase font-extrabold tracking-wider">
                 Emissão: {emissionLabel}
               </span>
             </div>
@@ -126,7 +126,7 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
 
             {/* BLOCK 1: DADOS DA VIAGEM */}
             <div className="border border-slate-300 rounded-2xl overflow-hidden shadow-xs">
-              <div className="bg-slate-100 px-4 py-2 border-b border-slate-300 text-[10px] uppercase font-extrabold font-mono text-slate-500 tracking-wider">
+              <div className="bg-slate-100 px-4 py-2 border-b border-slate-300 text-[10px] uppercase font-extrabold text-slate-500 tracking-wider">
                 1. DADOS LOGÍSTICOS DA VIAGEM
               </div>
               <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-medium">
@@ -145,7 +145,7 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
                 </div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold block uppercase mb-0.5">Data de Entrega</span>
-                  <p className="text-slate-900 font-bold font-mono text-emerald-800">
+                  <p className="text-slate-900 font-bold text-emerald-800">
                     {order.delivery_date ? new Date(order.delivery_date + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A'}
                   </p>
                 </div>
@@ -154,15 +154,15 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
 
             {/* BLOCK 2: MOTORISTA E VÍNCULO BANCÁRIO */}
             <div className="border border-slate-300 rounded-2xl overflow-hidden shadow-xs">
-              <div className="bg-slate-100 px-4 py-2 border-b border-slate-300 text-[10px] uppercase font-extrabold font-mono text-slate-500 tracking-wider">
+              <div className="bg-slate-100 px-4 py-2 border-b border-slate-300 text-[10px] uppercase font-extrabold text-slate-500 tracking-wider">
                 2. IDENTIFICAÇÃO DO CONDUTOR E DADOS DE PAGAMENTO
               </div>
               <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-6 text-xs font-medium">
                 <div className="space-y-1">
                   <span className="text-[9px] text-slate-400 font-extrabold block uppercase">Condutor Autorizado</span>
                   <p className="text-slate-900 font-black">{order.driver_name}</p>
-                  <p className="text-slate-500 font-mono">CPF: {order.driver_cpf}</p>
-                    <p className="text-slate-500 font-mono">RG: {order.driver_rg || 'N/A'}</p>
+                  <p className="text-slate-500">CPF: {order.driver_cpf}</p>
+                    <p className="text-slate-500">RG: {order.driver_rg || 'N/A'}</p>
                   <p className="text-slate-500">Fone: {order.driver_phone}</p>
                 </div>
 
@@ -170,7 +170,7 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
                   <span className="text-[9px] text-slate-400 font-extrabold block uppercase">Dados Bancários para Crédito</span>
                   <p className="text-slate-800">Banco: {order.bank_data_snapshot.bank_name}</p>
                   <p className="text-slate-500">Ag: {order.bank_data_snapshot.bank_agency} | CC: {order.bank_data_snapshot.bank_account}</p>
-                  <p className="text-emerald-700 font-bold font-mono">PIX Chave ID: {order.bank_data_snapshot.pix_key}</p>
+                  <p className="text-emerald-700 font-bold">PIX Chave ID: {order.bank_data_snapshot.pix_key}</p>
                 </div>
 
                 <div className="space-y-1">
@@ -182,7 +182,7 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
 
             {/* BLOCK 3: EQUIPAMENTO E PLACAS */}
             <div className="border border-slate-300 rounded-2xl overflow-hidden shadow-xs">
-              <div className="bg-slate-100 px-4 py-2 border-b border-slate-300 text-[10px] uppercase font-extrabold font-mono text-slate-500 tracking-wider">
+              <div className="bg-slate-100 px-4 py-2 border-b border-slate-300 text-[10px] uppercase font-extrabold text-slate-500 tracking-wider">
                 3. VEÍCULO / PLACA DE TRÁFEGO
               </div>
               <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-medium">
@@ -192,18 +192,18 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
                 </div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold block uppercase mb-0.5">Placa Trator (Cavalo)</span>
-                  <p className="text-slate-900 font-bold font-mono border-2 border-slate-600 bg-slate-55 rounded px-2 w-fit">
+                  <p className="text-slate-900 font-bold border-2 border-slate-600 bg-slate-55 rounded px-2 w-fit">
                     {order.vehicle_tractor_plate}
                   </p>
                 </div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold block uppercase mb-0.5">Placa Carreta (Reboque)</span>
-                  <p className="text-slate-900 font-bold font-mono border-2 border-slate-600 bg-slate-55 rounded px-2 w-fit">
+                  <p className="text-slate-900 font-bold border-2 border-slate-600 bg-slate-55 rounded px-2 w-fit">
                     {order.vehicle_trailer_plate}
                   </p>
                 </div>
                 <div>
-                  <span className="text-[9px] text-slate-400 font-extrabold block uppercase mb-0.5 font-mono">Número CTE Associado</span>
+                  <span className="text-[9px] text-slate-400 font-extrabold block uppercase mb-0.5">Número CTE Associado</span>
                   <p className="text-slate-950 font-black">{order.cte_number || "A Emitir"}</p>
                 </div>
               </div>
@@ -211,7 +211,7 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
 
             {/* BLOCK 4: ACORDOS FINANCEIROS */}
             <div className="border-2 border-slate-900 rounded-2xl overflow-hidden shadow">
-              <div className="bg-slate-900 px-4 py-2 text-[10px] uppercase font-extrabold font-mono text-white tracking-widest flex justify-between items-center">
+              <div className="bg-slate-900 px-4 py-2 text-[10px] uppercase font-extrabold text-white tracking-widest flex justify-between items-center">
                 <span>4. DEMONSTRATIVO FINANCEIRO DO FRETE</span>
                 <span className="text-[8px] bg-yellow-400 text-black px-1.5 rounded">CÁLCULO SISTÊMICO RBA</span>
               </div>
@@ -222,25 +222,25 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
                   <h4 className="text-[10px] font-black text-slate-550 uppercase tracking-wider block">Créditos Contratuais</h4>
                   <div className="flex justify-between text-xs">
                     <span className="text-slate-500 font-bold">Valor do Frete ao Motorista</span>
-                    <strong className="text-slate-950 font-mono text-sm leading-none">R$ {order.freight_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                    <strong className="text-slate-950 text-sm leading-none">R$ {order.freight_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
                   </div>
                   <div className="flex justify-between text-xs text-rose-700">
                     <span className="font-bold flex items-center gap-1">
                       <CornerDownRight className="h-3 w-3" />
                       (-) Adiantamento em Conta Bancária
                     </span>
-                    <strong className="font-mono">R$ {order.advance_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                    <strong>R$ {order.advance_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
                   </div>
                   <div className="flex justify-between text-xs text-rose-700">
                     <span className="font-bold flex items-center gap-1">
                       <CornerDownRight className="h-3 w-3" />
                       (-) Valor Pago à Vista / Desconto
                     </span>
-                    <strong className="font-mono">R$ {order.cash_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                    <strong>R$ {order.cash_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
                   </div>
                   <div className="flex justify-between text-xs border-t border-slate-200 pt-3 text-slate-950 font-black bg-yellow-500/10 p-2.5 rounded-lg border border-yellow-500/20">
                     <span>SALDO DE FRETE PENDENTE A PAGAR</span>
-                    <span className="font-mono text-sm">R$ {order.balance_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    <span className="text-sm">R$ {order.balance_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
 
@@ -249,23 +249,23 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
                   <h4 className="text-[10px] font-black text-slate-550 uppercase tracking-wider block">Ajustes Operacionais de Campo</h4>
                   <div className="flex justify-between text-xs text-slate-600">
                     <span>Custo de Carga</span>
-                    <span className="font-mono">R$ {order.loading_expense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    <span>R$ {order.loading_expense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between text-xs text-slate-600">
                     <span>Custo Descarrega</span>
-                    <span className="font-mono">R$ {order.unloading_expense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    <span>R$ {order.unloading_expense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between text-xs text-slate-600">
                     <span>Outros Desembolsos</span>
-                    <span className="font-mono">R$ {order.other_expenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    <span>R$ {order.other_expenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between text-xs border-b border-slate-150 pb-2.5">
                     <span className="text-slate-450 font-bold">Total Despesas Acordadas</span>
-                    <strong className="text-slate-900 font-mono">R$ {order.total_expenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                    <strong className="text-slate-900">R$ {order.total_expenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
                   </div>
                   <div className="flex justify-between text-sm text-emerald-900 font-extrabold bg-emerald-500/10 p-2.5 rounded-lg border border-emerald-500/20">
                     <span>VALOR LÍQUIDO FINAL DO FRETE</span>
-                    <span className="font-mono">R$ {order.net_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    <span>R$ {order.net_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
 
@@ -279,13 +279,13 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
                 <span className="text-[9px] text-slate-400 font-extrabold uppercase block tracking-wider">GERENCIAMENTO DE RISCO (LOG)</span>
                 <div className="flex items-center justify-between border-b pb-1">
                   <span>Buonny:</span>
-                  <span className={`font-mono font-black ${order.buonny_status === 'Aprovado' ? 'text-emerald-700' : 'text-yellow-700'}`}>
+                  <span className={`font-black ${order.buonny_status === 'Aprovado' ? 'text-emerald-700' : 'text-yellow-700'}`}>
                     {order.buonny_status}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Embarque:</span>
-                  <span className="font-mono font-bold bg-slate-100 p-0.5 rounded text-slate-700">
+                  <span className="font-bold bg-slate-100 p-0.5 rounded text-slate-700">
                     {normalizeFreightOrderStatus(order.shipment_release_status)}
                   </span>
                 </div>
@@ -309,18 +309,18 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
                   </div>
                   <div>
                     <span className="text-[10px] font-black block">AUTORIZAÇÃO SEGURA</span>
-                    <span className="text-[8px] font-mono text-slate-500 block truncate max-w-[150px]">{getQRSeed()}</span>
+                    <span className="text-[8px] text-slate-500 block truncate max-w-[150px]">{getQRSeed()}</span>
                     <span className="text-[8.5px] text-emerald-800 bg-emerald-100 p-0.5 font-bold block mt-1 rounded w-fit uppercase">Válido para Trânsito Sefaz</span>
                   </div>
                 </div>
               </div>
 
               {/* Signature stamp block */}
-              <div className="md:col-span-1 border border-slate-350 bg-slate-50/50 p-4 rounded-2xl flex flex-col justify-between gap-6 relative">
-                <span className="text-[9px] text-slate-400 font-extrabold uppercase block font-semibold">VALIDAÇÃO SISTÊMICA DA EMISSÃO</span>
+              <div className="md:col-span-1 border border-slate-350 bg-slate-55/50 p-4 rounded-2xl flex flex-col justify-between gap-6 relative">
+                <span className="text-[9px] text-slate-450 font-extrabold block uppercase mb-0.5">VALIDAÇÃO SISTÊMICA DA EMISSÃO</span>
                 <div className="text-center pb-2">
                   <p className="text-xs font-black text-slate-700">{order.responsible_name}</p>
-                  <p className="text-[9.5px] text-slate-500 font-mono tracking-wide">ASSINATURA ELETRÔNICA CONFIRMADA</p>
+                  <p className="text-[9.5px] text-slate-500 tracking-wide">ASSINATURA ELETRÔNICA CONFIRMADA</p>
                   <span className="text-[8px] text-emerald-800 bg-emerald-100 px-1.5 py-0.5 font-bold rounded-full mt-2 inline-block border border-emerald-300">
                     ✔ DISPOSITIVO AUDITADO RBA
                   </span>
