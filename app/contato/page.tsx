@@ -2,9 +2,7 @@ import PublicSiteChrome from '@/components/PublicSiteChrome';
 import { Mail, MapPin, MessageCircle, Phone, Users } from 'lucide-react';
 
 const units = [
-  ['Matriz', 'Base operacional RBA Transporte & Logística', '(31) 99309-2821'],
-  ['Filial MG', 'Atendimento para coletas e entregas no Sudeste', '(31) 99309-2821'],
-  ['Filial Sul', 'Apoio para rotas e distribuição regional', '(31) 99309-2821'],
+  ['Matriz', 'Base operacional RBA Transporte & Logística - MG', '(31) 99309-2821'],
 ];
 
 export default function ContactPage() {
@@ -74,17 +72,15 @@ export default function ContactPage() {
           <div className="mx-auto max-w-7xl">
             <div className="relative h-[360px] overflow-hidden border border-white/10 bg-[#0a0d0e]">
               <div className="absolute inset-0 opacity-45 [background-image:linear-gradient(rgba(215,177,93,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(215,177,93,0.18)_1px,transparent_1px)] [background-size:46px_46px]" />
-              <div className="absolute left-[22%] top-[48%] h-4 w-4 rounded-full bg-[#d7b15d] shadow-[0_0_0_12px_rgba(215,177,93,0.15)]" />
-              <div className="absolute left-[52%] top-[35%] h-4 w-4 rounded-full bg-[#d7b15d] shadow-[0_0_0_12px_rgba(215,177,93,0.15)]" />
-              <div className="absolute left-[70%] top-[60%] h-4 w-4 rounded-full bg-[#d7b15d] shadow-[0_0_0_12px_rgba(215,177,93,0.15)]" />
+              <div className="absolute left-[50%] top-[50%] h-4 w-4 rounded-full bg-[#d7b15d] shadow-[0_0_0_12px_rgba(215,177,93,0.15)]" />
               <div className="absolute inset-x-0 bottom-0 bg-black/60 p-6">
-                <span className="text-sm font-black uppercase tracking-[0.16em] text-[#d7b15d]">Atuação logística regional</span>
+                <span className="text-sm font-black uppercase tracking-[0.16em] text-[#d7b15d]">Matriz operacional - MG</span>
               </div>
             </div>
 
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
+            <div className="mt-8 flex justify-center">
               {units.map(([title, address, phone]) => (
-                <article key={title} className="border border-white/10 bg-[#0a0d0e] p-6 text-center">
+                <article key={title} className="w-full max-w-md border border-white/10 bg-[#0a0d0e] p-6 text-center">
                   <MapPin className="mx-auto h-8 w-8 text-[#d7b15d]" />
                   <h2 className="mt-4 text-xl font-black uppercase text-[#d7b15d]">{title}</h2>
                   <p className="mt-3 text-sm leading-7 text-white/62">{address}</p>
