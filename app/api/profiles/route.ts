@@ -60,17 +60,43 @@ export async function PATCH(req: NextRequest) {
 
     const body = await req.json();
     const id = String(body.id || '');
-    const role = body.role as Profile['role'];
-    const active = body.active !== false;
-
-    if (!id || !PROFILE_ROLES.includes(role)) {
+    if (!id) {
       return NextResponse.json(
-        { success: false, error: 'Perfil ou tipo de acesso inválido.' },
+        { success: false, error: 'ID do perfil não informado.' },
         { status: 400 },
       );
     }
 
-    const profile = await RBADatabase.updateProfileRole(id, role, active, session.id, session.name);
+    const updates: any = {};
+    if (body.name !== undefined) {
+      if (typeof body.name !== 'string' || !body.name.trim() || body.name.trim().length < 3) {
+        return NextResponse.json({ success: false, error: 'Nome do usuário deve ter pelo menos 3 caracteres.' }, { status: 400 });
+      }
+      updates.name = body.name.trim();
+    }
+    if (body.email !== undefined) {
+      if (typeof body.email !== 'string' || !body.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email.trim())) {
+        return NextResponse.json({ success: false, error: 'Formato de email inválido.' }, { status: 400 });
+      }
+      updates.email = body.email.toLowerCase().trim();
+    }
+    if (body.password !== undefined && body.password !== '') {
+      if (typeof body.password !== 'string' || body.password.length < 6) {
+        return NextResponse.json({ success: false, error: 'A senha deve ter pelo menos 6 caracteres.' }, { status: 400 });
+      }
+      updates.password = body.password;
+    }
+    if (body.role !== undefined) {
+      if (!PROFILE_ROLES.includes(body.role)) {
+        return NextResponse.json({ success: false, error: 'Perfil de acesso inválido.' }, { status: 400 });
+      }
+      updates.role = body.role;
+    }
+    if (body.active !== undefined) {
+      updates.active = body.active === true;
+    }
+
+    const profile = await RBADatabase.updateProfile(id, updates, session.id, session.name);
     return NextResponse.json({ success: true, profile });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

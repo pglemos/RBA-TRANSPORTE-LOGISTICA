@@ -43,6 +43,15 @@ export default function ProfilesPage() {
   const [msg, setMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
+  const [editingProfileId, setEditingProfileId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'Operacional' as Profile['role'],
+    active: true,
+  });
+
   const groupedProfiles = useMemo(() => {
     return ROLE_OPTIONS.map((role) => ({
       role,
@@ -103,7 +112,7 @@ export default function ProfilesPage() {
     }
   }
 
-  async function handleUpdate(profile: Profile, changes: Partial<Pick<Profile, 'role' | 'active'>>) {
+  async function handleSaveEdit(id: string) {
     setSaving(true);
     setMsg('');
     setErrorMsg('');
@@ -113,15 +122,20 @@ export default function ProfilesPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: profile.id,
-          role: changes.role ?? profile.role,
-          active: changes.active ?? profile.active,
+          id,
+          name: editForm.name,
+          email: editForm.email,
+          password: editForm.password || undefined,
+          role: editForm.role,
+          active: editForm.active,
         }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data?.error || 'Erro ao atualizar perfil.');
-      setProfiles((current) => current.map((item) => (item.id === profile.id ? data.profile : item)));
-      setMsg('Perfil atualizado.');
+      setProfiles((current) => current.map((item) => (item.id === id ? data.profile : item)));
+      setMsg('Perfil atualizado com sucesso.');
+      setEditingProfileId(null);
+      await loadData();
     } catch (error) {
       setErrorMsg(error instanceof Error ? error.message : 'Erro ao atualizar perfil.');
     } finally {
@@ -253,29 +267,117 @@ export default function ProfilesPage() {
                 ) : group.profiles.length === 0 ? (
                   <p className="text-xs font-bold text-slate-400">Nenhum usuário neste perfil.</p>
                 ) : group.profiles.map((profile) => (
-                  <div key={profile.id} className="grid grid-cols-1 gap-2 rounded-lg bg-slate-50 p-3 md:grid-cols-[1fr_auto_auto] md:items-center">
-                    <div>
-                      <p className="text-xs font-black text-slate-900">{profile.name}</p>
-                      <p className="text-[10px] font-semibold text-slate-500">{profile.email}</p>
-                    </div>
-                    <select
-                      value={profile.role}
-                      onChange={(event) => handleUpdate(profile, { role: event.target.value as Profile['role'] })}
-                      disabled={activeUser?.role !== 'Administrador' || saving}
-                      className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-700 outline-none"
-                    >
-                      {ROLE_OPTIONS.map((role) => <option key={role} value={role}>{role}</option>)}
-                    </select>
-                    <label className="flex items-center gap-2 text-[10px] font-bold text-slate-600">
-                      <input
-                        type="checkbox"
-                        checked={profile.active}
-                        onChange={(event) => handleUpdate(profile, { active: event.target.checked })}
-                        disabled={activeUser?.role !== 'Administrador' || saving}
-                        className="h-4 w-4 accent-yellow-500"
-                      />
-                      Ativo
-                    </label>
+                  <div key={profile.id} className="border border-slate-100 rounded-lg bg-slate-50 p-3">
+                    {editingProfileId === profile.id ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-black text-slate-500 uppercase">Nome</label>
+                            <input
+                              type="text"
+                              value={editForm.name}
+                              onChange={(e) => setEditForm(curr => ({ ...curr, name: e.target.value }))}
+                              className="rounded border border-slate-200 bg-white px-2 py-1 text-xs font-semibold outline-none focus:border-yellow-500"
+                              placeholder="Nome completo"
+                              required
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-black text-slate-500 uppercase">E-mail</label>
+                            <input
+                              type="email"
+                              value={editForm.email}
+                              onChange={(e) => setEditForm(curr => ({ ...curr, email: e.target.value }))}
+                              className="rounded border border-slate-200 bg-white px-2 py-1 text-xs font-semibold outline-none focus:border-yellow-500"
+                              placeholder="email@empresa.com"
+                              required
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-black text-slate-500 uppercase">Senha (opcional)</label>
+                            <input
+                              type="password"
+                              value={editForm.password}
+                              onChange={(e) => setEditForm(curr => ({ ...curr, password: e.target.value }))}
+                              className="rounded border border-slate-200 bg-white px-2 py-1 text-xs font-semibold outline-none focus:border-yellow-500"
+                              placeholder="Mudar senha (mín. 6)"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-black text-slate-500 uppercase">Perfil</label>
+                            <select
+                              value={editForm.role}
+                              onChange={(e) => setEditForm(curr => ({ ...curr, role: e.target.value as Profile['role'] }))}
+                              className="rounded border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-700 outline-none focus:border-yellow-500"
+                            >
+                              {ROLE_OPTIONS.map((role) => <option key={role} value={role}>{role}</option>)}
+                            </select>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between border-t border-slate-200/60 pt-2">
+                          <label className="flex items-center gap-2 text-xs font-bold text-slate-600 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={editForm.active}
+                              onChange={(e) => setEditForm(curr => ({ ...curr, active: e.target.checked }))}
+                              className="h-4 w-4 accent-yellow-500"
+                            />
+                            Ativo
+                          </label>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setEditingProfileId(null)}
+                              className="rounded bg-slate-200 px-3 py-1 text-xs font-bold text-slate-700 hover:bg-slate-300"
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSaveEdit(profile.id)}
+                              disabled={saving}
+                              className="rounded bg-yellow-500 px-3 py-1 text-xs font-black text-slate-950 hover:bg-yellow-400 disabled:opacity-60"
+                            >
+                              Salvar
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-xs font-black text-slate-900">{profile.name}</p>
+                          <p className="text-[10px] font-semibold text-slate-500">{profile.email}</p>
+                          <div className="mt-1 flex items-center gap-1.5">
+                            <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[9px] font-bold text-slate-700">
+                              {profile.role}
+                            </span>
+                            <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${profile.active ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
+                              {profile.active ? 'Ativo' : 'Inativo'}
+                            </span>
+                          </div>
+                        </div>
+                        {activeUser?.role === 'Administrador' && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingProfileId(profile.id);
+                              setEditForm({
+                                name: profile.name,
+                                email: profile.email,
+                                password: '',
+                                role: profile.role,
+                                active: profile.active
+                              });
+                            }}
+                            disabled={saving}
+                            className="rounded border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60 self-start sm:self-center"
+                          >
+                            Editar
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -775,14 +775,47 @@ export class RBADatabase {
     return this.load().profiles;
   }
 
-  public static async updateProfileRole(id: string, role: Profile['role'], active: boolean, operatorId: string, operatorName: string) {
+  public static async updateProfile(
+    id: string,
+    profileData: { name?: string; email?: string; password?: string; role?: Profile['role']; active?: boolean },
+    operatorId: string,
+    operatorName: string,
+  ) {
     if (isSupabaseServerConfigured) {
       const { data: oldValArray } = await supabaseDataClient().from('profiles').select('*').eq('id', id).limit(1);
-      const oldVal = (oldValArray && oldValArray[0]) || null;
+      const oldVal = (profileArray => (profileArray && profileArray[0]) || null)(oldValArray);
+      if (!oldVal) {
+        throw new Error('Perfil não encontrado no Supabase.');
+      }
+
+      // Update Supabase Auth user if name, email, or password is provided
+      const authUpdates: any = {};
+      if (profileData.name !== undefined) authUpdates.user_metadata = { name: profileData.name };
+      if (profileData.email !== undefined) authUpdates.email = profileData.email.toLowerCase().trim();
+      if (profileData.password !== undefined && profileData.password.length >= 6) {
+        authUpdates.password = profileData.password;
+      }
+
+      if (Object.keys(authUpdates).length > 0) {
+        const { data: authData, error: authError } = await supabaseServer.auth.admin.updateUserById(
+          oldVal.user_id,
+          authUpdates
+        );
+        if (authError) {
+          throw new Error(`Erro ao atualizar login no Supabase: ${authError.message}`);
+        }
+      }
+
+      // Update profiles table
+      const profileUpdates: any = { updated_at: new Date().toISOString() };
+      if (profileData.name !== undefined) profileUpdates.name = profileData.name;
+      if (profileData.email !== undefined) profileUpdates.email = profileData.email.toLowerCase().trim();
+      if (profileData.role !== undefined) profileUpdates.role = profileData.role;
+      if (profileData.active !== undefined) profileUpdates.active = profileData.active;
 
       const { data, error } = await supabaseServer
         .from('profiles')
-        .update({ role, active, updated_at: new Date().toISOString() })
+        .update(profileUpdates)
         .eq('id', id)
         .select()
         .single();
@@ -791,14 +824,17 @@ export class RBADatabase {
         await this.addAuditLog(operatorId, operatorName, "Atualizar Perfil", "Perfil de Usuário", id, oldVal, data);
         return data as Profile;
       }
+      throw new Error(`Erro ao atualizar perfil: ${error?.message || 'Erro desconhecido'}`);
     }
 
     const db = this.load();
     const idx = db.profiles.findIndex(p => p.id === id);
     if (idx !== -1) {
       const oldVal = { ...db.profiles[idx] };
-      db.profiles[idx].role = role;
-      db.profiles[idx].active = active;
+      if (profileData.name !== undefined) db.profiles[idx].name = profileData.name;
+      if (profileData.email !== undefined) db.profiles[idx].email = profileData.email.toLowerCase().trim();
+      if (profileData.role !== undefined) db.profiles[idx].role = profileData.role;
+      if (profileData.active !== undefined) db.profiles[idx].active = profileData.active;
       db.profiles[idx].updated_at = new Date().toISOString();
       await this.addAuditLog(operatorId, operatorName, "Atualizar Perfil", "Perfil de Usuário", id, oldVal, db.profiles[idx]);
       this.save(db);
