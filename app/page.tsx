@@ -204,7 +204,7 @@ export default function LandingPage() {
                 {[
                   ['24h', 'rotina de suporte'],
                   ['100%', 'operação rastreável'],
-                  ['SP', 'base operacional'],
+                  ['MG', 'base operacional'],
                 ].map(([number, label]) => (
                   <div key={number} className="border-r border-white/10 p-4 last:border-r-0">
                     <strong className="block text-2xl font-black text-[#d7b15d]">{number}</strong>
@@ -285,11 +285,11 @@ export default function LandingPage() {
             <div className="mt-5 grid gap-4 text-xs text-white/64">
               <span className="flex items-center gap-3">
                 <Phone className="h-4 w-4 text-[#d7b15d]" />
-                (91) 262 9559
+                (31) 99309-2821
               </span>
               <span className="flex items-center gap-3">
                 <Mail className="h-4 w-4 text-[#d7b15d]" />
-                rba@transporte.com.br
+                comercial@rbatransporte.com.br
               </span>
               <span className="flex items-center gap-3">
                 <MapPin className="h-4 w-4 text-[#d7b15d]" />

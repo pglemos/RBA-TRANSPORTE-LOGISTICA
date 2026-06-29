@@ -2,9 +2,9 @@ import PublicSiteChrome from '@/components/PublicSiteChrome';
 import { Mail, MapPin, MessageCircle, Phone, Users } from 'lucide-react';
 
 const units = [
-  ['Matriz', 'Base operacional RBA Transporte & Logística', '(91) 262 9559'],
-  ['Filial SP', 'Atendimento para coletas e entregas no Sudeste', '(91) 262 9559'],
-  ['Filial Sul', 'Apoio para rotas e distribuição regional', '(91) 262 9559'],
+  ['Matriz', 'Base operacional RBA Transporte & Logística', '(31) 99309-2821'],
+  ['Filial MG', 'Atendimento para coletas e entregas no Sudeste', '(31) 99309-2821'],
+  ['Filial Sul', 'Apoio para rotas e distribuição regional', '(31) 99309-2821'],
 ];
 
 export default function ContactPage() {
@@ -30,12 +30,12 @@ export default function ContactPage() {
               <article className="border border-black/10 bg-[#101415] p-6 text-white shadow-[0_18px_45px_rgba(0,0,0,0.08)]">
                 <Phone className="h-8 w-8 text-[#d7b15d]" />
                 <h2 className="mt-4 text-lg font-black uppercase text-[#d7b15d]">Telefone</h2>
-                <p className="mt-2 text-sm text-white/68">(91) 262 9559</p>
+                <p className="mt-2 text-sm text-white/68">(31) 99309-2821</p>
               </article>
               <article className="border border-black/10 bg-[#101415] p-6 text-white shadow-[0_18px_45px_rgba(0,0,0,0.08)]">
                 <Mail className="h-8 w-8 text-[#d7b15d]" />
                 <h2 className="mt-4 text-lg font-black uppercase text-[#d7b15d]">E-mail</h2>
-                <p className="mt-2 text-sm text-white/68">rba@transporte.com.br</p>
+                <p className="mt-2 text-sm text-white/68">comercial@rbatransporte.com.br</p>
               </article>
               <article className="border border-black/10 bg-[#101415] p-6 text-white shadow-[0_18px_45px_rgba(0,0,0,0.08)]">
                 <h2 className="text-lg font-black uppercase text-[#d7b15d]">Social</h2>

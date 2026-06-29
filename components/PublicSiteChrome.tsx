@@ -82,11 +82,11 @@ export default function PublicSiteChrome({ children }: { children: React.ReactNo
             <div className="mt-5 grid gap-4 text-xs text-white/64">
               <span className="flex items-center gap-3">
                 <Phone className="h-4 w-4 text-[#d7b15d]" />
-                (91) 262 9559
+                (31) 99309-2821
               </span>
               <span className="flex items-center gap-3">
                 <Mail className="h-4 w-4 text-[#d7b15d]" />
-                rba@transporte.com.br
+                comercial@rbatransporte.com.br
               </span>
               <span className="flex items-center gap-3">
                 <MapPin className="h-4 w-4 text-[#d7b15d]" />
