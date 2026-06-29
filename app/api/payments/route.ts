@@ -20,6 +20,8 @@ export async function GET(req: NextRequest) {
       return {
         ...payment,
         order_number: order ? order.order_number : 'Não vinculado',
+        cte_number: order ? (order.cte_number || 'Sem CTE') : 'Não vinculado',
+        order_status: order ? (order.status || 'Contratar') : 'N/A',
         destination: order ? order.destination : 'N/A',
         driver_name: driver ? driver.name : 'Desconhecido',
       };

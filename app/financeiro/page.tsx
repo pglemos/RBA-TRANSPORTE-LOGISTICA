@@ -148,14 +148,31 @@ export default function FinancePage() {
     }
   };
 
+  const statusRank: Record<string, number> = {
+    'Carregando': 1,
+    'Em Trânsito': 2,
+    'Entregue': 3,
+    'Contratar': 4,
+  };
+
   const filteredPayments = payments.filter(p => {
     const matchesSearch = 
       p.driver_name?.toLowerCase().includes(search.toLowerCase()) ||
-      p.order_number?.toLowerCase().includes(search.toLowerCase());
+      p.order_number?.toLowerCase().includes(search.toLowerCase()) ||
+      p.cte_number?.toLowerCase().includes(search.toLowerCase());
 
     const matchesStatus = statusFilter ? p.status === statusFilter : true;
 
     return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+    const rankA = statusRank[a.order_status] || 99;
+    const rankB = statusRank[b.order_status] || 99;
+    if (rankA !== rankB) {
+      return rankA - rankB;
+    }
+    const cteA = a.cte_number || '';
+    const cteB = b.cte_number || '';
+    return cteA.localeCompare(cteB, 'pt-BR', { numeric: true, sensitivity: 'base' });
   });
 
   return (
@@ -394,7 +411,30 @@ export default function FinancePage() {
                   {filteredPayments.map((p) => (
                     <tr key={p.id} className="hover:bg-slate-50">
                       <td className="p-4 text-slate-500">{p.id.slice(0, 8)}</td>
-                      <td className="p-4 font-black text-slate-900">#{p.order_number}</td>
+                      <td className="p-4 font-black text-slate-900">
+                        <div className="flex flex-col gap-0.5">
+                          <span>
+                            {p.cte_number && p.cte_number !== 'Sem CTE' && p.cte_number !== 'Não vinculado' ? (
+                              p.cte_number
+                            ) : (
+                              <span className="text-slate-400 font-semibold italic">Sem CTE</span>
+                            )}
+                          </span>
+                          <div className="flex flex-wrap items-center gap-1.5 font-normal">
+                            <span className="text-[10px] text-slate-500">Ordem: #{p.order_number}</span>
+                            {p.order_status && p.order_status !== 'N/A' && (
+                              <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wide ${
+                                p.order_status === 'Carregando' ? 'bg-orange-100 text-orange-850' :
+                                p.order_status === 'Em Trânsito' ? 'bg-blue-100 text-blue-850' :
+                                p.order_status === 'Entregue' ? 'bg-emerald-100 text-emerald-850' :
+                                'bg-slate-100 text-slate-700'
+                              }`}>
+                                {p.order_status}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
                       <td className="p-4">
                         <div>
                            <p>{p.driver_name}</p>
