@@ -150,39 +150,74 @@ export class RBAAuth {
     return role === 'Consulta/Auditoria';
   }
 
-  public static maskCPF(cpf: string, _role?: AppRole): string {
+  public static maskCPF(cpf: string, role?: AppRole): string {
     if (!cpf) return '';
     const clean = cpf.replace(/\D/g, '');
     if (clean.length === 11) {
+      if (role === 'Consulta/Auditoria') {
+        return `${clean.slice(0, 3)}.***.***-${clean.slice(9)}`;
+      }
       return clean.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
     }
     return cpf;
   }
 
-  public static maskDocument(document: string, _role?: AppRole): string {
+  public static maskDocument(document: string, role?: AppRole): string {
     if (!document) return '';
     const clean = document.replace(/\D/g, '');
     if (clean.length === 11) {
-      return this.maskCPF(clean);
+      return this.maskCPF(clean, role);
     }
     if (clean.length === 14) {
+      if (role === 'Consulta/Auditoria') {
+        return `${clean.slice(0, 2)}.***.***/****-${clean.slice(12)}`;
+      }
       return clean.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
     }
     return document;
   }
 
-  public static maskRG(rg: string, _role?: AppRole): string {
+  public static maskRG(rg: string, role?: AppRole): string {
     if (!rg) return '';
+    if (role === 'Consulta/Auditoria') {
+      const trimmed = rg.trim();
+      if (trimmed.length > 4) {
+        return `${trimmed.slice(0, 2)}.***.***-${trimmed.slice(-1)}`;
+      }
+      return '***';
+    }
     return rg;
   }
 
-  public static maskBankDetails(account: string, _role?: AppRole): string {
+  public static maskBankDetails(account: string, role?: AppRole): string {
     if (!account) return '';
+    if (role === 'Consulta/Auditoria') {
+      const trimmed = account.trim();
+      if (trimmed.length > 4) {
+        return `*****${trimmed.slice(-3)}`;
+      }
+      return '*****';
+    }
     return account;
   }
 
-  public static maskPixKey(key: string, _role?: AppRole): string {
+  public static maskPixKey(key: string, role?: AppRole): string {
     if (!key) return '';
+    if (role === 'Consulta/Auditoria') {
+      const trimmed = key.trim();
+      if (trimmed.includes('@')) {
+        const parts = trimmed.split('@');
+        return `${parts[0]!.slice(0, 2)}***@${parts[1]}`;
+      }
+      const cleanDigits = trimmed.replace(/\D/g, '');
+      if (cleanDigits.length === 11) {
+        return `(***) *****-${cleanDigits.slice(-4)}`;
+      }
+      if (trimmed.length > 8) {
+        return `${trimmed.slice(0, 3)}***${trimmed.slice(-3)}`;
+      }
+      return '***';
+    }
     return key;
   }
 }

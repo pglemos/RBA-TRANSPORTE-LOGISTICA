@@ -8,11 +8,13 @@ export async function GET(req: NextRequest) {
     const guard = await RBAAuth.requireAuth(req);
     if (guard.response) return guard.response;
 
-    const [payments, orders, drivers] = await Promise.all([
-      RBADatabase.getPayments(),
-      RBADatabase.getFreightOrders(),
-      RBADatabase.getDrivers(),
-    ]);
+    const payments = await RBADatabase.getPayments();
+
+    const orderIds = Array.from(new Set(payments.map((p) => p.freight_order_id).filter(Boolean)));
+    const orders = await RBADatabase.getFreightOrdersByIds(orderIds);
+
+    const driverIds = Array.from(new Set(orders.map((o) => o.driver_id).filter(Boolean)));
+    const drivers = await RBADatabase.getDriversByIds(driverIds);
 
     const populated = payments.map((payment) => {
       const order = orders.find((item) => item.id === payment.freight_order_id);

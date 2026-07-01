@@ -1296,6 +1296,58 @@ export class RBADatabase {
     return false;
   }
 
+  public static async getDriversByIds(ids: string[]) {
+    if (!ids || ids.length === 0) return [];
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseDataClient()
+        .from('drivers')
+        .select('*')
+        .in('id', ids);
+      if (error) throwSupabaseError('Erro ao listar motoristas por IDs', error);
+      return data || [];
+    }
+    return this.load().drivers.filter(d => ids.includes(d.id));
+  }
+
+  public static async getVehiclesByIds(ids: string[]) {
+    if (!ids || ids.length === 0) return [];
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseDataClient()
+        .from('vehicles')
+        .select('*')
+        .in('id', ids);
+      if (error) throwSupabaseError('Erro ao listar veículos por IDs', error);
+      return data || [];
+    }
+    return this.load().vehicles.filter(v => ids.includes(v.id));
+  }
+
+  public static async getClientsByIds(ids: string[]) {
+    if (!ids || ids.length === 0) return [];
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseDataClient()
+        .from('clients')
+        .select('*')
+        .in('id', ids);
+      if (error) throwSupabaseError('Erro ao listar clientes por IDs', error);
+      return data || [];
+    }
+    return this.load().clients.filter(c => ids.includes(c.id));
+  }
+
+  public static async getFreightOrdersByIds(ids: string[]) {
+    if (!ids || ids.length === 0) return [];
+    if (isSupabaseServerConfigured) {
+      const { data, error } = await supabaseDataClient()
+        .from('freight_orders')
+        .select('*')
+        .in('id', ids);
+      if (error) throwSupabaseError('Erro ao listar ordens por IDs', error);
+      return (data || []).map(withFreightOrderDefaults);
+    }
+    return this.load().freight_orders.filter(o => ids.includes(o.id)).map(withFreightOrderDefaults);
+  }
+
   // Freight Orders CRUD
   public static async getFreightOrders(options: { page?: number; pageSize?: number; status?: string; driverId?: string; clientId?: string; search?: string; startDate?: string; endDate?: string } = {}) {
     const page = Math.max(1, Number(options.page) || 1);
