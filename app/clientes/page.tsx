@@ -30,6 +30,31 @@ export default function ClientsPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const formatCPF = (val: string) => {
+    const clean = val.replace(/\D/g, '');
+    if (clean.length <= 3) return clean;
+    if (clean.length <= 6) return `${clean.slice(0, 3)}.${clean.slice(3)}`;
+    if (clean.length <= 9) return `${clean.slice(0, 3)}.${clean.slice(3, 6)}.${clean.slice(6)}`;
+    return `${clean.slice(0, 3)}.${clean.slice(3, 6)}.${clean.slice(6, 9)}-${clean.slice(9, 11)}`;
+  };
+
+  const formatTelefone = (val: string) => {
+    const clean = val.replace(/\D/g, '');
+    if (clean.length <= 2) return clean;
+    if (clean.length <= 6) return `(${clean.slice(0, 2)}) ${clean.slice(2)}`;
+    if (clean.length <= 10) return `(${clean.slice(0, 2)}) ${clean.slice(2, 6)}-${clean.slice(6)}`;
+    return `(${clean.slice(0, 2)}) ${clean.slice(2, 7)}-${clean.slice(7, 11)}`;
+  };
+
+  const formatCpfOrCnpj = (val: string) => {
+    const clean = val.replace(/\D/g, '');
+    if (clean.length <= 11) {
+      return formatCPF(clean);
+    }
+    if (clean.length <= 12) return `${clean.slice(0, 2)}.${clean.slice(2, 5)}.${clean.slice(5, 8)}/${clean.slice(8)}`;
+    return `${clean.slice(0, 2)}.${clean.slice(2, 5)}.${clean.slice(5, 8)}/${clean.slice(8, 12)}-${clean.slice(12, 14)}`;
+  };
+
   const loadClients = async () => {
     try {
       setLoading(true);
@@ -248,7 +273,7 @@ export default function ClientsPage() {
                     required
                     placeholder="Ex: 12.345.678/0001-90"
                     value={document}
-                    onChange={(e) => setDocument(e.target.value)}
+                    onChange={(e) => setDocument(formatCpfOrCnpj(e.target.value))}
                     className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
                   />
                 </div>
@@ -274,7 +299,7 @@ export default function ClientsPage() {
                     type="text"
                     placeholder="Ex: (11) 4004-0000"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => setPhone(formatTelefone(e.target.value))}
                     className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
                   />
                 </div>

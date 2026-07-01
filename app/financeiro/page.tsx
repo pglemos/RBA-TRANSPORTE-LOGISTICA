@@ -19,6 +19,8 @@ export default function FinancePage() {
   const [paymentType, setPaymentType] = useState<'Adiantamento' | 'Saldo' | 'Taxa de Carga' | 'Outros'>('Adiantamento');
   const [amount, setAmount] = useState(0);
   const [status, setStatus] = useState<'Pendente' | 'Pago' | 'Cancelado'>('Pendente');
+  const [paymentMethod, setPaymentMethod] = useState<'Pix' | 'Transferência' | 'Dinheiro' | 'Cartão' | 'Cheque'>('Pix');
+  const [proofUrl, setProofUrl] = useState('');
 
   // Messages
   const [msg, setMsg] = useState('');
@@ -120,7 +122,8 @@ export default function FinancePage() {
       type: paymentType,
       amount,
       payment_date: new Date().toISOString().split('T')[0],
-      payment_method: 'Pix',
+      payment_method: paymentMethod,
+      proof_url: proofUrl,
       status
     };
 
@@ -137,6 +140,8 @@ export default function FinancePage() {
         setShowForm(false);
         setOrderId('');
         setAmount(0);
+        setPaymentMethod('Pix');
+        setProofUrl('');
         loadFinanceData();
       } else {
         setErrorMsg(data.error || "Operação não autorizada pelo controle RLS.");
@@ -314,7 +319,7 @@ export default function FinancePage() {
 
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] uppercase font-bold text-slate-500">Status do Envio Bancário</label>
                   <select
@@ -326,6 +331,32 @@ export default function FinancePage() {
                     <option value="Pago">🟢 Pago / Comprovante Anetado</option>
                     <option value="Cancelado">❌ Estornado / Cancelado</option>
                   </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold text-slate-500">Método de Pagamento</label>
+                  <select
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value as any)}
+                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                  >
+                    <option value="Pix">Pix</option>
+                    <option value="Transferência">Transferência Bancária</option>
+                    <option value="Dinheiro">Dinheiro Espécie</option>
+                    <option value="Cartão">Cartão Corporativo</option>
+                    <option value="Cheque">Cheque</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-bold text-slate-500">URL do Comprovante (Opcional)</label>
+                  <input
+                    type="text"
+                    placeholder="https://exemplo.com/comprovante.pdf"
+                    value={proofUrl}
+                    onChange={(e) => setProofUrl(e.target.value)}
+                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                  />
                 </div>
               </div>
 
@@ -442,9 +473,22 @@ export default function FinancePage() {
                         </div>
                       </td>
                       <td className="p-4">
-                        <span className="p-1 text-[10px] bg-slate-100 text-slate-700 font-bold rounded">
-                          {p.type}
-                        </span>
+                        <div className="flex flex-col gap-1 items-start">
+                          <span className="px-1.5 py-0.5 text-[9px] bg-slate-100 text-slate-700 font-extrabold rounded uppercase tracking-wider">
+                            {p.type}
+                          </span>
+                          <span className="text-[10px] text-slate-450">{p.payment_method || 'Pix'}</span>
+                          {p.proof_url && (
+                            <a
+                              href={p.proof_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[9px] font-bold text-[#d8b45d] hover:underline"
+                            >
+                              📎 Ver Recibo
+                            </a>
+                          )}
+                        </div>
                       </td>
                       <td className="p-4 font-bold text-slate-900">R$ {p.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                       <td className="p-4">

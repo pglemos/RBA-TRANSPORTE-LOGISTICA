@@ -41,6 +41,31 @@ export default function DriversPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const formatCPF = (val: string) => {
+    const clean = val.replace(/\D/g, '');
+    if (clean.length <= 3) return clean;
+    if (clean.length <= 6) return `${clean.slice(0, 3)}.${clean.slice(3)}`;
+    if (clean.length <= 9) return `${clean.slice(0, 3)}.${clean.slice(3, 6)}.${clean.slice(6)}`;
+    return `${clean.slice(0, 3)}.${clean.slice(3, 6)}.${clean.slice(6, 9)}-${clean.slice(9, 11)}`;
+  };
+
+  const formatTelefone = (val: string) => {
+    const clean = val.replace(/\D/g, '');
+    if (clean.length <= 2) return clean;
+    if (clean.length <= 6) return `(${clean.slice(0, 2)}) ${clean.slice(2)}`;
+    if (clean.length <= 10) return `(${clean.slice(0, 2)}) ${clean.slice(2, 6)}-${clean.slice(6)}`;
+    return `(${clean.slice(0, 2)}) ${clean.slice(2, 7)}-${clean.slice(7, 11)}`;
+  };
+
+  const formatCpfOrCnpj = (val: string) => {
+    const clean = val.replace(/\D/g, '');
+    if (clean.length <= 11) {
+      return formatCPF(clean);
+    }
+    if (clean.length <= 12) return `${clean.slice(0, 2)}.${clean.slice(2, 5)}.${clean.slice(5, 8)}/${clean.slice(8)}`;
+    return `${clean.slice(0, 2)}.${clean.slice(2, 5)}.${clean.slice(5, 8)}/${clean.slice(8, 12)}-${clean.slice(12, 14)}`;
+  };
+
   const loadDrivers = async () => {
     try {
       setLoading(true);
@@ -284,7 +309,7 @@ export default function DriversPage() {
                     required
                     placeholder="Ex: 123.456.789-00"
                     value={cpf}
-                    onChange={(e) => setCpf(e.target.value)}
+                    onChange={(e) => setCpf(formatCPF(e.target.value))}
                     className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
                   />
                 </div>
@@ -310,7 +335,7 @@ export default function DriversPage() {
                     type="text"
                     placeholder="Ex: (11) 98765-4321"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => setPhone(formatTelefone(e.target.value))}
                     className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-50 border border-slate-250 rounded-lg outline-none"
                   />
                 </div>
@@ -398,7 +423,7 @@ export default function DriversPage() {
                       type="text"
                       placeholder="Deixe em branco se for o próprio motorista"
                       value={beneficiaryDocument}
-                      onChange={(e) => setBeneficiaryDocument(e.target.value)}
+                      onChange={(e) => setBeneficiaryDocument(formatCpfOrCnpj(e.target.value))}
                       className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
                     />
                   </div>

@@ -118,14 +118,40 @@ export default function DashboardPage() {
     );
   }
 
-  const chartData = [
-    { name: 'Jan', Fretes: summary.totalGrossRevenue * 0.38 || 20000, Margem: summary.totalNet * 0.34 || 12000 },
-    { name: 'Fev', Fretes: summary.totalGrossRevenue * 0.52 || 32000, Margem: summary.totalNet * 0.45 || 22000 },
-    { name: 'Mar', Fretes: summary.totalGrossRevenue * 0.48 || 28000, Margem: summary.totalNet * 0.42 || 19000 },
-    { name: 'Abr', Fretes: summary.totalGrossRevenue * 0.72 || 45000, Margem: summary.totalNet * 0.64 || 35000 },
-    { name: 'Mai', Fretes: summary.totalGrossRevenue || 62000, Margem: summary.totalNet || 47000 },
-    { name: 'Jun', Fretes: summary.totalGrossRevenue * 1.08 || 68000, Margem: summary.totalNet * 1.12 || 52000 },
-  ];
+  const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  const currentMonthIndex = new Date().getMonth();
+  
+  const monthlyDataMap = new Map<number, { Fretes: number; Margem: number }>();
+  for (let i = 0; i <= currentMonthIndex; i++) {
+    monthlyDataMap.set(i, { Fretes: 0, Margem: 0 });
+  }
+
+  orders.forEach((o) => {
+    if (!o.created_at) return;
+    const date = new Date(o.created_at);
+    if (date.getFullYear() !== new Date().getFullYear()) return;
+    
+    const month = date.getMonth();
+    if (month <= currentMonthIndex) {
+      const cteVal = Number(o.cte_value) || 0;
+      const freightVal = Number(o.freight_value) || 0;
+      const totalExpenses = Number(o.total_expenses) || 0;
+      const discountVal = cteVal * (Number(o.cte_discount_percent ?? 10) / 100);
+      const netVal = cteVal - discountVal - freightVal - totalExpenses;
+
+      const currentSum = monthlyDataMap.get(month) || { Fretes: 0, Margem: 0 };
+      monthlyDataMap.set(month, {
+        Fretes: currentSum.Fretes + cteVal,
+        Margem: currentSum.Margem + netVal
+      });
+    }
+  });
+
+  const chartData = Array.from(monthlyDataMap.entries()).map(([monthIdx, totals]) => ({
+    name: months[monthIdx]!,
+    Fretes: Math.round(totals.Fretes * 100) / 100,
+    Margem: Math.round(totals.Margem * 100) / 100,
+  }));
 
   const statusData = FREIGHT_ORDER_STATUSES.map((statusOption) => ({
     name: statusOption,
