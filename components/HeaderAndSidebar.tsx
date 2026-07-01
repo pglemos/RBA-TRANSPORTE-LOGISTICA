@@ -17,8 +17,6 @@ import {
   UserSquare2,
   Users,
   X,
-  Sun,
-  Moon,
 } from 'lucide-react';
 
 interface UserSession {
@@ -56,18 +54,7 @@ export default function HeaderAndSidebar({ children }: { children: React.ReactNo
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [headerError, setHeaderError] = useState('');
-  const [darkMode, setDarkMode] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') === 'dark';
-    }
-    return false;
-  });
 
-  const toggleTheme = () => {
-    const newVal = !darkMode;
-    setDarkMode(newVal);
-    localStorage.setItem('theme', newVal ? 'dark' : 'light');
-  };
 
   useEffect(() => {
     let cancelled = false;
@@ -119,8 +106,8 @@ export default function HeaderAndSidebar({ children }: { children: React.ReactNo
         onClick={onClick}
         className={`flex items-center gap-3 rounded-lg border px-4 py-3 text-sm font-extrabold transition ${
           active
-            ? 'border-[#d8b45d]/50 bg-[#fff7df] text-slate-950 dark:bg-slate-900 dark:text-white dark:border-[#d8b45d]/30'
-            : 'border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white'
+            ? 'border-[#d8b45d]/50 bg-[#fff7df] text-slate-950'
+            : 'border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-950'
         }`}
       >
         <Icon className="h-4 w-4" />
@@ -130,8 +117,8 @@ export default function HeaderAndSidebar({ children }: { children: React.ReactNo
   };
 
   return (
-    <div id="rba-app-root" className={`min-h-screen bg-[oklch(96.5%_0.01_83)] text-slate-900 antialiased selection:bg-[oklch(76%_0.13_82)] selection:text-slate-950 dark:bg-[#0f111a] dark:text-slate-100 ${darkMode ? 'dark' : ''}`}>
-      <div className="sticky top-0 z-50 border-b border-slate-200 bg-[oklch(98%_0.006_83)] shadow-sm dark:bg-slate-950 dark:border-slate-800">
+    <div id="rba-app-root" className="min-h-screen bg-[oklch(96.5%_0.01_83)] text-slate-900 antialiased selection:bg-[oklch(76%_0.13_82)] selection:text-slate-950">
+      <div className="sticky top-0 z-50 border-b border-slate-200 bg-[oklch(98%_0.006_83)] shadow-sm">
         <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-3 px-4 py-2 md:px-8">
           <div className="flex min-w-0 items-center gap-3 text-[11px]">
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.12)]" />
@@ -142,29 +129,19 @@ export default function HeaderAndSidebar({ children }: { children: React.ReactNo
                 <span className="rounded-full border border-[#d8b45d]/40 bg-[#fff7df] px-3 py-1 font-black uppercase tracking-[0.08em] text-[#8a6725]">
                   {currentUser?.role || 'Sem sessão'}
                 </span>
-                <span className="hidden max-w-[260px] truncate font-semibold text-slate-500 md:inline dark:text-slate-400">{currentUser?.name}</span>
+                <span className="hidden max-w-[260px] truncate font-semibold text-slate-500 md:inline">{currentUser?.name}</span>
               </>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              aria-label="Alternar tema"
-              className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-2 text-slate-500 hover:bg-slate-50 dark:border-slate-850 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
-            >
-              {darkMode ? <Sun className="h-4 w-4 text-yellow-500" /> : <Moon className="h-4 w-4" />}
-            </button>
-            <button
-              type="button"
-              onClick={logout}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.1em] text-slate-600 transition hover:border-rose-200 hover:text-rose-600 dark:border-slate-850 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-rose-950 cursor-pointer"
-            >
-              <LogOut className="h-4 w-4" />
-              Sair
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={logout}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.1em] text-slate-600 transition hover:border-rose-200 hover:text-rose-600 cursor-pointer"
+          >
+            <LogOut className="h-4 w-4" />
+            Sair
+          </button>
         </div>
         {headerError && (
           <div className="border-t border-red-100 bg-red-50 px-4 py-2 text-center text-[11px] font-bold text-red-700">{headerError}</div>
@@ -172,14 +149,14 @@ export default function HeaderAndSidebar({ children }: { children: React.ReactNo
       </div>
 
       <div className="flex min-h-[calc(100vh-49px)]">
-        <aside id="desktop-sidebar" className="sticky top-[49px] hidden h-[calc(100vh-49px)] w-72 shrink-0 flex-col border-r border-slate-200 bg-[oklch(98.5%_0.006_83)] md:flex dark:bg-slate-950 dark:border-slate-800">
-          <div className="border-b border-slate-100 px-6 py-6 dark:border-slate-800">
+        <aside id="desktop-sidebar" className="sticky top-[49px] hidden h-[calc(100vh-49px)] w-72 shrink-0 flex-col border-r border-slate-200 bg-[oklch(98.5%_0.006_83)] md:flex">
+          <div className="border-b border-slate-100 px-6 py-6">
             <Link href={homePath} aria-label="Início RBA">
               <RBALogo className="h-24 w-44" />
             </Link>
-            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
               <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Central operacional</p>
-              <p className="mt-1 text-sm font-black text-slate-900 dark:text-white">RBA Fretes Digital</p>
+              <p className="mt-1 text-sm font-black text-slate-900">RBA Fretes Digital</p>
             </div>
           </div>
 
@@ -187,9 +164,9 @@ export default function HeaderAndSidebar({ children }: { children: React.ReactNo
             {filteredNavItems.map((item) => navLink(item))}
           </nav>
 
-          <div className="border-t border-slate-100 p-4 dark:border-slate-800">
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
-              <p className="truncate text-sm font-black text-slate-900 dark:text-white">{currentUser?.name || 'Usuário'}</p>
+          <div className="border-t border-slate-100 p-4">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <p className="truncate text-sm font-black text-slate-900">{currentUser?.name || 'Usuário'}</p>
               <p className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#8a6725]">{currentUser?.role || 'Sem sessão'}</p>
             </div>
           </div>
@@ -213,8 +190,8 @@ export default function HeaderAndSidebar({ children }: { children: React.ReactNo
         )}
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-[oklch(98.5%_0.006_83)] px-4 md:hidden dark:bg-slate-950 dark:border-slate-800">
-            <button type="button" onClick={() => setSidebarOpen(true)} className="rounded-lg border border-slate-200 p-2 text-slate-600 dark:border-slate-800 dark:text-slate-400">
+          <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-[oklch(98.5%_0.006_83)] px-4 md:hidden">
+            <button type="button" onClick={() => setSidebarOpen(true)} className="rounded-lg border border-slate-200 p-2 text-slate-600">
               <Menu className="h-6 w-6" />
             </button>
             <RBALogo className="h-12 w-24" />
