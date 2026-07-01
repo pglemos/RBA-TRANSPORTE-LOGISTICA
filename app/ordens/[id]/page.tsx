@@ -240,8 +240,8 @@ const id = params?.id;
     (Number(cteValueEdit) || 0) !== (Number(order.cte_value) || 0) ||
     (Number(cteDiscountEdit) || 0) !== (order.cte_discount_percent ?? 10);
   const statusDirty = statusEdit !== normalizeFreightOrderStatus(order.status);
-  const canManageFaturamento = currentRole === 'Administrador' || currentRole === 'Financeiro';
-  const canViewFreightFinancialDetails = currentRole !== null && currentRole !== 'Operacional';
+  const canManageFaturamento = currentRole === 'Administrador' || currentRole === 'Financeiro' || currentRole === 'Operacional';
+  const canViewFreightFinancialDetails = currentRole !== null;
 
   return (
     <HeaderAndSidebar>

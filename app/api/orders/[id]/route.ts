@@ -90,18 +90,6 @@ export async function PUT(
     }
 
     const body = await req.json();
-    if (session.role === 'Operacional') {
-      const attemptedFinancialEdit = Object.keys(body).some((key) => (
-        FINANCIAL_ORDER_FIELDS.has(key)
-        && Number((body as any)[key]) !== Number((currentOrder as any)[key] ?? 0)
-      ));
-      if (attemptedFinancialEdit) {
-        return NextResponse.json(
-          { success: false, error: 'Operacional não pode alterar valores financeiros da ficha.' },
-          { status: 403 },
-        );
-      }
-    }
 
     const allowedKeys = Object.keys(FreightOrderSchema.shape);
     const normalizedBody = Object.fromEntries(

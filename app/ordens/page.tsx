@@ -38,8 +38,8 @@ export default function OrdersListPage() {
   const [errorMsg, setErrorMsg] = useState('');
 
   const getCteSortValue = (cteNumber?: string) => {
-    const digits = cteNumber?.match(/\d+/g)?.join('');
-    return digits ? Number(digits) : -1;
+    const firstMatch = cteNumber?.match(/\d+/);
+    return firstMatch ? Number(firstMatch[0]) : -1;
   };
 
   const getOrderVehicleLabel = (order: any) =>
