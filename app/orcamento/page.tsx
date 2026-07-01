@@ -189,11 +189,64 @@ export default function QuotePage() {
             ) : (
               <form onSubmit={handleSubmit} className="mt-9 border border-[#d7b15d]/45 bg-[#111514] p-6 text-white shadow-[0_24px_80px_rgba(0,0,0,0.38)] md:p-9">
                 {errorMsg && (
-                  <div className="mb-6 p-4 bg-red-950/60 border border-red-500 text-red-200 rounded-xl text-xs font-semibold flex items-start gap-2.5">
-                    <span className="text-sm shrink-0">⚠️</span>
-                    <div>
-                      <p className="font-bold text-red-300">Falha no envio automático:</p>
-                      <p className="mt-0.5">{errorMsg}</p>
+                  <div className="mb-6 p-5 bg-red-950/80 border border-red-500 text-red-200 rounded-2xl space-y-4">
+                    <div className="flex items-start gap-2.5">
+                      <span className="text-sm shrink-0">⚠️</span>
+                      <div>
+                        <p className="font-bold text-red-300 text-sm">Falha no envio automático:</p>
+                        <p className="mt-0.5 text-xs text-red-200/80">{errorMsg}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="border-t border-red-500/20 pt-4 space-y-3">
+                      <p className="text-xs text-slate-350 font-bold">Não se preocupe! Você pode enviar os dados preenchidos diretamente usando os botões abaixo:</p>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <a
+                          href={`https://wa.me/5531993092821?text=${encodeURIComponent(
+                            `Olá Comercial RBA, gostaria de solicitar um orçamento:\n\n` +
+                            `• Nome: ${nome}\n` +
+                            `• Empresa: ${empresa || 'Não informada'}\n` +
+                            `• E-mail: ${email}\n` +
+                            `• Telefone: ${telefone}\n\n` +
+                            `• Origem: ${origem}\n` +
+                            `• Destino: ${destino}\n\n` +
+                            `• Tipo de Carga: ${tipoCarga}\n` +
+                            `• Peso: ${peso} kg\n` +
+                            `• Serviço: ${tipoServico}\n` +
+                            `• Valor Carga: R$ ${valorCarga}\n\n` +
+                            `• Observações: ${mensagem || 'Sem observações.'}`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-550 text-white font-extrabold text-[11px] tracking-wider uppercase rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer text-center"
+                        >
+                          Enviar por WhatsApp
+                        </a>
+                        <a
+                          href={`mailto:comercial@rbatransporte.com.br?subject=${encodeURIComponent(
+                            `Solicitação de Orçamento - ${empresa || nome}`
+                          )}&body=${encodeURIComponent(
+                            `Olá Comercial RBA,\n\nTemos uma nova solicitação de orçamento:\n\n` +
+                            `1. CONTATO\n` +
+                            `- Nome: ${nome}\n` +
+                            `- Empresa: ${empresa || 'Não informada'}\n` +
+                            `- E-mail: ${email}\n` +
+                            `- Telefone: ${telefone}\n\n` +
+                            `2. ROTA\n` +
+                            `- Origem: ${origem}\n` +
+                            `- Destino: ${destino}\n\n` +
+                            `3. CARGA\n` +
+                            `- Tipo: ${tipoCarga}\n` +
+                            `- Peso: ${peso}\n` +
+                            `- Valor: R$ ${valorCarga}\n` +
+                            `- Serviço: ${tipoServico}\n\n` +
+                            `Observações: ${mensagem || 'Sem observações.'}`
+                          )}`}
+                          className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-[11px] tracking-wider uppercase rounded-xl border border-slate-800 flex items-center justify-center gap-1.5 transition-colors cursor-pointer text-center"
+                        >
+                          Enviar por E-mail (Manual)
+                        </a>
+                      </div>
                     </div>
                   </div>
                 )}

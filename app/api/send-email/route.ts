@@ -58,9 +58,20 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify(payload)
     });
 
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data?.message || 'Falha ao processar envio pelo canal autônomo.');
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.message || 'Falha ao processar envio pelo canal autônomo.');
+      }
+    } else {
+      const text = await res.text();
+      if (!res.ok) {
+        if (text.includes('activate FormSubmit') || text.includes('Activation') || text.includes('confirm')) {
+          throw new Error('O e-mail comercial@rbatransporte.com.br ainda não foi confirmado/ativado no FormSubmit. Por favor, verifique a caixa de entrada para ativá-lo.');
+        }
+        throw new Error('O servidor de fallback (FormSubmit) retornou uma página HTML em vez de JSON.');
+      }
     }
 
     return NextResponse.json({ success: true, method: 'autonomous' });
