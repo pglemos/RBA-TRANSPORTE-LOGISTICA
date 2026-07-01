@@ -15,7 +15,8 @@ import {
   Filter, 
   Printer, 
   AlertCircle,
-  HelpCircle
+  HelpCircle,
+  AlertTriangle
 } from 'lucide-react';
 
 export default function OrdersListPage() {
@@ -322,12 +323,12 @@ export default function OrdersListPage() {
                   {filteredOrders.map((o) => (
                     <tr key={o.id} className="hover:bg-slate-50">
                       
-                      {/* Order and CTE link */}
                       <td className="p-4">
                         <Link
                           href={`/ordens/${o.id}`}
-                          className={`font-extrabold text-xs hover:underline ${o.cte_number ? 'text-yellow-650' : 'text-red-600'}`}
+                          className={`font-extrabold text-xs hover:underline inline-flex items-center gap-1 ${o.cte_number ? 'text-yellow-650' : 'text-red-650 dark:text-red-500'}`}
                         >
+                          {!o.cte_number && <AlertTriangle className="h-3 w-3 animate-pulse text-red-500" />}
                           {o.cte_number || 'A emitir'}
                         </Link>
                       </td>
@@ -440,8 +441,9 @@ export default function OrdersListPage() {
                       <span className="text-[10px] text-slate-400 font-bold uppercase block tracking-wider">CTE/MANIFESTO</span>
                       <Link
                         href={`/ordens/${o.id}`}
-                        className={`font-extrabold text-sm hover:underline ${o.cte_number ? 'text-yellow-650' : 'text-red-600'}`}
+                        className={`font-extrabold text-sm hover:underline inline-flex items-center gap-1 ${o.cte_number ? 'text-yellow-650' : 'text-red-650 dark:text-red-500'}`}
                       >
+                        {!o.cte_number && <AlertTriangle className="h-3.5 w-3.5 animate-pulse text-red-500" />}
                         {o.cte_number || 'A emitir'}
                       </Link>
                     </div>

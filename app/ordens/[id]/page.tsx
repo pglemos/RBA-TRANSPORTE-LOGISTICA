@@ -280,6 +280,64 @@ const id = params?.id;
           </div>
         </div>
 
+        {/* Visual Stepper Timeline */}
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm dark:bg-slate-950 dark:border-slate-800">
+          <div className="flex items-center justify-between relative max-w-2xl mx-auto py-2">
+            {/* Connecting line */}
+            <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1 bg-slate-250 dark:bg-slate-850 -z-10 rounded" />
+            
+            {/* Connecting active line */}
+            <div
+              className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-yellow-500 transition-all duration-500 rounded -z-10"
+              style={{
+                width: 
+                  order.status === 'Contratar' ? '0%' :
+                  order.status === 'Carregando' ? '33.3%' :
+                  order.status === 'Em Trânsito' || order.status === 'Em Viagem' ? '66.6%' : '100%'
+              }}
+            />
+
+            {[
+              { id: 'Contratar', label: 'Contratação', icon: '🤝' },
+              { id: 'Carregando', label: 'Carregamento', icon: '🚛' },
+              { id: 'Em Trânsito', label: 'Em Trânsito', icon: '🚚' },
+              { id: 'Entregue', label: 'Entregue', icon: '✅' },
+            ].map((step, idx) => {
+              const normalizedCurrent = normalizeFreightOrderStatus(order.status);
+              const stepRanks = { Contratar: 0, Carregando: 1, 'Em Trânsito': 2, Entregue: 3 };
+              
+              const currentRank = stepRanks[normalizedCurrent] ?? 0;
+              const stepRank = stepRanks[step.id as keyof typeof stepRanks] ?? 0;
+              
+              const isCompleted = stepRank < currentRank;
+              const isActive = stepRank === currentRank;
+              
+              return (
+                <div key={step.id} className="flex flex-col items-center relative z-10">
+                  <div
+                    className={`h-10 w-10 rounded-full border-2 flex items-center justify-center text-sm transition-all duration-300 ${
+                      isCompleted ? 'bg-emerald-600 border-emerald-600 text-white shadow-[0_0_10px_rgba(16,185,129,0.3)]' :
+                      isActive ? 'bg-yellow-500 border-yellow-500 text-slate-950 font-black shadow-[0_0_10px_rgba(216,180,93,0.4)] ring-4 ring-yellow-100 dark:ring-yellow-950/40' :
+                      'bg-white dark:bg-slate-900 border-slate-350 text-slate-400 dark:border-slate-800'
+                    }`}
+                  >
+                    {isCompleted ? '✓' : step.icon}
+                  </div>
+                  <span
+                    className={`text-[10px] font-black uppercase tracking-wider mt-2 whitespace-nowrap ${
+                      isActive ? 'text-yellow-600' :
+                      isCompleted ? 'text-emerald-700' :
+                      'text-slate-450 dark:text-slate-600'
+                    }`}
+                  >
+                    {step.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Master Details Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           

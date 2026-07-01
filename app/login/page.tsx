@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -76,7 +77,7 @@ export default function LoginPage() {
 
           <label className="block space-y-2">
             <span className="block text-[9px] font-extrabold uppercase tracking-widest text-slate-400">E-mail</span>
-            <span className="flex items-center gap-2 rounded-xl border border-slate-900 bg-slate-950/80 px-4 py-3 focus-within:border-amber-500/40">
+            <span className="flex items-center gap-2 rounded-xl border border-slate-900 bg-slate-950/80 px-4 py-3 focus-within:border-amber-500/50 focus-within:ring-2 focus-within:ring-amber-500/20">
               <Mail className="h-4 w-4 text-slate-500" />
               <input
                 id="ip-email"
@@ -92,7 +93,7 @@ export default function LoginPage() {
 
           <label className="block space-y-2">
             <span className="block text-[9px] font-extrabold uppercase tracking-widest text-slate-400">Senha</span>
-            <span className="flex items-center gap-2 rounded-xl border border-slate-900 bg-slate-950/80 px-4 py-3 focus-within:border-amber-500/40">
+            <span className="flex items-center gap-2 rounded-xl border border-slate-900 bg-slate-950/80 px-4 py-3 focus-within:border-amber-500/50 focus-within:ring-2 focus-within:ring-amber-500/20">
               <LockKeyhole className="h-4 w-4 text-slate-500" />
               <input
                 id="ip-password"
@@ -113,11 +114,26 @@ export default function LoginPage() {
             </span>
           </label>
 
+          <div className="flex items-center justify-between py-1 text-[11px]">
+            <label className="flex items-center gap-2 cursor-pointer select-none text-slate-400 hover:text-slate-200 transition-colors">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-900 bg-slate-950 text-amber-500 focus:ring-amber-500/20 focus:ring-offset-0 focus:outline-none"
+              />
+              Lembrar de mim
+            </label>
+            <a href="#" className="text-slate-500 hover:text-amber-550 transition-colors">
+              Esqueceu a senha?
+            </a>
+          </div>
+
           <button
             id="login-submit-btn"
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 py-3.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.2)] transition hover:from-amber-400 hover:to-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 py-3.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.2)] transition hover:from-amber-400 hover:to-yellow-300 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
           >
             {loading ? 'Autenticando...' : 'Entrar no sistema'}
           </button>

@@ -26,6 +26,17 @@ export default function FinancePage() {
   const [msg, setMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [saving, setSaving] = useState(false);
+  const [sortKey, setSortKey] = useState<'default' | 'amount' | 'date'>('default');
+  const [sortAsc, setSortAsc] = useState<boolean>(true);
+
+  const handleSortToggle = (key: 'amount' | 'date') => {
+    if (sortKey === key) {
+      setSortAsc(!sortAsc);
+    } else {
+      setSortKey(key);
+      setSortAsc(true);
+    }
+  };
 
   // Dynamic statistics
   const [stats, setStats] = useState({
@@ -182,6 +193,16 @@ export default function FinancePage() {
 
     return matchesSearch && matchesStatus;
   }).sort((a, b) => {
+    if (sortKey === 'amount') {
+      const diff = (Number(a.amount) || 0) - (Number(b.amount) || 0);
+      return sortAsc ? diff : -diff;
+    }
+    if (sortKey === 'date') {
+      const dateA = new Date(a.created_at || a.payment_date || 0).getTime();
+      const dateB = new Date(b.created_at || b.payment_date || 0).getTime();
+      const diff = dateA - dateB;
+      return sortAsc ? diff : -diff;
+    }
     const rankA = statusRank[a.order_status] || 99;
     const rankB = statusRank[b.order_status] || 99;
     if (rankA !== rankB) {
@@ -455,9 +476,13 @@ export default function FinancePage() {
                     <th className="p-4">Ficha / Ordem Associada</th>
                     <th className="p-4">Motorista Beneficiário</th>
                     <th className="p-4">Tipo de Baixa</th>
-                    <th className="p-4">Valor Sacado</th>
+                    <th className="p-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900 select-none" onClick={() => handleSortToggle('amount')}>
+                       Valor Sacado {sortKey === 'amount' ? (sortAsc ? ' ⬆️' : ' ⬇️') : ''}
+                     </th>
                     <th className="p-4">Status de Liquidação</th>
-                    <th className="p-4">Data Registro</th>
+                    <th className="p-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900 select-none" onClick={() => handleSortToggle('date')}>
+                       Data Registro {sortKey === 'date' ? (sortAsc ? ' ⬆️' : ' ⬇️') : ''}
+                     </th>
                     <th className="p-4 text-right">Ação</th>
                   </tr>
                 </thead>
