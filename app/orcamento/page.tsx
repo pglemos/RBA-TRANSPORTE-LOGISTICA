@@ -22,6 +22,18 @@ export default function QuotePage() {
   const [enviado, setEnviado] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  const formatTelefone = (val: string) => {
+    const clean = val.replace(/\D/g, '');
+    if (clean.length <= 2) return clean;
+    if (clean.length <= 6) return `(${clean.slice(0, 2)}) ${clean.slice(2)}`;
+    if (clean.length <= 10) return `(${clean.slice(0, 2)}) ${clean.slice(2, 6)}-${clean.slice(6)}`;
+    return `(${clean.slice(0, 2)}) ${clean.slice(2, 7)}-${clean.slice(7, 11)}`;
+  };
+
+  const handlePhoneChange = (val: string) => {
+    setTelefone(formatTelefone(val));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -190,7 +202,7 @@ export default function QuotePage() {
                   <Field label="Nome" value={nome} onChange={setNome} placeholder="Seu nome completo" />
                   <Field label="Empresa" value={empresa} onChange={setEmpresa} placeholder="Nome da empresa" required={false} />
                   <Field label="E-mail" type="email" value={email} onChange={setEmail} placeholder="seuemail@exemplo.com" />
-                  <Field label="Telefone" value={telefone} onChange={setTelefone} placeholder="(00) 00000-0000" />
+                  <Field label="Telefone" value={telefone} onChange={handlePhoneChange} placeholder="(00) 00000-0000" />
                 </FormSection>
 
                 <FormSection title="2. Origem e destino">

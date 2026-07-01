@@ -301,11 +301,12 @@ export default function OrdersListPage() {
         ) : (
           <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xs">
             
-            <div className="overflow-x-auto">
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-50 text-slate-400 font-bold border-b border-slate-200 text-[10px]">
-<th className="p-4">CTE/MANIFESTO</th>
+                    <th className="p-4">CTE/MANIFESTO</th>
                     <th className="p-4">Motorista Condutor</th>
                     <th className="p-4">Veículo Conjugado</th>
                     <th className="p-4">Origem ➔ Destino</th>
@@ -361,24 +362,24 @@ export default function OrdersListPage() {
                       <td className="p-4 min-w-[108px] whitespace-nowrap text-[11px] font-bold leading-tight tracking-normal text-slate-900">
                         R$ {(Number(o.cte_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </td>
-                    <td className="p-4 min-w-[128px] font-bold text-slate-900">
-                      <div className="w-max min-w-[108px] text-[11px] leading-tight tracking-normal">
-                        {(Number(o.cash_value) || 0) > 0 ? (
-                          <p className="whitespace-nowrap text-emerald-700">
-                            À vista R$ {(Number(o.cash_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </p>
-                        ) : (
-                          <>
-                            <p className="whitespace-nowrap border-b border-slate-200 pb-1">
-                              AD R$ {(Number(o.advance_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      <td className="p-4 min-w-[128px] font-bold text-slate-900">
+                        <div className="w-max min-w-[108px] text-[11px] leading-tight tracking-normal">
+                          {(Number(o.cash_value) || 0) > 0 ? (
+                            <p className="whitespace-nowrap text-emerald-700">
+                              À vista R$ {(Number(o.cash_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </p>
-                            <p className={`whitespace-nowrap pt-1 ${o.balance_value < 0 ? 'text-red-600' : 'text-slate-900'}`}>
-                              SD R$ {o.balance_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </p>
-                          </>
-                        )}
-                      </div>
-                    </td>
+                          ) : (
+                            <>
+                              <p className="whitespace-nowrap border-b border-slate-200 pb-1">
+                                AD R$ {(Number(o.advance_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </p>
+                              <p className={`whitespace-nowrap pt-1 ${o.balance_value < 0 ? 'text-red-600' : 'text-slate-900'}`}>
+                                SD R$ {o.balance_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      </td>
 
                       {/* Status label */}
                       <td className="p-4">
@@ -428,6 +429,97 @@ export default function OrdersListPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Cards View */}
+            <div className="block md:hidden divide-y divide-slate-150">
+              {filteredOrders.map((o) => (
+                <div key={o.id} className="p-4 space-y-4 hover:bg-slate-50">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block tracking-wider">CTE/MANIFESTO</span>
+                      <Link
+                        href={`/ordens/${o.id}`}
+                        className={`font-extrabold text-sm hover:underline ${o.cte_number ? 'text-yellow-650' : 'text-red-600'}`}
+                      >
+                        {o.cte_number || 'A emitir'}
+                      </Link>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block tracking-wider text-right mb-1">STATUS</span>
+                      <span className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-wide inline-flex items-center gap-1 ${getFreightStatusMeta(o.status).className}`}>
+                        {getFreightStatusMeta(o.status).icon} {normalizeFreightOrderStatus(o.status)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Motorista</span>
+                      <p className="font-bold text-slate-950 mt-0.5">{o.driver_name}</p>
+                      <p className="text-[10px] text-slate-500">CPF: {o.driver_cpf}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Veículo</span>
+                      <p className="font-extrabold text-slate-950 mt-0.5">{o.vehicle_tractor_plate} | {o.vehicle_trailer_plate}</p>
+                      <p className="text-[10px] text-slate-450">{o.vehicle_model}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Origem ➔ Destino</span>
+                      <p className="text-slate-800 mt-0.5">{o.origin} ➔ {o.destination}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Valor CTE</span>
+                      <p className="font-extrabold text-slate-950 mt-0.5">R$ {(Number(o.cte_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Saldo Frete</span>
+                      <div className="text-[11px] mt-0.5 font-bold text-slate-950 leading-tight">
+                        {(Number(o.cash_value) || 0) > 0 ? (
+                          <p className="text-emerald-700">
+                            À vista R$ {(Number(o.cash_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </p>
+                        ) : (
+                          <>
+                            <p className="border-b border-slate-200 pb-0.5">
+                              AD R$ {(Number(o.advance_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </p>
+                            <p className={`pt-0.5 ${o.balance_value < 0 ? 'text-red-600' : 'text-slate-950'}`}>
+                              SD R$ {o.balance_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-slate-100 pt-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedOrderForPDF(o)}
+                      className="p-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg inline-flex items-center gap-1.5 cursor-pointer text-[10px] uppercase font-bold"
+                    >
+                      <Printer className="h-3 w-3" />
+                      Imprimir PDF
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/ordens/${o.id}/editar`}
+                        className="p-2 bg-slate-950 hover:bg-slate-800 text-white rounded-lg text-[10px] uppercase font-bold"
+                      >
+                        Editar
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(o.id)}
+                        className="p-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
 
           </div>

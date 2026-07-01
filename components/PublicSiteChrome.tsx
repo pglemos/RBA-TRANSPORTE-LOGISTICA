@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronRight, Clock3, Mail, MapPin, Phone, ShieldCheck } from 'lucide-react';
+import { ChevronRight, Clock3, Mail, MapPin, Phone, ShieldCheck, Menu, X } from 'lucide-react';
 import RBALogo from '@/components/RBALogo';
 
 const navItems = [
@@ -16,6 +16,7 @@ const navItems = [
 
 export default function PublicSiteChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#090b0c] text-white selection:bg-[#d7b15d] selection:text-black">
@@ -25,6 +26,7 @@ export default function PublicSiteChrome({ children }: { children: React.ReactNo
             <RBALogo className="h-16 w-28 drop-shadow-[0_2px_1px_rgba(255,255,255,0.35)]" />
           </Link>
 
+          {/* Desktop Navigation */}
           <nav className="hidden items-center gap-8 lg:flex">
             {navItems.map((item) => {
               const active = pathname === item.href;
@@ -42,14 +44,57 @@ export default function PublicSiteChrome({ children }: { children: React.ReactNo
             })}
           </nav>
 
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 border border-[#d7b15d]/70 px-4 py-3 text-[10px] font-black uppercase tracking-[0.14em] text-[#f3db9f] transition-colors hover:bg-[#d7b15d] hover:text-[#0a0c0d]"
-          >
-            Portal do Cliente
-            <ChevronRight className="h-3.5 w-3.5" />
-          </Link>
+          {/* Desktop login button & Mobile toggle */}
+          <div className="flex items-center gap-4">
+            <Link
+              href="/login"
+              className="hidden items-center gap-2 border border-[#d7b15d]/70 px-4 py-3 text-[10px] font-black uppercase tracking-[0.14em] text-[#f3db9f] transition-colors hover:bg-[#d7b15d] hover:text-[#0a0c0d] md:inline-flex"
+            >
+              Portal do Cliente
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="inline-flex items-center justify-center rounded-lg border border-white/10 p-2 text-white hover:text-[#d7b15d] focus:outline-none lg:hidden"
+              aria-label="Toggle navigation menu"
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Navigation Dropdown */}
+        {mobileMenuOpen && (
+          <div className="absolute inset-x-0 top-20 z-40 border-b border-white/10 bg-[#080a0b] py-6 px-6 lg:hidden animate-in fade-in slide-in-from-top-4 duration-200">
+            <nav className="flex flex-col gap-5">
+              {navItems.map((item) => {
+                const active = pathname === item.href;
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`text-xs font-black uppercase tracking-[0.18em] transition-colors hover:text-[#d7b15d] py-1 ${
+                      active ? 'text-[#d7b15d]' : 'text-white/72'
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="mt-2 flex items-center justify-between border border-[#d7b15d]/70 px-4 py-3 text-xs font-black uppercase tracking-[0.14em] text-[#f3db9f] transition-colors hover:bg-[#d7b15d] hover:text-[#0a0c0d]"
+              >
+                Portal do Cliente
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            </nav>
+          </div>
+        )}
       </header>
 
       {children}
