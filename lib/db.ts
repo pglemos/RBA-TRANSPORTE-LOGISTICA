@@ -1291,7 +1291,7 @@ export class RBADatabase {
   }
 
   // Freight Orders CRUD
-  public static async getFreightOrders(options: { page?: number; pageSize?: number; status?: string; driverId?: string; clientId?: string; search?: string } = {}) {
+  public static async getFreightOrders(options: { page?: number; pageSize?: number; status?: string; driverId?: string; clientId?: string; search?: string; startDate?: string; endDate?: string } = {}) {
     const page = Math.max(1, Number(options.page) || 1);
     const pageSize = Math.min(100, Math.max(1, Number(options.pageSize) || 50));
     if (isSupabaseServerConfigured) {
@@ -1304,10 +1304,40 @@ export class RBADatabase {
       if (options.status) query = query.eq('status', options.status);
       if (options.driverId) query = query.eq('driver_id', options.driverId);
       if (options.clientId) query = query.eq('client_id', options.clientId);
+      if (options.startDate) query = query.gte('created_at', options.startDate);
+      if (options.endDate) query = query.lte('created_at', `${options.endDate}T23:59:59.999Z`);
       if (options.search) {
         const term = options.search.replace(/[%_]/g, '').trim();
         if (term) {
-          query = query.or(`order_number.ilike.%${term}%,cte_number.ilike.%${term}%,origin.ilike.%${term}%,destination.ilike.%${term}%`);
+          // Fetch matching foreign key IDs first
+          const [matchedDrivers, matchedVehicles, matchedClients] = await Promise.all([
+            supabaseServer.from('drivers').select('id').or(`name.ilike.%${term}%,cpf.ilike.%${term}%`),
+            supabaseServer.from('vehicles').select('id').or(`tractor_plate.ilike.%${term}%,trailer_plate.ilike.%${term}%,model.ilike.%${term}%`),
+            supabaseServer.from('clients').select('id').ilike('name', `%${term}%`)
+          ]);
+
+          const driverIds = (matchedDrivers.data?.map(d => d.id) || []).slice(0, 100);
+          const vehicleIds = (matchedVehicles.data?.map(v => v.id) || []).slice(0, 100);
+          const clientIds = (matchedClients.data?.map(c => c.id) || []).slice(0, 100);
+
+          const orParts = [
+            `order_number.ilike.%${term}%`,
+            `cte_number.ilike.%${term}%`,
+            `origin.ilike.%${term}%`,
+            `destination.ilike.%${term}%`
+          ];
+
+          if (driverIds.length > 0) {
+            orParts.push(`driver_id.in.(${driverIds.join(',')})`);
+          }
+          if (vehicleIds.length > 0) {
+            orParts.push(`vehicle_id.in.(${vehicleIds.join(',')})`);
+          }
+          if (clientIds.length > 0) {
+            orParts.push(`client_id.in.(${clientIds.join(',')})`);
+          }
+
+          query = query.or(orParts.join(','));
         }
       }
 
@@ -1327,13 +1357,42 @@ export class RBADatabase {
     if (options.status) orders = orders.filter(o => o.status === options.status);
     if (options.driverId) orders = orders.filter(o => o.driver_id === options.driverId);
     if (options.clientId) orders = orders.filter(o => o.client_id === options.clientId);
+    if (options.startDate) orders = orders.filter(o => o.created_at >= options.startDate!);
+    if (options.endDate) orders = orders.filter(o => o.created_at <= `${options.endDate!}T23:59:59.999Z`);
     if (options.search) {
       const term = options.search.toLowerCase();
+      const db = this.load();
+      
+      const matchedDriverIds = new Set(
+        db.drivers
+          .filter(d => d.name?.toLowerCase().includes(term) || d.cpf?.toLowerCase().includes(term))
+          .map(d => d.id)
+      );
+      
+      const matchedVehicleIds = new Set(
+        db.vehicles
+          .filter(v => 
+            v.tractor_plate?.toLowerCase().includes(term) || 
+            v.trailer_plate?.toLowerCase().includes(term) || 
+            v.model?.toLowerCase().includes(term)
+          )
+          .map(v => v.id)
+      );
+      
+      const matchedClientIds = new Set(
+        db.clients
+          .filter(c => c.name?.toLowerCase().includes(term))
+          .map(c => c.id)
+      );
+
       orders = orders.filter(o =>
         o.order_number?.toLowerCase().includes(term) ||
         o.cte_number?.toLowerCase().includes(term) ||
         o.origin?.toLowerCase().includes(term) ||
-        o.destination?.toLowerCase().includes(term)
+        o.destination?.toLowerCase().includes(term) ||
+        matchedDriverIds.has(o.driver_id) ||
+        matchedVehicleIds.has(o.vehicle_id) ||
+        matchedClientIds.has(o.client_id)
       );
     }
     return orders.slice((page - 1) * pageSize, page * pageSize).map(withFreightOrderDefaults);

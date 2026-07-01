@@ -15,18 +15,20 @@ export async function GET(req: NextRequest) {
   try {
     const guard = await RBAAuth.requireAuth(req);
     if (guard.response) return guard.response;
-
+ 
     const role = guard.session.user!.role;
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search')?.toLowerCase() || '';
     const status = searchParams.get('status') || '';
     const driverId = searchParams.get('driver_id') || '';
     const clientId = searchParams.get('client_id') || '';
+    const startDate = searchParams.get('start_date') || '';
+    const endDate = searchParams.get('end_date') || '';
     const page = Number(searchParams.get('page') || '1');
     const pageSize = Number(searchParams.get('page_size') || '50');
-
+ 
     const [orders, drivers, vehicles, clients] = await Promise.all([
-      RBADatabase.getFreightOrders({ search, status: '', driverId, clientId, page, pageSize }),
+      RBADatabase.getFreightOrders({ search, status: '', driverId, clientId, page, pageSize, startDate, endDate }),
       RBADatabase.getDrivers(),
       RBADatabase.getVehicles(),
       RBADatabase.getClients(),

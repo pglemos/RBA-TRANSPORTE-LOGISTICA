@@ -28,6 +28,8 @@ export default function OrdersListPage() {
   const [driverFilter, setDriverFilter] = useState('');
   const [vehicleFilter, setVehicleFilter] = useState('');
   const [clientFilter, setClientFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [selectedOrderForPDF, setSelectedOrderForPDF] = useState<any | null>(null);
 
   // Messages
@@ -51,6 +53,8 @@ export default function OrdersListPage() {
       const params = new URLSearchParams({ page: '1', page_size: '100' });
       if (search.trim()) params.set('search', search.trim());
       if (statusFilter) params.set('status', statusFilter);
+      if (startDate) params.set('start_date', startDate);
+      if (endDate) params.set('end_date', endDate);
       const res = await fetch(`/api/orders?${params.toString()}`);
       const data = await res.json();
       if (!res.ok) {
@@ -62,7 +66,7 @@ export default function OrdersListPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter]);
+  }, [search, statusFilter, startDate, endDate]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -117,8 +121,10 @@ export default function OrdersListPage() {
       { value: vehicleFilter, getValue: getOrderVehicleLabel },
       { value: clientFilter, getValue: (order) => order.client_name },
     ]);
+    const matchesDate = (!startDate || o.created_at >= startDate) && 
+                        (!endDate || o.created_at <= `${endDate}T23:59:59.999Z`);
 
-    return matchesSearch && matchesFilters;
+    return matchesSearch && matchesFilters && matchesDate;
   }).sort((a, b) => {
     const statusDiff = getFreightStatusListSortRank(a.status) - getFreightStatusListSortRank(b.status);
     if (statusDiff !== 0) return statusDiff;
@@ -167,83 +173,118 @@ export default function OrdersListPage() {
         )}
 
         {/* Filters bar */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="bg-white border border-slate-200 rounded-3xl p-5 space-y-4 shadow-xs">
           
-          <div className="relative w-full md:max-w-md">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-            <input
-              id="search-input"
-              type="text"
-              placeholder="Pesquisar ficha, motorista, placa, CTE ou cliente..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full text-xs font-semibold pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-250 rounded-xl outline-none focus:border-yellow-500 transition-colors text-slate-800"
-            />
+          {/* Top row: Search input and Date Range */}
+          <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+            <div className="relative w-full lg:max-w-md">
+              <Search className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+              <input
+                id="search-input"
+                type="text"
+                placeholder="Pesquisar ficha, motorista, placa, CTE ou cliente..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full text-xs font-semibold pl-9 pr-3 py-3 bg-slate-50 border border-slate-250 rounded-xl outline-none focus:border-yellow-500 transition-colors text-slate-800"
+              />
+            </div>
+
+            {/* Date range picker */}
+            <div className="flex items-center gap-2 w-full lg:w-auto shrink-0 flex-wrap sm:flex-nowrap">
+              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2.5 rounded-xl text-xs font-bold w-full sm:w-auto">
+                <span className="text-slate-400 text-[10px] uppercase font-black">De:</span>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="bg-transparent text-slate-700 outline-none font-bold cursor-pointer w-full sm:w-auto text-[11px]"
+                />
+              </div>
+              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2.5 rounded-xl text-xs font-bold w-full sm:w-auto">
+                <span className="text-slate-400 text-[10px] uppercase font-black">Até:</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="bg-transparent text-slate-700 outline-none font-bold cursor-pointer w-full sm:w-auto text-[11px]"
+                />
+              </div>
+              {(startDate || endDate) && (
+                <button
+                  type="button"
+                  onClick={() => { setStartDate(''); setEndDate(''); }}
+                  className="text-[10px] font-black uppercase text-red-650 hover:text-red-700 px-2.5 py-2 bg-red-50 hover:bg-red-100 rounded-xl transition-colors cursor-pointer shrink-0"
+                >
+                  Limpar
+                </button>
+              )}
+            </div>
           </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 w-full xl:w-auto shrink-0">
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
-            <Filter className="h-3.5 w-3.5 text-slate-500" />
-            <select
-                id="status-filter"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-transparent text-slate-700 outline-none font-bold"
+          {/* Bottom row: Select Dropdowns */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 w-full">
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
+              <Filter className="h-3.5 w-3.5 text-slate-500" />
+              <select
+                  id="status-filter"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full bg-transparent text-slate-700 outline-none font-bold"
+                >
+                  <option value="">Todos os Status</option>
+                  {FREIGHT_ORDER_STATUSES.map((statusOption) => {
+                    const meta = getFreightStatusMeta(statusOption);
+                    return (
+                      <option key={statusOption} value={statusOption}>
+                        {meta.icon} {meta.label}
+                      </option>
+                    );
+                  })}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
+              <select
+                id="driver-filter"
+                value={driverFilter}
+                onChange={(e) => setDriverFilter(e.target.value)}
+                className="w-full bg-transparent text-slate-700 outline-none font-bold"
               >
-                <option value="">Todos os Status</option>
-                {FREIGHT_ORDER_STATUSES.map((statusOption) => {
-                  const meta = getFreightStatusMeta(statusOption);
-                  return (
-                    <option key={statusOption} value={statusOption}>
-                      {meta.icon} {meta.label}
-                    </option>
-                  );
-                })}
-            </select>
-          </div>
+                <option value="">Todos os Motoristas</option>
+                {driverOptions.map((driver) => (
+                  <option key={driver} value={driver}>{driver}</option>
+                ))}
+              </select>
+            </div>
 
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
-            <select
-              id="driver-filter"
-              value={driverFilter}
-              onChange={(e) => setDriverFilter(e.target.value)}
-              className="w-full bg-transparent text-slate-700 outline-none font-bold"
-            >
-              <option value="">Todos os Motoristas</option>
-              {driverOptions.map((driver) => (
-                <option key={driver} value={driver}>{driver}</option>
-              ))}
-            </select>
-          </div>
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
+              <select
+                id="vehicle-filter"
+                value={vehicleFilter}
+                onChange={(e) => setVehicleFilter(e.target.value)}
+                className="w-full bg-transparent text-slate-700 outline-none font-bold"
+              >
+                <option value="">Todos os Veículos</option>
+                {vehicleOptions.map((vehicle) => (
+                  <option key={vehicle} value={vehicle}>{vehicle}</option>
+                ))}
+              </select>
+            </div>
 
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
-            <select
-              id="vehicle-filter"
-              value={vehicleFilter}
-              onChange={(e) => setVehicleFilter(e.target.value)}
-              className="w-full bg-transparent text-slate-700 outline-none font-bold"
-            >
-              <option value="">Todos os Veículos</option>
-              {vehicleOptions.map((vehicle) => (
-                <option key={vehicle} value={vehicle}>{vehicle}</option>
-              ))}
-            </select>
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
+              <select
+                id="client-filter"
+                value={clientFilter}
+                onChange={(e) => setClientFilter(e.target.value)}
+                className="w-full bg-transparent text-slate-700 outline-none font-bold"
+              >
+                <option value="">Todos os Clientes</option>
+                {clientOptions.map((client) => (
+                  <option key={client} value={client}>{client}</option>
+                ))}
+              </select>
+            </div>
           </div>
-
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
-            <select
-              id="client-filter"
-              value={clientFilter}
-              onChange={(e) => setClientFilter(e.target.value)}
-              className="w-full bg-transparent text-slate-700 outline-none font-bold"
-            >
-              <option value="">Todos os Clientes</option>
-              {clientOptions.map((client) => (
-                <option key={client} value={client}>{client}</option>
-              ))}
-            </select>
-          </div>
-        </div>
 
         </div>
 
