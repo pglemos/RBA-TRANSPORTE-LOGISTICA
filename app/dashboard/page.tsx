@@ -241,6 +241,7 @@ export default function DashboardPage() {
                 detail="Frete ainda não liquidado"
                 icon={Clock}
                 tone="gold"
+                href="/financeiro"
               />
               <KpiCard
                 label="Fretes ativos"
@@ -248,6 +249,7 @@ export default function DashboardPage() {
                 detail={`Carregando: ${summary.ordersByStatus.Carregando || 0}`}
                 icon={TrendingUp}
                 tone="slate"
+                href="/ordens"
               />
             </section>
 
@@ -463,7 +465,21 @@ function SummaryLine({ label, value }: { label: string; value: string }) {
   );
 }
 
-function KpiCard({ label, value, detail, icon: Icon, tone }: { label: string; value: string; detail: string; icon: React.ElementType; tone: 'emerald' | 'blue' | 'gold' | 'slate' }) {
+function KpiCard({
+  label,
+  value,
+  detail,
+  icon: Icon,
+  tone,
+  href,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  icon: React.ElementType;
+  tone: 'emerald' | 'blue' | 'gold' | 'slate';
+  href?: string;
+}) {
   const tones = {
     emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100',
     blue: 'bg-blue-50 text-blue-700 border-blue-100',
@@ -471,8 +487,8 @@ function KpiCard({ label, value, detail, icon: Icon, tone }: { label: string; va
     slate: 'bg-slate-100 text-slate-700 border-slate-200',
   };
 
-  return (
-    <article className="rounded-lg border border-slate-200 bg-[oklch(98.5%_0.006_83)] p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+  const CardContent = (
+    <>
       <div className="flex items-start justify-between gap-4">
         <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">{label}</p>
         <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border ${tones[tone]}`}>
@@ -481,6 +497,20 @@ function KpiCard({ label, value, detail, icon: Icon, tone }: { label: string; va
       </div>
       <p className="mt-5 text-2xl font-black tracking-tight text-slate-950">{value}</p>
       <p className="mt-2 text-xs font-semibold leading-5 text-slate-500">{detail}</p>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} className="block rounded-lg border border-slate-200 bg-[oklch(98.5%_0.006_83)] p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md hover:border-[#d8b45d]">
+        {CardContent}
+      </Link>
+    );
+  }
+
+  return (
+    <article className="rounded-lg border border-slate-200 bg-[oklch(98.5%_0.006_83)] p-5 shadow-sm">
+      {CardContent}
     </article>
   );
 }

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LockKeyhole, Mail } from 'lucide-react';
+import { LockKeyhole, Mail, Eye, EyeOff } from 'lucide-react';
 import RBALogo from '@/components/RBALogo';
 import { isSupabaseConfigured, supabaseClient } from '@/lib/supabase/client';
 
@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -95,13 +96,20 @@ export default function LoginPage() {
               <LockKeyhole className="h-4 w-4 text-slate-500" />
               <input
                 id="ip-password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 className="min-w-0 flex-1 bg-transparent text-xs font-semibold text-white outline-none placeholder:text-slate-650"
                 placeholder="Senha cadastrada"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-slate-500 hover:text-white transition focus:outline-none"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </span>
           </label>
 
