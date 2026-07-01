@@ -657,8 +657,9 @@ const initialDB: Database = {
 
 export class RBADatabase {
   private static load(): Database {
-    if (isServerlessRuntime && !isSupabaseServerConfigured) {
-      throw new Error('Supabase não configurado no ambiente serverless. Fallback local desativado para evitar perda de dados.');
+    const isProduction = process.env.NODE_ENV === 'production';
+    if ((isServerlessRuntime || isProduction) && !isSupabaseServerConfigured) {
+      throw new Error('Supabase não configurado no ambiente de produção. Fallback local desativado para evitar perda de dados.');
     }
     if (!fs.existsSync(DB_PATH)) {
       try {
@@ -694,10 +695,27 @@ export class RBADatabase {
 
   // Auditing Helper
   public static async addAuditLog(userId: string, userName: string, action: string, entity: string, entityId: string, oldData: any, newData: any) {
-    if (isSupabaseServerConfigured) {
-      const { error } = await supabaseServer
-        .from('audit_logs')
-        .insert({
+    try {
+      if (isSupabaseServerConfigured) {
+        const { error } = await supabaseServer
+          .from('audit_logs')
+          .insert({
+            id: generateId('log'),
+            user_id: userId,
+            user_name: userName,
+            action,
+            entity,
+            entity_id: entityId,
+            old_data: JSON.stringify(oldData || {}),
+            new_data: JSON.stringify(newData || {}),
+            created_at: new Date().toISOString()
+          });
+        if (error) {
+          console.error("Erro ao gravar log de auditoria no Supabase:", error);
+        }
+      } else {
+        const db = this.load();
+        db.audit_logs.push({
           id: generateId('log'),
           user_id: userId,
           user_name: userName,
@@ -708,23 +726,11 @@ export class RBADatabase {
           new_data: JSON.stringify(newData || {}),
           created_at: new Date().toISOString()
         });
-      if (!error) return;
+        this.save(db);
+      }
+    } catch (e) {
+      console.error("Falha ao gravar log de auditoria (operação principal continuada):", e);
     }
-
-    const db = this.load();
-    const newLog: AuditLog = {
-      id: generateId('log'),
-      user_id: userId,
-      user_name: userName,
-      action,
-      entity,
-      entity_id: entityId,
-      old_data: JSON.stringify(oldData || {}),
-      new_data: JSON.stringify(newData || {}),
-      created_at: new Date().toISOString()
-    };
-    db.audit_logs.unshift(newLog);
-    this.save(db);
   }
 
   // Settings
