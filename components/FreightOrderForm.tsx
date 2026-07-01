@@ -167,6 +167,7 @@ export default function FreightOrderForm({ initialData }: Props) {
   const [freightValue, setFreightValue] = useState(initialData?.freight_value || 0);
   const [advanceValue, setAdvanceValue] = useState(initialData?.advance_value || 0);
   const [cashValue, setCashValue] = useState(initialData?.cash_value || 0);
+  const [balanceValue, setBalanceValue] = useState(initialData?.balance_value || 0);
   const [loadingExpense, setLoadingExpense] = useState(initialData?.loading_expense || 0);
   const [unloadingExpense, setUnloadingExpense] = useState(initialData?.unloading_expense || 0);
   const [otherExpenses, setOtherExpenses] = useState(initialData?.other_expenses || 0);
@@ -209,7 +210,7 @@ export default function FreightOrderForm({ initialData }: Props) {
   const [attachments, setAttachments] = useState<any[]>(initialData?.attachments || []);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
 
-  const calculatedBalanceValue = Number(((freightValue || 0) - (advanceValue || 0) - (cashValue || 0)).toFixed(2));
+
 
   // Load lists
   useEffect(() => {
@@ -368,7 +369,7 @@ export default function FreightOrderForm({ initialData }: Props) {
       setErrorMessage("O valor do frete é obrigatório e deve ser maior que zero.");
       return;
     }
-    if (calculatedBalanceValue < 0 && !confirmNegativeBalance) {
+    if (balanceValue < 0 && !confirmNegativeBalance) {
       setErrorMessage("⚠️ ATENÇÃO: O saldo do frete restou negativo! Marque a confirmação de override no campo SALDO.");
       return;
     }
@@ -400,7 +401,7 @@ export default function FreightOrderForm({ initialData }: Props) {
       freight_value: freightValue,
       advance_value: advanceValue,
       cash_value: cashValue,
-      balance_value: calculatedBalanceValue,
+      balance_value: balanceValue,
       loading_expense: loadingExpense,
       unloading_expense: unloadingExpense,
       other_expenses: otherExpenses,
@@ -586,15 +587,15 @@ export default function FreightOrderForm({ initialData }: Props) {
                   name="balance_value"
                   type="number"
                   step="0.01"
-                  value={calculatedBalanceValue}
-                  readOnly
-                  className={field + ' font-bold bg-slate-100 text-slate-750 cursor-not-allowed'}
+                  value={balanceValue || ''}
+                  onChange={(e) => setBalanceValue(Number(e.target.value))}
+                  className={`${field} font-black ${balanceValue < 0 ? 'text-red-650' : 'text-blue-800'}`}
                 />
               </div>
           </div>
 
           {/* Override saldo negativo */}
-          {calculatedBalanceValue < 0 && (
+          {balanceValue < 0 && (
             <div className="border-b-2 border-slate-900 bg-red-50 px-2 py-1.5">
               <label className="flex items-center gap-2 text-[11px] font-bold text-red-800 cursor-pointer select-none">
                 <input id="chk-negative-balance" name="confirm_negative_balance" type="checkbox" checked={confirmNegativeBalance} onChange={(e) => setConfirmNegativeBalance(e.target.checked)} className="h-4 w-4" />
