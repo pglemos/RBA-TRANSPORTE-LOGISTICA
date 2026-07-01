@@ -405,6 +405,7 @@ export default function DashboardPage() {
                       <Tooltip
                         cursor={{ fill: '#f8fafc' }}
                         contentStyle={{ backgroundColor: 'oklch(98.5% 0.006 83)', borderColor: '#e2e8f0', borderRadius: '8px' }}
+                        formatter={(value) => [`${value} ordens`, 'Quantidade']}
                       />
                       <Bar dataKey="value" fill="#d8b45d" radius={[8, 8, 0, 0]} />
                     </BarChart>

@@ -70,6 +70,60 @@ export default function ReportsPage() {
   const totalBalance = reportSummary.totalBalanceToPay;
   const totalNet = reportSummary.totalNet;
 
+  const handleExportCSV = () => {
+    const headers = [
+      'Ordem',
+      'CTE/Manifesto',
+      'Motorista',
+      'CPF Motorista',
+      'Placa Cavalo',
+      'Placa Carreta',
+      'Origem',
+      'Destino',
+      'Cliente Pagador',
+      'Valor CTE',
+      'Frete Motorista',
+      'Adiantamento',
+      'Saldo a Vista',
+      'Saldo a Pagar',
+      'Status Geral',
+      'Data Emissao'
+    ];
+
+    const rows = filteredOrders.map(o => [
+      `#${o.order_number}`,
+      o.cte_number || 'A emitir',
+      o.driver_name,
+      o.driver_cpf || '',
+      o.vehicle_tractor_plate || '',
+      o.vehicle_trailer_plate || '',
+      o.origin,
+      o.destination,
+      o.client_name || '',
+      o.cte_value || 0,
+      o.freight_value || 0,
+      o.advance_value || 0,
+      o.cash_value || 0,
+      o.balance_value || 0,
+      o.status,
+      o.created_at ? new Date(o.created_at).toLocaleDateString('pt-BR') : ''
+    ]);
+
+    const csvContent = [
+      headers.join(';'),
+      ...rows.map(r => r.map(val => typeof val === 'string' ? `"${val.replace(/"/g, '""')}"` : String(val).replace('.', ',')).join(';'))
+    ].join('\n');
+
+    const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `relatorio_rba_transporte_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handlePrintReport = () => {
     window.print();
   };
@@ -90,14 +144,23 @@ export default function ReportsPage() {
             <p className="text-xs text-slate-500 mt-1">Gere romaneios operacionais de fretes, resumos de adiantamento e margens RBA de forma consolidada.</p>
           </div>
 
-          <button
-            id="print-report-btn"
-            onClick={handlePrintReport}
-            className="px-4 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-extrabold text-xs tracking-wider uppercase rounded-xl shadow transition-all flex items-center gap-1.5 cursor-pointer"
-          >
-            <Printer className="h-4.5 w-4.5" />
-            Imprimir Relatório (PDF)
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportCSV}
+              className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs tracking-wider uppercase rounded-xl shadow transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <ArrowDownToLine className="h-4.5 w-4.5" />
+              Exportar Planilha (CSV)
+            </button>
+            <button
+              id="print-report-btn"
+              onClick={handlePrintReport}
+              className="px-4 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-extrabold text-xs tracking-wider uppercase rounded-xl shadow transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <Printer className="h-4.5 w-4.5" />
+              Imprimir Relatório (PDF)
+            </button>
+          </div>
         </div>
 
         {/* FILTERS PANEL */}

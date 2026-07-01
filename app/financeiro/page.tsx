@@ -31,7 +31,8 @@ export default function FinancePage() {
   const [stats, setStats] = useState({
     totalPaid: 0,
     totalPending: 0,
-    totalBudget: 0
+    totalBudget: 0,
+    totalMargin: 0
   });
 
   const loadFinanceData = async () => {
@@ -62,10 +63,21 @@ export default function FinancePage() {
         }
       });
 
+      let marginSum = 0;
+      (Array.isArray(ordData) ? ordData : []).forEach((o: any) => {
+        const cteVal = Number(o.cte_value) || 0;
+        const freightVal = Number(o.freight_value) || 0;
+        const totalExpenses = Number(o.total_expenses) || 0;
+        const discountVal = cteVal * (Number(o.cte_discount_percent ?? 10) / 100);
+        const netVal = cteVal - discountVal - freightVal - totalExpenses;
+        marginSum += netVal;
+      });
+
       setStats({
         totalPaid: paid,
         totalPending: pending,
-        totalBudget: paid + pending
+        totalBudget: paid + pending,
+        totalMargin: marginSum
       });
     } catch (e) {
       setErrorMsg(e instanceof Error ? e.message : 'Erro ao carregar financeiro.');
@@ -218,7 +230,7 @@ export default function FinancePage() {
         )}
 
         {/* METRICS HEADER CARDS */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           
           <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5">
             <div className="flex items-center justify-between">
@@ -251,6 +263,17 @@ export default function FinancePage() {
               R$ {stats.totalBudget.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </h4>
             <span className="text-[9px] text-slate-400 block mt-1">Soma de adiantas + parcelas residuais</span>
+          </div>
+
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-amber-700 uppercase font-black tracking-wider">Margem Acumulada RBA</span>
+              <ArrowUpRight className="h-4.5 w-4.5 text-amber-600" />
+            </div>
+            <h4 className="text-lg font-black mt-3 text-amber-950">
+              R$ {stats.totalMargin.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </h4>
+            <span className="text-[9px] text-amber-650 block mt-1">Lucro líquido operacional consolidado</span>
           </div>
 
         </div>
