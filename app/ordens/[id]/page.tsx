@@ -101,6 +101,12 @@ const id = params?.id;
     }
   };
 
+  const handleDropDoc = async (event: React.DragEvent<HTMLLabelElement>, category: string) => {
+    event.preventDefault();
+    if (uploadingCat) return;
+    await handleUploadDoc(category, event.dataTransfer.files?.[0] || null);
+  };
+
   const handleDeleteDoc = async (attId: string) => {
     if (!confirm('Excluir este documento anexado?')) return;
     setAttachmentMsg(null);
@@ -684,7 +690,11 @@ const id = params?.id;
                       )}
 
                       {/* Botão de upload */}
-                      <label className={`flex items-center justify-center gap-1.5 py-2 border border-dashed rounded-lg text-[10px] font-bold cursor-pointer select-none transition-colors ${isUploading ? 'border-slate-300 text-slate-400' : 'border-slate-300 text-slate-600 hover:border-yellow-500 hover:bg-yellow-50'}`}>
+                      <label
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => handleDropDoc(e, cat.key)}
+                        className={`flex items-center justify-center gap-1.5 py-2 border border-dashed rounded-lg text-[10px] font-bold cursor-pointer select-none transition-colors ${isUploading ? 'border-slate-300 text-slate-400' : 'border-slate-300 text-slate-600 hover:border-yellow-500 hover:bg-yellow-50'}`}
+                      >
                         {isUploading ? (
                           <>
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -693,7 +703,7 @@ const id = params?.id;
                         ) : (
                           <>
                             <Upload className="h-3.5 w-3.5" />
-                            {files.length > 0 ? 'Anexar outro' : 'Anexar documento'}
+                              {files.length > 0 ? 'Arraste ou clique para trocar' : 'Arraste ou clique para anexar'}
                           </>
                         )}
                         <input

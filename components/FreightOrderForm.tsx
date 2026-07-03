@@ -292,10 +292,7 @@ export default function FreightOrderForm({ initialData }: Props) {
 
   const fmt = (n: number) => n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  const handleUploadFile = async (event: React.ChangeEvent<HTMLInputElement>, type: 'cte' | 'outros' | 'comprovante') => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-
+  const uploadAttachmentFile = async (file: File | null, type: 'cte' | 'outros' | 'comprovante') => {
     if (!file) return;
     if (!isEdit) {
       setErrorMessage("Salve a ficha primeiro. Depois abra a edição para anexar documentos.");
@@ -323,6 +320,18 @@ export default function FreightOrderForm({ initialData }: Props) {
     } finally {
       setUploadingAttachment(false);
     }
+  };
+
+  const handleUploadFile = async (event: React.ChangeEvent<HTMLInputElement>, type: 'cte' | 'outros' | 'comprovante') => {
+    const file = event.target.files?.[0] || null;
+    event.target.value = '';
+    await uploadAttachmentFile(file, type);
+  };
+
+  const handleDropAttachment = async (event: React.DragEvent<HTMLLabelElement>, type: 'cte' | 'outros' | 'comprovante') => {
+    event.preventDefault();
+    if (uploadingAttachment) return;
+    await uploadAttachmentFile(event.dataTransfer.files?.[0] || null, type);
   };
 
   const handleRemoveAttachment = async (id: string) => {
@@ -1063,13 +1072,21 @@ export default function FreightOrderForm({ initialData }: Props) {
             <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3">
               <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">Anexos da Ficha</span>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <label className={`py-3 border border-dashed border-slate-300 hover:border-yellow-500 hover:bg-slate-50 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-700 ${uploadingAttachment ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
-                  <input type="file" className="sr-only" disabled={uploadingAttachment} onChange={(e) => handleUploadFile(e, 'cte')} />
-                  <Paperclip className="h-4 w-4 text-slate-400" /> Anexar CTE / XML
+                <label
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => handleDropAttachment(e, 'cte')}
+                  className={`py-3 border border-dashed border-slate-300 hover:border-yellow-500 hover:bg-slate-50 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-700 ${uploadingAttachment ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  <input type="file" className="sr-only" accept=".pdf,.xml,image/png,image/jpeg,image/webp,text/xml,application/xml" disabled={uploadingAttachment} onChange={(e) => handleUploadFile(e, 'cte')} />
+                  <Paperclip className="h-4 w-4 text-slate-400" /> Arraste ou clique para anexar CTE / XML
                 </label>
-                <label className={`py-3 border border-dashed border-slate-300 hover:border-yellow-500 hover:bg-slate-50 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-700 ${uploadingAttachment ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
-                  <input type="file" className="sr-only" disabled={uploadingAttachment} onChange={(e) => handleUploadFile(e, 'comprovante')} />
-                  <Paperclip className="h-4 w-4 text-emerald-500" /> Anexar Comprovante
+                <label
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => handleDropAttachment(e, 'comprovante')}
+                  className={`py-3 border border-dashed border-slate-300 hover:border-yellow-500 hover:bg-slate-50 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-700 ${uploadingAttachment ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  <input type="file" className="sr-only" accept="image/png,image/jpeg,image/webp,.pdf" disabled={uploadingAttachment} onChange={(e) => handleUploadFile(e, 'comprovante')} />
+                  <Paperclip className="h-4 w-4 text-emerald-500" /> Arraste ou clique para anexar comprovante
                 </label>
               </div>
               {attachments.length > 0 && (
