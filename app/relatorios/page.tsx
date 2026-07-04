@@ -7,6 +7,7 @@ import RBALogo from '@/components/RBALogo';
 import { Search, Printer, DollarSign, BarChart3, Filter, ShieldCheck, FileCheck, ArrowDownToLine } from 'lucide-react';
 import { FREIGHT_ORDER_STATUSES, getFreightStatusMeta, normalizeFreightOrderStatus } from '@/lib/freightStatus';
 import { summarizeFreightOrders } from '@/lib/financialMetrics';
+import { formatFreightOrderEmissionDate, getFreightOrderEmissionDateValue } from '@/lib/freightOrderDates';
 
 export default function ReportsPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -54,8 +55,9 @@ export default function ReportsPage() {
   const matchesStatus = statusFilter ? normalizeFreightOrderStatus(o.status) === statusFilter : true;
     
     let matchesMonth = true;
-    if (monthFilter && o.created_at) {
-      const orderDate = new Date(o.created_at);
+    if (monthFilter) {
+      const orderDate = new Date(getFreightOrderEmissionDateValue(o));
+      if (Number.isNaN(orderDate.getTime())) return false;
       const monthStr = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, '0')}`;
       matchesMonth = monthStr === monthFilter;
     }
@@ -307,7 +309,7 @@ export default function ReportsPage() {
                             </Link>
                           </td>
                           <td className="p-3 text-slate-450">
-                            {o.created_at ? new Date(o.created_at).toLocaleDateString('pt-BR') : 'N/A'}
+                            {formatFreightOrderEmissionDate(o)}
                           </td>
                           <td className="p-3 font-bold text-slate-900">{o.driver_name}</td>
                           <td className="p-3 truncate max-w-[120px]">{o.origin} ➔ {o.destination}</td>

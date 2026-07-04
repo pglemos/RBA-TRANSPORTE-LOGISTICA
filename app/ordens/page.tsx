@@ -6,6 +6,7 @@ import HeaderAndSidebar from '@/components/HeaderAndSidebar';
 import FreightOrderPDF from '@/components/FreightOrderPDF';
 import { getUniqueFilterOptions, matchesAllFilters, matchesSearchFields } from '@/lib/tableFilters';
 import { FREIGHT_ORDER_STATUSES, getFreightStatusListSortRank, getFreightStatusMeta, normalizeFreightOrderStatus } from '@/lib/freightStatus';
+import { formatFreightOrderEmissionDate, getFreightOrderEmissionDateValue } from '@/lib/freightOrderDates';
 import { 
   Search, 
   Plus, 
@@ -54,8 +55,6 @@ export default function OrdersListPage() {
       const params = new URLSearchParams({ page: '1', page_size: '100' });
       if (search.trim()) params.set('search', search.trim());
       if (statusFilter) params.set('status', statusFilter);
-      if (startDate) params.set('start_date', startDate);
-      if (endDate) params.set('end_date', endDate);
       const res = await fetch(`/api/orders?${params.toString()}`);
       const data = await res.json();
       if (!res.ok) {
@@ -67,7 +66,7 @@ export default function OrdersListPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter, startDate, endDate]);
+  }, [search, statusFilter]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -122,8 +121,9 @@ export default function OrdersListPage() {
       { value: vehicleFilter, getValue: getOrderVehicleLabel },
       { value: clientFilter, getValue: (order) => order.client_name },
     ]);
-    const matchesDate = (!startDate || o.created_at >= startDate) && 
-                        (!endDate || o.created_at <= `${endDate}T23:59:59.999Z`);
+    const emissionDate = getFreightOrderEmissionDateValue(o);
+    const matchesDate = (!startDate || emissionDate >= startDate) &&
+      (!endDate || emissionDate <= endDate);
 
     return matchesSearch && matchesFilters && matchesDate;
   }).sort((a, b) => {
@@ -132,7 +132,8 @@ export default function OrdersListPage() {
 
     const cteDiff = getCteSortValue(b.cte_number) - getCteSortValue(a.cte_number);
     if (cteDiff !== 0) return cteDiff;
-    return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+    return new Date(getFreightOrderEmissionDateValue(b) || 0).getTime() -
+      new Date(getFreightOrderEmissionDateValue(a) || 0).getTime();
   });
 
   const driverOptions = getUniqueFilterOptions(orders, (order) => order.driver_name);
@@ -323,15 +324,18 @@ export default function OrdersListPage() {
                   {filteredOrders.map((o) => (
                     <tr key={o.id} className="hover:bg-slate-50">
                       
-                      <td className="p-4">
-                        <Link
-                          href={`/ordens/${o.id}`}
-                          className={`font-extrabold text-xs hover:underline inline-flex items-center gap-1 ${o.cte_number ? 'text-yellow-650' : 'text-red-650 dark:text-red-500'}`}
-                        >
-                          {!o.cte_number && <AlertTriangle className="h-3 w-3 animate-pulse text-red-500" />}
-                          {o.cte_number || 'A emitir'}
-                        </Link>
-                      </td>
+              <td className="p-4">
+                <Link
+                  href={`/ordens/${o.id}`}
+                  className={`font-extrabold text-xs hover:underline inline-flex items-center gap-1 ${o.cte_number ? 'text-yellow-650' : 'text-red-650 dark:text-red-500'}`}
+                >
+                  {!o.cte_number && <AlertTriangle className="h-3 w-3 animate-pulse text-red-500" />}
+                  {o.cte_number || 'A emitir'}
+                </Link>
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                  Emissão: {formatFreightOrderEmissionDate(o)}
+                </p>
+              </td>
 
                       {/* Driver mask dynamically rendered */}
                       <td className="p-4">
@@ -439,14 +443,17 @@ export default function OrdersListPage() {
                   <div className="flex justify-between items-start">
                     <div>
                       <span className="text-[10px] text-slate-400 font-bold uppercase block tracking-wider">CTE/MANIFESTO</span>
-                      <Link
-                        href={`/ordens/${o.id}`}
-                        className={`font-extrabold text-sm hover:underline inline-flex items-center gap-1 ${o.cte_number ? 'text-yellow-650' : 'text-red-650 dark:text-red-500'}`}
-                      >
-                        {!o.cte_number && <AlertTriangle className="h-3.5 w-3.5 animate-pulse text-red-500" />}
-                        {o.cte_number || 'A emitir'}
-                      </Link>
-                    </div>
+                <Link
+                  href={`/ordens/${o.id}`}
+                  className={`font-extrabold text-sm hover:underline inline-flex items-center gap-1 ${o.cte_number ? 'text-yellow-650' : 'text-red-650 dark:text-red-500'}`}
+                >
+                  {!o.cte_number && <AlertTriangle className="h-3.5 w-3.5 animate-pulse text-red-500" />}
+                  {o.cte_number || 'A emitir'}
+                </Link>
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                  Emissão: {formatFreightOrderEmissionDate(o)}
+                </p>
+              </div>
                     <div>
                       <span className="text-[10px] text-slate-400 font-bold uppercase block tracking-wider text-right mb-1">STATUS</span>
                       <span className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-wide inline-flex items-center gap-1 ${getFreightStatusMeta(o.status).className}`}>

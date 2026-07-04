@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
 import { FREIGHT_ORDER_STATUSES, getFreightStatusMeta, normalizeFreightOrderStatus } from '@/lib/freightStatus';
 import { summarizeFreightOrders } from '@/lib/financialMetrics';
+import { getFreightOrderEmissionDateValue } from '@/lib/freightOrderDates';
 import {
   Area,
   AreaChart,
@@ -127,8 +128,10 @@ export default function DashboardPage() {
   }
 
   orders.forEach((o) => {
-    if (!o.created_at) return;
-    const date = new Date(o.created_at);
+    const emissionDate = getFreightOrderEmissionDateValue(o);
+    if (!emissionDate) return;
+    const date = new Date(emissionDate);
+    if (Number.isNaN(date.getTime())) return;
     if (date.getFullYear() !== new Date().getFullYear()) return;
     
     const month = date.getMonth();

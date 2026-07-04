@@ -4,6 +4,7 @@ import React from 'react';
 import { Printer, ShieldCheck, XCircle, Share2, CornerDownRight } from 'lucide-react';
 import RBALogo from '@/components/RBALogo';
 import { normalizeFreightOrderStatus } from '@/lib/freightStatus';
+import { formatFreightOrderEmissionLongDate } from '@/lib/freightOrderDates';
 
 interface Props {
   order: {
@@ -63,10 +64,7 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
     return `RBA_HMAC_SHA256:${order.pdf_proof_token || 'assinatura-indisponivel'}`;
   };
 
-  const emissionLabel =
-    order.emission_day && order.emission_month && order.emission_year
-      ? `${order.emission_day} de ${order.emission_month} de 20${order.emission_year}`
-      : `${new Date(order.created_at).toLocaleDateString('pt-BR')} ${new Date(order.created_at).toLocaleTimeString('pt-BR')}`;
+  const emissionLabel = formatFreightOrderEmissionLongDate(order);
 
   return (
     <div id="pdf-modal-overlay" className="fixed inset-0 bg-slate-900/70 py-6 px-4 z-50 overflow-y-auto flex items-start justify-center backdrop-blur-xs">
