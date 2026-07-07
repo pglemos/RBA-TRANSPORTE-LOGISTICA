@@ -70,6 +70,18 @@ export function getFreightOrderEmissionDateValue(order: EmissionDateSource) {
   return createdAt.toISOString().slice(0, 10);
 }
 
+/**
+ * Extracts the year and month (as "YYYY-MM") from a freight order's emission date.
+ * Works directly on the ISO date string returned by getFreightOrderEmissionDateValue,
+ * so it is fully timezone-safe (no Date object construction).
+ */
+export function getFreightOrderEmissionYearMonth(order: EmissionDateSource): string {
+  const dateValue = getFreightOrderEmissionDateValue(order);
+  if (!dateValue || dateValue.length < 7) return '';
+  // dateValue is always "YYYY-MM-DD" — slice directly, no timezone risk
+  return dateValue.slice(0, 7);
+}
+
 export function formatFreightOrderEmissionDate(order: EmissionDateSource) {
   const emissionDate = parseFreightOrderEmissionDate(order);
   const date = emissionDate || (order.created_at ? new Date(order.created_at) : null);

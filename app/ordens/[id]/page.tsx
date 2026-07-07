@@ -6,6 +6,7 @@ import Link from 'next/link';
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
 import FreightOrderPDF from '@/components/FreightOrderPDF';
 import { FREIGHT_ORDER_STATUSES, getFreightStatusMeta, normalizeFreightOrderStatus } from '@/lib/freightStatus';
+import { getFreightOrderEmissionDateValue, FREIGHT_ORDER_EMISSION_MONTHS } from '@/lib/freightOrderDates';
 import { 
   ArrowLeft,
   Printer,
@@ -59,6 +60,11 @@ const id = params?.id;
   const [statusEdit, setStatusEdit] = useState('');
   const [savingStatus, setSavingStatus] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+
+  // Data de Emissão do Frete — edição inline
+  const [emissionDateEdit, setEmissionDateEdit] = useState('');
+  const [savingEmission, setSavingEmission] = useState(false);
+  const [emissionMsg, setEmissionMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
 
   const DOC_CATEGORIES = [
     { key: 'comprovante_pagamento', label: 'Comprovante de Pagamento ao Motorista', hint: 'PIX / transferência paga ao condutor', icon: Receipt, accent: 'text-emerald-600' },
@@ -132,7 +138,9 @@ const id = params?.id;
         const data = await res.json();
         setCteValueEdit(Number(data.cte_value) || 0);
         setCteDiscountEdit(data.cte_discount_percent ?? 10);
-          setStatusEdit(normalizeFreightOrderStatus(data.status));
+        setStatusEdit(normalizeFreightOrderStatus(data.status));
+        // Sync emission date edit with the loaded order
+        setEmissionDateEdit(getFreightOrderEmissionDateValue(data) || '');
         setOrder(data);
       } else {
         setErrorMsg("Você não possui permissão para ver esta ficha, ou o registro não existe.");
@@ -190,6 +198,37 @@ const id = params?.id;
       setFatMsg({ type: 'err', text: 'Erro de rede ao salvar o faturamento.' });
     } finally {
       setSavingFat(false);
+    }
+  };
+
+  const handleSaveEmissionDate = async () => {
+    if (!emissionDateEdit) return;
+    setSavingEmission(true);
+    setEmissionMsg(null);
+    try {
+      // Convert YYYY-MM-DD -> emission_day, emission_month, emission_year
+      const [yearStr, monthStr, dayStr] = emissionDateEdit.split('-');
+      const monthIndex = Number(monthStr) - 1;
+      const emission_day = String(Number(dayStr));
+      const emission_month = FREIGHT_ORDER_EMISSION_MONTHS[monthIndex] || '';
+      const emission_year = yearStr.slice(-2);
+
+      const res = await fetch(`/api/orders/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emission_day, emission_month, emission_year }),
+      });
+      const data = await res.json();
+      if (data?.success) {
+        setEmissionMsg({ type: 'ok', text: 'Data de emissão atualizada!' });
+        await fetchOrderDetails();
+      } else {
+        setEmissionMsg({ type: 'err', text: data?.error || 'Falha ao salvar a data.' });
+      }
+    } catch {
+      setEmissionMsg({ type: 'err', text: 'Erro de rede ao salvar a data.' });
+    } finally {
+      setSavingEmission(false);
     }
   };
 
@@ -374,6 +413,30 @@ const id = params?.id;
                 <div>
                   <span className="text-[9px] text-slate-450 block font-bold uppercase mb-0.5">Data de Entrega Limite</span>
                   <p className="text-slate-900 font-bold">{order.delivery_date || 'N/A'}</p>
+                </div>
+                <div className="col-span-2 md:col-span-1">
+                  <span className="text-[9px] text-slate-450 block font-bold uppercase mb-1">Data de Emissão do Frete</span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="inline-emission-date"
+                      type="date"
+                      value={emissionDateEdit}
+                      onChange={(e) => { setEmissionDateEdit(e.target.value); setEmissionMsg(null); }}
+                      className="text-xs font-bold text-slate-900 bg-slate-50 border border-slate-300 rounded-lg px-2 py-1.5 outline-none focus:border-yellow-500 cursor-pointer"
+                    />
+                    <button
+                      onClick={handleSaveEmissionDate}
+                      disabled={savingEmission || !emissionDateEdit}
+                      className="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-slate-950 rounded-lg text-[10px] font-extrabold uppercase tracking-wide cursor-pointer transition-all"
+                    >
+                      {savingEmission ? '...' : 'Salvar'}
+                    </button>
+                  </div>
+                  {emissionMsg && (
+                    <p className={`text-[9px] mt-1 font-bold ${emissionMsg.type === 'ok' ? 'text-emerald-600' : 'text-red-600'}`}>
+                      {emissionMsg.text}
+                    </p>
+                  )}
                 </div>
               </div>
 

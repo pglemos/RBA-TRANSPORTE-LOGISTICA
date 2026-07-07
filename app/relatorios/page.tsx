@@ -7,7 +7,7 @@ import RBALogo from '@/components/RBALogo';
 import { Search, Printer, DollarSign, BarChart3, Filter, ShieldCheck, FileCheck, ArrowDownToLine } from 'lucide-react';
 import { FREIGHT_ORDER_STATUSES, getFreightStatusMeta, normalizeFreightOrderStatus } from '@/lib/freightStatus';
 import { summarizeFreightOrders } from '@/lib/financialMetrics';
-import { formatFreightOrderEmissionDate, getFreightOrderEmissionDateValue } from '@/lib/freightOrderDates';
+import { formatFreightOrderEmissionDate, getFreightOrderEmissionYearMonth } from '@/lib/freightOrderDates';
 
 export default function ReportsPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -24,7 +24,7 @@ export default function ReportsPage() {
     try {
       setLoading(true);
       const [ordRes, cliRes] = await Promise.all([
-        fetch('/api/orders'),
+        fetch('/api/orders?page_size=1000'),
         fetch('/api/clients')
       ]);
 
@@ -56,10 +56,11 @@ export default function ReportsPage() {
     
     let matchesMonth = true;
     if (monthFilter) {
-      const orderDate = new Date(getFreightOrderEmissionDateValue(o));
-      if (Number.isNaN(orderDate.getTime())) return false;
-      const monthStr = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, '0')}`;
-      matchesMonth = monthStr === monthFilter;
+      // getFreightOrderEmissionYearMonth returns "YYYY-MM" directly from the ISO string,
+      // with no Date object construction — fully timezone-safe.
+      const orderYearMonth = getFreightOrderEmissionYearMonth(o);
+      if (!orderYearMonth) return false;
+      matchesMonth = orderYearMonth === monthFilter;
     }
 
     return matchesClient && matchesStatus && matchesMonth;
@@ -108,7 +109,7 @@ export default function ReportsPage() {
       o.cash_value || 0,
       o.balance_value || 0,
       o.status,
-      o.created_at ? new Date(o.created_at).toLocaleDateString('pt-BR') : ''
+      formatFreightOrderEmissionDate(o)
     ]);
 
     const csvContent = [

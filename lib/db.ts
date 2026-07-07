@@ -1369,9 +1369,9 @@ export class RBADatabase {
         if (term) {
           // Fetch matching foreign key IDs first
           const [matchedDrivers, matchedVehicles, matchedClients] = await Promise.all([
-            supabaseServer.from('drivers').select('id').or(`name.ilike.%${term}%,cpf.ilike.%${term}%`),
-            supabaseServer.from('vehicles').select('id').or(`tractor_plate.ilike.%${term}%,trailer_plate.ilike.%${term}%,model.ilike.%${term}%`),
-            supabaseServer.from('clients').select('id').ilike('name', `%${term}%`)
+            supabaseDataClient().from('drivers').select('id').or(`name.ilike.%${term}%,cpf.ilike.%${term}%`),
+            supabaseDataClient().from('vehicles').select('id').or(`tractor_plate.ilike.%${term}%,trailer_plate.ilike.%${term}%,model.ilike.%${term}%`),
+            supabaseDataClient().from('clients').select('id').ilike('name', `%${term}%`)
           ]);
 
           const driverIds = (matchedDrivers.data?.map(d => d.id) || []).slice(0, 100);

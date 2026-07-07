@@ -132,9 +132,9 @@ export default function DashboardPage() {
     if (!emissionDate) return;
     const date = new Date(emissionDate);
     if (Number.isNaN(date.getTime())) return;
-    if (date.getFullYear() !== new Date().getFullYear()) return;
+    if (date.getUTCFullYear() !== new Date().getUTCFullYear()) return;
     
-    const month = date.getMonth();
+    const month = date.getUTCMonth();
     if (month <= currentMonthIndex) {
       const cteVal = Number(o.cte_value) || 0;
       const freightVal = Number(o.freight_value) || 0;

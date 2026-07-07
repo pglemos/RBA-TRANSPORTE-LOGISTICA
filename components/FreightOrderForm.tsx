@@ -196,9 +196,32 @@ export default function FreightOrderForm({ initialData }: Props) {
 
   // Emission date (ficha física: "__ DE ____ 20__")
   const now = new Date();
-  const [emissionDay, setEmissionDay] = useState(initialData?.emission_day || String(now.getDate()).padStart(2, '0'));
-  const [emissionMonth, setEmissionMonth] = useState(initialData?.emission_month || MESES[now.getMonth()]);
-  const [emissionYear, setEmissionYear] = useState(initialData?.emission_year || String(now.getFullYear()).slice(-2));
+
+  // Derive initial date string for the date picker from existing emission fields or today
+  const getInitialEmissionDateString = () => {
+    const day = initialData?.emission_day;
+    const month = initialData?.emission_month;
+    const year = initialData?.emission_year;
+    if (day && month && year) {
+      const monthIndex = MESES.findIndex(
+        (m) => m.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') ===
+          month.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      );
+      if (monthIndex !== -1) {
+        const fullYear = Number(year) < 100 ? 2000 + Number(year) : Number(year);
+        return `${fullYear}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      }
+    }
+    // Default to today
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  };
+
+  const [emissionDateStr, setEmissionDateStr] = useState(getInitialEmissionDateString);
+
+  // Derived fields kept in sync with the date picker
+  const emissionDay = emissionDateStr ? String(Number(emissionDateStr.split('-')[2])) : String(now.getDate()).padStart(2, '0');
+  const emissionMonth = emissionDateStr ? MESES[Number(emissionDateStr.split('-')[1]) - 1] : MESES[now.getMonth()];
+  const emissionYear = emissionDateStr ? emissionDateStr.split('-')[0].slice(-2) : String(now.getFullYear()).slice(-2);
 
   // Double validations
   const [confirmNegativeBalance, setConfirmNegativeBalance] = useState(false);
@@ -1036,12 +1059,19 @@ export default function FreightOrderForm({ initialData }: Props) {
 
           {/* DATA DE EMISSÃO + RESPONSÁVEL */}
           <div className={cell}>
-            <div className="flex items-center gap-1 flex-1 min-w-0 px-2 py-2">
-              <input id="ip-emission-day" name="emission_day" value={emissionDay} onChange={(e) => setEmissionDay(e.target.value)} className="w-10 bg-transparent outline-none text-center text-sm font-bold text-blue-800 border-b border-slate-400" />
-              <span className="text-[11px] font-extrabold uppercase text-slate-900">de</span>
-              <input id="ip-emission-month" name="emission_month" value={emissionMonth} onChange={(e) => setEmissionMonth(e.target.value)} className="w-24 bg-transparent outline-none text-center text-sm font-bold text-blue-800 border-b border-slate-400" />
-              <span className="text-[11px] font-extrabold uppercase text-slate-900">20</span>
-              <input id="ip-emission-year" name="emission_year" value={emissionYear} onChange={(e) => setEmissionYear(e.target.value)} className="w-10 bg-transparent outline-none text-center text-sm font-bold text-blue-800 border-b border-slate-400" />
+            <div className="flex flex-col gap-0.5 flex-1 min-w-0 px-2 py-2">
+              <span className="text-[9px] font-extrabold uppercase text-slate-500 tracking-wider">Data de Emissão do Frete</span>
+              <input
+                id="ip-emission-date"
+                type="date"
+                value={emissionDateStr}
+                onChange={(e) => setEmissionDateStr(e.target.value)}
+                className="bg-transparent outline-none text-sm font-bold text-blue-800 border-b border-slate-400 cursor-pointer w-full"
+              />
+              {/* Hidden fields for backward compatibility with the form payload */}
+              <input type="hidden" name="emission_day" value={emissionDay} />
+              <input type="hidden" name="emission_month" value={emissionMonth} />
+              <input type="hidden" name="emission_year" value={emissionYear} />
             </div>
             <div className={`flex flex-col items-center justify-center w-[42%] px-2 py-1 ${divider}`}>
               <input
