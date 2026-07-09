@@ -63,7 +63,8 @@ export function calculateFreightOrderFinancials(order: FreightFinancialInput): F
   const unloadingExpense = toNumber(order.unloading_expense);
   const otherExpenses = toNumber(order.other_expenses);
   const componentExpenses = loadingExpense + unloadingExpense + otherExpenses;
-  const totalExpenses = componentExpenses !== 0 ? componentExpenses : toNumber(order.total_expenses);
+  const hasComponentExpenses = hasValue(order.loading_expense) || hasValue(order.unloading_expense) || hasValue(order.other_expenses);
+  const totalExpenses = hasComponentExpenses ? componentExpenses : toNumber(order.total_expenses);
   const cteDiscountValue = cteValue * cteDiscountPercent / 100;
   const netRevenue = cteValue - cteDiscountValue;
 
