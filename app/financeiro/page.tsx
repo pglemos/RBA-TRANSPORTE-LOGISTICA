@@ -28,6 +28,7 @@ export default function FinancePage() {
   const [saving, setSaving] = useState(false);
   const [sortKey, setSortKey] = useState<'default' | 'amount' | 'date'>('default');
   const [sortAsc, setSortAsc] = useState<boolean>(true);
+  const [expandedPaymentId, setExpandedPaymentId] = useState<string | null>(null);
 
   const handleSortToggle = (key: 'amount' | 'date') => {
     if (sortKey === key) {
@@ -51,7 +52,7 @@ export default function FinancePage() {
       setLoading(true);
       const [payRes, ordRes] = await Promise.all([
         fetch('/api/payments'),
-        fetch('/api/orders')
+        fetch('/api/orders?page_size=200')
       ]);
 
       const payData = await payRes.json();
@@ -487,95 +488,227 @@ export default function FinancePage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-150 font-semibold text-slate-700">
-                  {filteredPayments.map((p) => (
-                    <tr key={p.id} className="hover:bg-slate-50">
-                      <td className="p-4 text-slate-500">{p.id.slice(0, 8)}</td>
-                      <td className="p-4 font-black text-slate-900">
-                        <div className="flex flex-col gap-0.5">
-                          <span>
-                            {p.cte_number && p.cte_number !== 'Sem CTE' && p.cte_number !== 'Não vinculado' ? (
-                              p.cte_number
-                            ) : (
-                              <span className="text-slate-400 font-semibold italic">Sem CTE</span>
-                            )}
-                          </span>
-                          <div className="flex flex-wrap items-center gap-1.5 font-normal">
-                            <span className="text-[10px] text-slate-500">Ordem: #{p.order_number}</span>
-                            {p.order_status && p.order_status !== 'N/A' && (
-                              <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wide ${
-                                p.order_status === 'Carregando' ? 'bg-orange-100 text-orange-850' :
-                                p.order_status === 'Em Trânsito' ? 'bg-blue-100 text-blue-850' :
-                                p.order_status === 'Entregue' ? 'bg-emerald-100 text-emerald-850' :
-                                'bg-slate-100 text-slate-700'
-                              }`}>
-                                {p.order_status}
+                  {filteredPayments.map((p) => {
+                    const order = orders.find(o => o.id === p.freight_order_id);
+                    const valCTE = Number(order?.cte_value) || 0;
+                    const valFrete = Number(order?.freight_value) || 0;
+                    const valAdto = Number(order?.advance_value) || 0;
+                    const valPedagio = Number(order?.cash_value) || 0;
+                    const valSaldo = valFrete - valAdto - valPedagio;
+
+                    const valAjudante = Number(order?.loading_expense) || 0;
+                    const valDescarga = Number(order?.unloading_expense) || 0;
+                    const valOutros = Number(order?.other_expenses) || 0;
+                    const valDespesas = Number(order?.total_expenses) || 0;
+
+                    const cteDiscountPercent = Number(order?.cte_discount_percent ?? 10);
+                    const valDesconto = valCTE * (cteDiscountPercent / 100);
+                    const valLiq = valCTE - valDesconto - valFrete - valDespesas;
+
+                    const isExpanded = expandedPaymentId === p.id;
+
+                    return (
+                      <React.Fragment key={p.id}>
+                        <tr
+                          className={`hover:bg-slate-50 cursor-pointer transition-colors ${isExpanded ? 'bg-slate-50/80 border-l-4 border-yellow-500' : ''}`}
+                          onClick={() => setExpandedPaymentId(isExpanded ? null : p.id)}
+                        >
+                          <td className="p-4 text-slate-550">{p.id.slice(0, 8)}</td>
+                          <td className="p-4 font-black text-slate-900">
+                            <div className="flex flex-col gap-0.5">
+                              <span>
+                                {p.cte_number && p.cte_number !== 'Sem CTE' && p.cte_number !== 'Não vinculado' ? (
+                                  p.cte_number
+                                ) : (
+                                  <span className="text-slate-400 font-semibold italic">Sem CTE</span>
+                                )}
                               </span>
+                              <div className="flex flex-wrap items-center gap-1.5 font-normal">
+                                <span className="text-[10px] text-slate-500">Ordem: #{p.order_number}</span>
+                                {p.order_status && p.order_status !== 'N/A' && (
+                                  <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wide ${
+                                    p.order_status === 'Carregando' ? 'bg-orange-100 text-orange-850' :
+                                    p.order_status === 'Em Trânsito' ? 'bg-blue-100 text-blue-850' :
+                                    p.order_status === 'Entregue' ? 'bg-emerald-100 text-emerald-850' :
+                                    'bg-slate-100 text-slate-700'
+                                  }`}>
+                                    {p.order_status}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex flex-wrap gap-1 mt-1.5 font-normal">
+                                <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-[9px] font-bold">CTE: R$ {valCTE.toLocaleString('pt-BR')}</span>
+                                <span className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded text-[9px] font-bold">Frete: R$ {valFrete.toLocaleString('pt-BR')}</span>
+                                <span className="bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded text-[9px] font-bold">Adto: R$ {valAdto.toLocaleString('pt-BR')}</span>
+                                <span className="bg-yellow-50 text-yellow-800 px-1.5 py-0.5 rounded text-[9px] font-bold">Saldo: R$ {valSaldo.toLocaleString('pt-BR')}</span>
+                                <span className="bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded text-[9px] font-bold">Líq: R$ {valLiq.toLocaleString('pt-BR')}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <div>
+                               <p>{p.driver_name}</p>
+                               <p className="text-[10px] text-slate-450">Chave Pix: {p.pix_key}</p>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex flex-col gap-1 items-start">
+                              <span className="px-1.5 py-0.5 text-[9px] bg-slate-100 text-slate-700 font-extrabold rounded uppercase tracking-wider">
+                                {p.type}
+                              </span>
+                              <span className="text-[10px] text-slate-450">{p.payment_method || 'Pix'}</span>
+                              {p.proof_url && (
+                                <a
+                                  href={p.proof_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-[9px] font-bold text-[#d8b45d] hover:underline"
+                                >
+                                  📎 Ver Recibo
+                                </a>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-4 font-bold text-slate-900">R$ {p.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                          <td className="p-4">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                              p.status === 'Pago' ? 'bg-emerald-100 text-emerald-800' :
+                              p.status === 'Cancelado' ? 'bg-red-100 text-red-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {p.status}
+                            </span>
+                          </td>
+                          <td className="p-4 text-[10.5px] text-slate-450">
+                            {p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : 'Hoje'}
+                          </td>
+                          <td className="p-4 text-right">
+                            {p.status === 'Pendente' ? (
+                              <div className="flex justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleUpdateStatus(p.id, 'Pago');
+                                  }}
+                                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold flex items-center gap-0.5 cursor-pointer"
+                                >
+                                  <Check className="h-3 w-3" />
+                                  Liquidar
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleUpdateStatus(p.id, 'Cancelado');
+                                  }}
+                                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-red-600 rounded text-[10px] font-bold cursor-pointer"
+                                >
+                                  Bloquear
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-[10px] text-slate-400">Cancelado ou Finalizado</span>
                             )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div>
-                           <p>{p.driver_name}</p>
-                           <p className="text-[10px] text-slate-450">Chave Pix: {p.pix_key}</p>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex flex-col gap-1 items-start">
-                          <span className="px-1.5 py-0.5 text-[9px] bg-slate-100 text-slate-700 font-extrabold rounded uppercase tracking-wider">
-                            {p.type}
-                          </span>
-                          <span className="text-[10px] text-slate-450">{p.payment_method || 'Pix'}</span>
-                          {p.proof_url && (
-                            <a
-                              href={p.proof_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-[9px] font-bold text-[#d8b45d] hover:underline"
-                            >
-                              📎 Ver Recibo
-                            </a>
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-4 font-bold text-slate-900">R$ {p.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                      <td className="p-4">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
-                          p.status === 'Pago' ? 'bg-emerald-100 text-emerald-800' :
-                          p.status === 'Cancelado' ? 'bg-red-100 text-red-800' :
-                          'bg-yellow-105 bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {p.status}
-                        </span>
-                      </td>
-                      <td className="p-4 text-[10.5px] text-slate-450">
-                        {p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : 'Hoje'}
-                      </td>
-                      <td className="p-4 text-right">
-                        {p.status === 'Pendente' ? (
-                          <div className="flex justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateStatus(p.id, 'Pago')}
-                              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold flex items-center gap-0.5 cursor-pointer"
-                            >
-                              <Check className="h-3 w-3" />
-                              Liquidar
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateStatus(p.id, 'Cancelado')}
-                              className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-red-600 rounded text-[10px] font-bold cursor-pointer"
-                            >
-                              Bloquear
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="text-[10px] text-slate-400">Cancelado ou Finalizado</span>
+                          </td>
+                        </tr>
+                        {isExpanded && (
+                          <tr className="bg-slate-50/50 border-l-4 border-yellow-500">
+                            <td colSpan={8} className="p-5 border-b">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-700 font-semibold">
+                                
+                                {/* DETALHAMENTO FINANCEIRO DO FRETE */}
+                                <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 shadow-xs">
+                                  <div className="border-b pb-2">
+                                    <h4 className="font-black text-slate-900 uppercase tracking-wider text-[10px]">
+                                      DETALHAMENTO FINANCEIRO DO FRETE
+                                    </h4>
+                                    <p className="text-[9px] font-black uppercase text-slate-400 mt-1">FLUXOS DE PAGAMENTOS</p>
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    <div className="flex justify-between border-b pb-1 text-slate-500">
+                                      <span>Valor do Frete ao Motorista:</span>
+                                      <strong>R$ {valFrete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                                    </div>
+                                    <div className="flex justify-between border-b pb-1 text-red-700">
+                                      <span>(-) Adiantamento faturado:</span>
+                                      <strong>R$ {valAdto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                                    </div>
+                                    <div className="flex justify-between border-b pb-1 text-red-700">
+                                      <span>(-) Pedágio / Pago à Vista:</span>
+                                      <strong>R$ {valPedagio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                                    </div>
+                                    <div className="flex justify-between text-slate-950 font-black pt-1 bg-yellow-500/10 p-2 rounded-lg border border-yellow-500/20">
+                                      <span>SALDO DE FRETE A PAGAR:</span>
+                                      <strong>R$ {valSaldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* CUSTOS E AJUSTES DE CARGA */}
+                                <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 shadow-xs">
+                                  <div className="border-b pb-2">
+                                    <h4 className="font-black text-slate-900 uppercase tracking-wider text-[10px]">
+                                      CUSTOS E AJUSTES DE CARGA
+                                    </h4>
+                                    <p className="text-[9px] font-black uppercase text-slate-400 mt-1">&nbsp;</p>
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    <div className="flex justify-between border-b pb-1 text-slate-500">
+                                      <span>Ajudante de Carga:</span>
+                                      <strong>R$ {valAjudante.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                                    </div>
+                                    <div className="flex justify-between border-b pb-1 text-slate-500">
+                                      <span>Pedágio / Descarga duto:</span>
+                                      <strong>R$ {valDescarga.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                                    </div>
+                                    <div className="flex justify-between border-b pb-1 text-slate-500">
+                                      <span>Outros custos operacionais:</span>
+                                      <strong>R$ {valOutros.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* FATURAMENTO (CTE) — MEMÓRIA DE CÁLCULO */}
+                                <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 shadow-xs">
+                                  <div className="border-b pb-2">
+                                    <h4 className="font-black text-slate-900 uppercase tracking-wider text-[10px]">
+                                      FATURAMENTO (CTE) — MEMÓRIA DE CÁLCULO
+                                    </h4>
+                                    <p className="text-[9px] font-black uppercase text-slate-400 mt-1">&nbsp;</p>
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    <div className="flex justify-between border-b pb-1 text-slate-500">
+                                      <span>VALOR DO CTE (Receita Bruta):</span>
+                                      <strong>R$ {valCTE.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                                    </div>
+                                    <div className="flex justify-between border-b pb-1 text-red-700">
+                                      <span>(−) DESCONTO SOBRE O CTE ({cteDiscountPercent}%):</span>
+                                      <strong>− R$ {valDesconto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                                    </div>
+                                    <div className="flex justify-between border-b pb-1 text-red-700">
+                                      <span>(−) Valor de Frete (motorista: AD. + saldo):</span>
+                                      <strong>− R$ {valFrete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                                    </div>
+                                    <div className="flex justify-between border-b pb-1 text-red-700">
+                                      <span>(−) Despesas (carga / descarga / outros):</span>
+                                      <strong>− R$ {valDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                                    </div>
+                                    <div className="flex justify-between text-slate-950 font-black pt-1 bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20">
+                                      <span>RESULTADO LÍQUIDO RBA:</span>
+                                      <strong>R$ {valLiq.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                                    </div>
+                                  </div>
+                                </div>
+
+                              </div>
+                            </td>
+                          </tr>
                         )}
-                      </td>
-                    </tr>
-                  ))}
+                      </React.Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

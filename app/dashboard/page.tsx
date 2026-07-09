@@ -138,7 +138,7 @@ export default function DashboardPage() {
 
       setRedirectingOperational(false);
       setCheckingAccess(false);
-      const res = await fetch('/api/orders');
+      const res = await fetch('/api/orders?page_size=200');
       const data = await res.json();
       if (!res.ok || !Array.isArray(data)) throw new Error(data?.error || 'Erro ao carregar dashboard.');
 
