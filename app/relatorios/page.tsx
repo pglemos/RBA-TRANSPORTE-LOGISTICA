@@ -345,7 +345,7 @@ export default function ReportsPage() {
                           <td className="p-3">
                             <Link
                               href={`/ordens/${o.id}`}
-                              className={`font-extrabold text-xs hover:underline ${o.cte_number ? 'text-yellow-650' : 'text-red-600'}`}
+                              className={`font-extrabold text-xs hover:underline ${o.cte_number ? 'text-amber-600 dark:text-amber-500' : 'text-red-600'}`}
                             >
                               {o.cte_number || 'A emitir'}
                             </Link>

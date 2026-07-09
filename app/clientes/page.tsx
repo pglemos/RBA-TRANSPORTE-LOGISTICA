@@ -228,7 +228,7 @@ export default function ClientsPage() {
 
         {errorMsg && (
           <div className="p-3 bg-red-50/70 border border-red-200 text-red-800 rounded-xl text-xs font-bold flex items-center gap-2">
-            <AlertCircle className="h-4.5 w-4.5 text-red-650" />
+            <AlertCircle className="h-4.5 w-4.5 text-red-600" />
             <span>{errorMsg}</span>
           </div>
         )}

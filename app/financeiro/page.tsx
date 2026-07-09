@@ -245,7 +245,7 @@ export default function FinancePage() {
 
         {errorMsg && (
           <div className="p-3 bg-red-50/70 border border-red-200 text-red-800 rounded-xl text-xs font-bold flex items-center gap-2">
-            <AlertCircle className="h-4.5 w-4.5 text-red-650" />
+            <AlertCircle className="h-4.5 w-4.5 text-red-600" />
             <span>{errorMsg}</span>
           </div>
         )}
@@ -272,7 +272,7 @@ export default function FinancePage() {
             <h4 className="text-lg font-black text-yellow-950 mt-3">
               R$ {stats.totalPending.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </h4>
-            <span className="text-[9px] text-yellow-650 block mt-1">Liquidações que dependem do canhoto assinado</span>
+            <span className="text-[9px] text-yellow-700 block mt-1">Liquidações que dependem do canhoto assinado</span>
           </div>
 
           <div className="bg-slate-900 border border-slate-800 text-slate-100 rounded-2xl p-5">

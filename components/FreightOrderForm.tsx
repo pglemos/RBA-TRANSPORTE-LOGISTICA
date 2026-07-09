@@ -621,7 +621,7 @@ export default function FreightOrderForm({ initialData }: Props) {
                   step="0.01"
                   value={balanceValue || ''}
                   onChange={(e) => setBalanceValue(Number(e.target.value))}
-                  className={`${field} font-black ${balanceValue < 0 ? 'text-red-650' : 'text-blue-800'}`}
+                  className={`${field} font-black ${balanceValue < 0 ? 'text-rose-600' : 'text-blue-800'}`}
                 />
               </div>
           </div>

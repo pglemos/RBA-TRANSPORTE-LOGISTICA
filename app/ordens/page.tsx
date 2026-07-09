@@ -305,7 +305,7 @@ export default function OrdersListPage() {
             
             {/* Desktop Table View */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full min-w-[1200px] text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-50 text-slate-400 font-bold border-b border-slate-200 text-[10px]">
                     <th className="p-4">CTE/MANIFESTO</th>
@@ -327,7 +327,7 @@ export default function OrdersListPage() {
               <td className="p-4">
                 <Link
                   href={`/ordens/${o.id}`}
-                  className={`font-extrabold text-xs hover:underline inline-flex items-center gap-1 ${o.cte_number ? 'text-yellow-650' : 'text-red-650 dark:text-red-500'}`}
+                  className={`font-extrabold text-xs hover:underline inline-flex items-center gap-1 ${o.cte_number ? 'text-amber-600 dark:text-amber-500' : 'text-rose-600 dark:text-rose-400'}`}
                 >
                   {!o.cte_number && <AlertTriangle className="h-3 w-3 animate-pulse text-red-500" />}
                   {o.cte_number || 'A emitir'}
@@ -445,7 +445,7 @@ export default function OrdersListPage() {
                       <span className="text-[10px] text-slate-400 font-bold uppercase block tracking-wider">CTE/MANIFESTO</span>
                 <Link
                   href={`/ordens/${o.id}`}
-                  className={`font-extrabold text-sm hover:underline inline-flex items-center gap-1 ${o.cte_number ? 'text-yellow-650' : 'text-red-650 dark:text-red-500'}`}
+                  className={`font-extrabold text-sm hover:underline inline-flex items-center gap-1 ${o.cte_number ? 'text-amber-600 dark:text-amber-500' : 'text-rose-600 dark:text-rose-400'}`}
                 >
                   {!o.cte_number && <AlertTriangle className="h-3.5 w-3.5 animate-pulse text-red-500" />}
                   {o.cte_number || 'A emitir'}

@@ -393,7 +393,7 @@ const id = params?.id;
             <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4">
               <div className="border-b pb-3 flex items-center justify-between">
                 <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <Truck className="h-4 w-4 text-yellow-650" />
+                  <Truck className="h-4 w-4 text-amber-600" />
                   Dados de Itinerário & Clientes
                 </h2>
                 <span className="text-[10px] bg-slate-100 p-1 px-2.5 rounded-full font-bold text-slate-600">
