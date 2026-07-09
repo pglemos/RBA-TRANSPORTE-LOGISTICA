@@ -517,7 +517,7 @@ const id = params?.id;
                   </div>
                   <div className="flex justify-between text-slate-950 font-black pt-1.5 bg-yellow-500/10 p-2.5 rounded-lg border border-yellow-500/20">
                     <span>SALDO DE FRETE A PAGAR:</span>
-                    <strong>R$ {order.balance_value.toLocaleString('pt-BR')}</strong>
+                    <strong>R$ {((Number(order.freight_value) || 0) - (Number(order.advance_value) || 0) - (Number(order.cash_value) || 0)).toLocaleString('pt-BR')}</strong>
                   </div>
                 </div>
 
@@ -534,10 +534,6 @@ const id = params?.id;
                   <div className="flex justify-between border-b pb-1.5 text-slate-550">
                     <span>Outros custos operacionais:</span>
                     <span>R$ {order.other_expenses.toLocaleString('pt-BR')}</span>
-                  </div>
-                  <div className="flex justify-between text-emerald-900 font-black pt-1.5 bg-emerald-500/10 p-2.5 rounded-lg border border-emerald-500/20">
-                    <span>VALOR LÍQUIDO RBA:</span>
-                    <strong>R$ {order.net_value.toLocaleString('pt-BR')}</strong>
                   </div>
                 </div>
               </div>

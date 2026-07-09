@@ -600,17 +600,47 @@ export default function FreightOrderForm({ initialData }: Props) {
                 name="freight_value"
                 type="number" step="0.01" min="0"
                 value={freightValue || ''}
-                onChange={(e) => setFreightValue(Number(e.target.value))}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setFreightValue(val);
+                  setBalanceValue(val - advanceValue - cashValue);
+                }}
                 className={field}
               />
             </div>
             <div className={`flex items-stretch w-[18%] ${divider}`}>
               <span className={label}>AD.:</span>
-              <input id="ip-advance" name="advance_value" type="number" step="0.01" min="0" value={advanceValue || ''} onChange={(e) => setAdvanceValue(Number(e.target.value))} className={field} />
+              <input
+                id="ip-advance"
+                name="advance_value"
+                type="number"
+                step="0.01"
+                min="0"
+                value={advanceValue || ''}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setAdvanceValue(val);
+                  setBalanceValue(freightValue - val - cashValue);
+                }}
+                className={field}
+              />
             </div>
             <div className={`flex items-stretch w-[22%] ${divider}`}>
               <span className={label}>A Vista:</span>
-              <input id="ip-cash" name="cash_value" type="number" step="0.01" min="0" value={cashValue || ''} onChange={(e) => setCashValue(Number(e.target.value))} className={field} />
+              <input
+                id="ip-cash"
+                name="cash_value"
+                type="number"
+                step="0.01"
+                min="0"
+                value={cashValue || ''}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setCashValue(val);
+                  setBalanceValue(freightValue - advanceValue - val);
+                }}
+                className={field}
+              />
             </div>
               <div className={`flex items-stretch w-[24%] ${divider}`}>
                 <span className={label}>Saldo:</span>
