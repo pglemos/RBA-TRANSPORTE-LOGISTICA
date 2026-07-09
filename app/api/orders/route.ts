@@ -51,6 +51,7 @@ export async function GET(req: NextRequest) {
           ...syncedStatuses,
           driver_name: driver ? driver.name : 'N/A',
           driver_cpf: driver ? RBAAuth.maskCPF(driver.cpf, role) : 'N/A',
+          driver_status: driver ? driver.status : 'Ativo',
           vehicle_tractor_plate: vehicle ? vehicle.tractor_plate : 'N/A',
           vehicle_trailer_plate: vehicle ? vehicle.trailer_plate : 'N/A',
           vehicle_model: vehicle ? vehicle.model : 'N/A',

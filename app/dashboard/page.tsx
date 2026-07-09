@@ -60,10 +60,67 @@ export default function DashboardPage() {
   const router = useRouter();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState<SummaryData>(emptySummary);
   const [errorMsg, setErrorMsg] = useState('');
   const [checkingAccess, setCheckingAccess] = useState(true);
   const [redirectingOperational, setRedirectingOperational] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  const filteredOrders = React.useMemo(() => {
+    return orders.filter((o) => {
+      const emissionDate = getFreightOrderEmissionDateValue(o);
+      if (!emissionDate) return true;
+      if (startDate && emissionDate < startDate) return false;
+      if (endDate && emissionDate > endDate) return false;
+      return true;
+    });
+  }, [orders, startDate, endDate]);
+
+  const summary = React.useMemo(() => {
+    return summarizeFreightOrders(filteredOrders, (status) => normalizeFreightOrderStatus(status as any));
+  }, [filteredOrders]);
+
+  const alerts = React.useMemo(() => {
+    const list: Array<{ title: string; text: string; icon: any; tone: 'rose' | 'amber' | 'blue' }> = [];
+
+    // 1. Motorista bloqueado ativo
+    const blockedDrivers = filteredOrders.filter(
+      (o) => o.status !== 'Entregue' && o.driver_status === 'Bloqueado'
+    );
+    blockedDrivers.forEach((o) => {
+      list.push({
+        title: `Motorista bloqueado ativo: ${o.driver_name}`,
+        text: `O condutor da ordem ${o.order_number} possui restrição cadastral ativa ou está bloqueado no sistema.`,
+        icon: AlertTriangle,
+        tone: 'rose',
+      });
+    });
+
+    // 2. Buonny a renovar
+    const buonnyToRenew = filteredOrders.filter(
+      (o) => o.status !== 'Entregue' && o.buonny_status?.toLowerCase() === 'renovar'
+    );
+    buonnyToRenew.forEach((o) => {
+      list.push({
+        title: `Buonny a renovar: ${o.driver_name}`,
+        text: `Condução na ordem ${o.order_number} com consulta Buonny pendente de renovação.`,
+        icon: Clock,
+        tone: 'amber',
+      });
+    });
+
+    // Fallback: if no critical items, show a general auditoria/fechamento alert
+    if (list.length === 0) {
+      list.push({
+        title: 'Fechamento operacional',
+        text: 'Nenhum desvio ou restrição crítica pendente nas auditorias ativas hoje.',
+        icon: CheckCircle,
+        tone: 'blue',
+      });
+    }
+
+    return list.slice(0, 3);
+  }, [filteredOrders]);
 
   const loadData = React.useCallback(async () => {
     setLoading(true);
@@ -86,7 +143,6 @@ export default function DashboardPage() {
       if (!res.ok || !Array.isArray(data)) throw new Error(data?.error || 'Erro ao carregar dashboard.');
 
       setOrders(data);
-      setSummary(summarizeFreightOrders(data, (status) => normalizeFreightOrderStatus(status as any)));
     } catch (e) {
       setCheckingAccess(false);
       setErrorMsg(e instanceof Error ? e.message : 'Erro ao carregar dashboard.');
@@ -127,7 +183,7 @@ export default function DashboardPage() {
     monthlyDataMap.set(i, { Fretes: 0, Margem: 0 });
   }
 
-  orders.forEach((o) => {
+  filteredOrders.forEach((o) => {
     const emissionDate = getFreightOrderEmissionDateValue(o);
     if (!emissionDate) return;
     const date = new Date(emissionDate);
@@ -189,22 +245,52 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row xl:justify-end">
-              <Link
-                id="dash-add-order-btn"
-                href="/ordens/nova"
-                className="inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-slate-950 px-5 text-xs font-black uppercase tracking-[0.12em] text-white transition hover:bg-slate-800"
-              >
-                <Plus className="h-4.5 w-4.5" />
-                Nova ordem
-              </Link>
-              <Link
-                href="/relatorios"
-                className="inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-slate-200 bg-[oklch(98%_0.006_83)] px-5 text-xs font-black uppercase tracking-[0.12em] text-slate-700 transition hover:border-[#d8b45d] hover:text-slate-950"
-              >
-                Relatórios
-                <ArrowUpRight className="h-4.5 w-4.5" />
-              </Link>
+            <div className="flex flex-col gap-4 sm:flex-row xl:items-end xl:justify-end">
+              {/* Período de Emissão Filter */}
+              <div className="space-y-1.5 min-w-[240px]">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] uppercase font-bold text-slate-500 block">Período de Emissão</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 shadow-sm">
+                    <span className="text-[9px] uppercase font-extrabold text-slate-400">De</span>
+                    <input
+                      className="w-full bg-transparent text-xs font-bold text-slate-700 outline-none"
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex-1 flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 shadow-sm">
+                    <span className="text-[9px] uppercase font-extrabold text-slate-400">Até</span>
+                    <input
+                      className="w-full bg-transparent text-xs font-bold text-slate-700 outline-none"
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-3 sm:flex-row xl:justify-end">
+                <Link
+                  id="dash-add-order-btn"
+                  href="/ordens/nova"
+                  className="inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-slate-950 px-5 text-xs font-black uppercase tracking-[0.12em] text-white transition hover:bg-slate-800"
+                >
+                  <Plus className="h-4.5 w-4.5" />
+                  Nova ordem
+                </Link>
+                <Link
+                  href="/relatorios"
+                  className="inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-slate-200 bg-[oklch(98%_0.006_83)] px-5 text-xs font-black uppercase tracking-[0.12em] text-slate-700 transition hover:border-[#d8b45d] hover:text-slate-950"
+                >
+                  Relatórios
+                  <ArrowUpRight className="h-4.5 w-4.5" />
+                </Link>
+              </div>
             </div>
           </div>
 
@@ -268,25 +354,16 @@ export default function DashboardPage() {
                   </span>
                 </div>
 
-                <div className="mt-6">
-                  <AlertItem
-                    title="Motorista bloqueado ativo"
-                    text="Claudio de Souza possui restrição cadastral ativa de seguro no sistema."
-                    icon={AlertTriangle}
-                    tone="rose"
-                  />
-                  <AlertItem
-                    title="Buonny a renovar"
-                    text="Condução de Marcos Vinicius Santos com consulta Buonny pendente de renovação."
-                    icon={Clock}
-                    tone="amber"
-                  />
-                  <AlertItem
-                    title="Fechamento mensal"
-                    text="Nenhum desvio financeiro encontrado nas auditorias de pátio hoje."
-                    icon={CheckCircle}
-                    tone="blue"
-                  />
+                <div className="mt-6 text-xs text-slate-500 font-semibold space-y-4">
+                  {alerts.map((alert, index) => (
+                    <AlertItem
+                      key={index}
+                      title={alert.title}
+                      text={alert.text}
+                      icon={alert.icon}
+                      tone={alert.tone}
+                    />
+                  ))}
                 </div>
               </div>
 
@@ -342,7 +419,7 @@ export default function DashboardPage() {
                   </Link>
                 </div>
 
-                {orders.length === 0 ? (
+                {filteredOrders.length === 0 ? (
                   <div className="py-16 text-center text-xs font-black uppercase tracking-[0.14em] text-slate-400">
                     Nenhuma ordem cadastrada ainda.
                   </div>
@@ -361,7 +438,7 @@ export default function DashboardPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {orders.slice(0, 6).map((order) => (
+                        {filteredOrders.slice(0, 6).map((order) => (
                           <tr key={order.id} className="transition hover:bg-slate-50/80">
                             <td className="p-4 font-black text-slate-950">{order.order_number}</td>
                             <td className="p-4">
