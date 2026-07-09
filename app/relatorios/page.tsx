@@ -4,10 +4,10 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
 import RBALogo from '@/components/RBALogo';
-import { Search, Printer, DollarSign, BarChart3, Filter, ShieldCheck, FileCheck, ArrowDownToLine } from 'lucide-react';
+import { Search, Printer, DollarSign, BarChart3, Filter, ShieldCheck, FileCheck, ArrowDownToLine, Calendar } from 'lucide-react';
 import { FREIGHT_ORDER_STATUSES, getFreightStatusMeta, normalizeFreightOrderStatus } from '@/lib/freightStatus';
 import { summarizeFreightOrders } from '@/lib/financialMetrics';
-import { formatFreightOrderEmissionDate, getFreightOrderEmissionYearMonth } from '@/lib/freightOrderDates';
+import { formatFreightOrderEmissionDate, getFreightOrderEmissionYearMonth, getFreightOrderEmissionDateValue } from '@/lib/freightOrderDates';
 
 export default function ReportsPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -18,7 +18,14 @@ export default function ReportsPage() {
   // Filter criteria
   const [selectedClient, setSelectedClient] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [monthFilter, setMonthFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  const formatDateBR = (dateStr: string) => {
+    if (!dateStr) return '';
+    const [year, month, day] = dateStr.split('-');
+    return `${day}/${month}/${year}`;
+  };
 
   const loadReportData = async () => {
     try {
@@ -54,16 +61,22 @@ export default function ReportsPage() {
     const matchesClient = selectedClient ? o.client_id === selectedClient : true;
   const matchesStatus = statusFilter ? normalizeFreightOrderStatus(o.status) === statusFilter : true;
     
-    let matchesMonth = true;
-    if (monthFilter) {
-      // getFreightOrderEmissionYearMonth returns "YYYY-MM" directly from the ISO string,
-      // with no Date object construction — fully timezone-safe.
-      const orderYearMonth = getFreightOrderEmissionYearMonth(o);
-      if (!orderYearMonth) return false;
-      matchesMonth = orderYearMonth === monthFilter;
+    let matchesDateRange = true;
+    if (startDate || endDate) {
+      const orderDate = getFreightOrderEmissionDateValue(o);
+      if (!orderDate) {
+        matchesDateRange = false;
+      } else {
+        if (startDate && orderDate < startDate) {
+          matchesDateRange = false;
+        }
+        if (endDate && orderDate > endDate) {
+          matchesDateRange = false;
+        }
+      }
     }
 
-    return matchesClient && matchesStatus && matchesMonth;
+    return matchesClient && matchesStatus && matchesDateRange;
   });
 
   // Aggregated totals
@@ -209,13 +222,37 @@ export default function ReportsPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] uppercase font-bold text-slate-500 block">Mês de Emissão</label>
-            <input
-              type="month"
-              value={monthFilter}
-              onChange={(e) => setMonthFilter(e.target.value)}
-              className="w-full text-xs font-bold px-3 py-2.5 bg-slate-50 border border-slate-250 rounded-xl outline-none"
-            />
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] uppercase font-bold text-slate-500 block">Período de Emissão</label>
+              {(startDate || endDate) && (
+                <button
+                  onClick={() => { setStartDate(''); setEndDate(''); }}
+                  className="text-[9px] font-bold text-red-500 hover:text-red-700 hover:underline transition-colors focus:outline-none"
+                >
+                  Limpar período
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 flex items-center gap-1.5 bg-slate-50 border border-slate-250 rounded-xl px-2 py-2">
+                <span className="text-[9px] uppercase font-extrabold text-slate-400">De</span>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full bg-transparent text-xs font-bold text-slate-700 outline-none"
+                />
+              </div>
+              <div className="flex-1 flex items-center gap-1.5 bg-slate-50 border border-slate-250 rounded-xl px-2 py-2">
+                <span className="text-[9px] uppercase font-extrabold text-slate-400">Até</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full bg-transparent text-xs font-bold text-slate-700 outline-none"
+                />
+              </div>
+            </div>
           </div>
 
         </div>
@@ -233,7 +270,11 @@ export default function ReportsPage() {
               <RBALogo className="mb-3 h-20 w-40" />
               <h1 className="text-lg font-black tracking-tight">RBA TRANSPORTE & LOGÍSTICA S.A.</h1>
               <p className="text-xs uppercase font-bold text-slate-500">Relatório Consolidado de Contratos de Fretes e Custos Fiscais</p>
-              <p className="text-[10px] text-slate-450">Filtro Cliente: {selectedClient ? 'Filtro Ativo' : 'Todos'} | Status: {statusFilter || 'Todos'}</p>
+              <p className="text-[10px] text-slate-450">
+                Filtro Cliente: {clients.find(c => c.id === selectedClient)?.name || 'Todos'} |{' '}
+                Status: {statusFilter || 'Todos'} |{' '}
+                Período: {startDate || endDate ? `${startDate ? formatDateBR(startDate) : 'Início'} até ${endDate ? formatDateBR(endDate) : 'Fim'}` : 'Todo o período'}
+              </p>
                        {/* FINANCIAL BLOCKS VIEW */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               
