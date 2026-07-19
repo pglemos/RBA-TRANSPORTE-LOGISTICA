@@ -308,9 +308,9 @@ export default function OrdersListPage() {
             
             {/* Desktop Table View */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full min-w-[1200px] text-left text-xs border-collapse">
+              <table className="w-full min-w-[1200px] text-left text-sm border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 text-slate-400 font-bold border-b border-slate-200 text-[10px]">
+                  <tr className="bg-slate-50 text-slate-500 font-heading font-semibold border-b border-slate-200 text-xs uppercase tracking-wider">
                     <th className="p-4">CTE/MANIFESTO</th>
                     <th className="p-4">Motorista Condutor</th>
                     <th className="p-4">Veículo Conjugado</th>
@@ -322,19 +322,19 @@ export default function OrdersListPage() {
                     <th className="p-4 text-right">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-150 font-semibold text-slate-700">
+                <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                   {filteredOrders.map((o) => (
                     <tr key={o.id} className="hover:bg-slate-50">
                       
               <td className="p-4">
                 <Link
                   href={`/ordens/${o.id}`}
-                  className={`font-extrabold text-xs hover:underline inline-flex items-center gap-1 ${o.cte_number ? 'text-amber-600 dark:text-amber-500' : 'text-rose-600 dark:text-rose-400'}`}
+                  className={`font-bold text-sm hover:underline inline-flex items-center gap-1 ${o.cte_number ? 'text-amber-600 dark:text-amber-500' : 'text-rose-600 dark:text-rose-400'}`}
                 >
                   {!o.cte_number && <AlertTriangle className="h-3 w-3 animate-pulse text-red-500" />}
                   {o.cte_number || 'A emitir'}
                 </Link>
-                <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                <p className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-400">
                   Emissão: {formatFreightOrderEmissionDate(o)}
                 </p>
               </td>
@@ -343,15 +343,15 @@ export default function OrdersListPage() {
                       <td className="p-4">
                         <div>
                           <p className="font-bold text-slate-900">{o.driver_name}</p>
-                          <p className="text-[10px] text-slate-500">CPF: {o.driver_cpf}</p>
+                          <p className="text-xs text-slate-500">CPF: {o.driver_cpf}</p>
                         </div>
                       </td>
 
                       {/* Vehicle Plates */}
                       <td className="p-4">
                         <div>
-                          <p className="font-extrabold text-xs text-slate-900">{o.vehicle_tractor_plate} | {o.vehicle_trailer_plate}</p>
-                          <p className="text-[10px] text-slate-450">{o.vehicle_model}</p>
+                          <p className="font-bold text-sm text-slate-900">{o.vehicle_tractor_plate} | {o.vehicle_trailer_plate}</p>
+                          <p className="text-xs text-slate-400">{o.vehicle_model}</p>
                         </div>
                       </td>
 
@@ -366,21 +366,21 @@ export default function OrdersListPage() {
                       <td className="p-4 text-slate-550 truncate max-w-[120px]">{o.client_name}</td>
 
                       {/* CTE value and residual driver balance */}
-                      <td className="p-4 min-w-[108px] whitespace-nowrap text-[11px] font-bold leading-tight tracking-normal text-slate-900">
+                      <td className="p-4 min-w-[108px] whitespace-nowrap text-sm font-semibold leading-tight tracking-normal text-slate-900">
                         R$ {(Number(o.cte_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </td>
                       <td className="p-4 min-w-[128px] font-bold text-slate-900">
-                        <div className="w-max min-w-[108px] text-[11px] leading-tight tracking-normal">
+                        <div className="w-max min-w-[108px] text-xs leading-tight tracking-normal">
                           {(Number(o.cash_value) || 0) > 0 ? (
                             <p className="whitespace-nowrap text-emerald-700">
                               À vista R$ {(Number(o.cash_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </p>
                           ) : (
                             <>
-                              <p className={`whitespace-nowrap border-b border-slate-200 pb-1 ${(Number(o.advance_value) || 0) > 0 ? 'text-emerald-600' : 'text-red-650'}`}>
+                              <p className={`whitespace-nowrap border-b border-slate-100 pb-1 ${(Number(o.advance_value) || 0) > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                                 AD R$ {(Number(o.advance_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                               </p>
-                              <p className={`whitespace-nowrap pt-1 ${o.balance_value > 0 ? 'text-emerald-600' : 'text-red-650'}`}>
+                              <p className={`whitespace-nowrap pt-1 ${o.balance_value > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                                 SD R$ {o.balance_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                               </p>
                             </>
@@ -390,7 +390,7 @@ export default function OrdersListPage() {
 
                       {/* Status label */}
                       <td className="p-4">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wide ${getFreightStatusMeta(o.status).className}`}>
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide ${getFreightStatusMeta(o.status).className}`}>
                           {getFreightStatusMeta(o.status).icon} {normalizeFreightOrderStatus(o.status)}
                         </span>
                       </td>
@@ -416,7 +416,7 @@ export default function OrdersListPage() {
                                   className="fixed inset-0 z-10" 
                                   onClick={() => setActiveDropdownId(null)}
                                 />
-                                <div className="absolute right-0 mt-1 w-36 rounded-lg bg-white border border-slate-200 shadow-lg py-1 z-20 text-left font-semibold text-slate-700">
+                                <div className="absolute right-0 mt-1.5 w-36 rounded-xl bg-white border border-slate-200 shadow-lg py-1.5 z-20 text-left font-semibold text-slate-750 animate-slide-in">
                                   <Link
                                     href={`/ordens/${o.id}`}
                                     onClick={() => setActiveDropdownId(null)}

@@ -357,11 +357,11 @@ export default function ReportsPage() {
                           <td className="p-3 truncate max-w-[120px]">{o.origin} ➔ {o.destination}</td>
                           <td className="p-3 truncate max-w-[110px] text-slate-500">{o.client_name}</td>
                           <td className="p-3 text-right font-bold text-slate-900">R$ {(Number(o.cte_value) || 0).toLocaleString('pt-BR')}</td>
-                          <td className={`p-3 text-right font-bold ${o.advance_value > 0 ? 'text-emerald-600' : 'text-red-650'}`}>R$ {o.advance_value.toLocaleString('pt-BR')}</td>
-                          <td className={`p-3 text-right font-bold ${o.balance_value > 0 ? 'text-emerald-600' : 'text-red-650'}`}>R$ {o.balance_value.toLocaleString('pt-BR')}</td>
+                          <td className={`p-3 text-right font-bold ${o.advance_value > 0 ? 'text-emerald-600' : 'text-red-600'}`}>R$ {o.advance_value.toLocaleString('pt-BR')}</td>
+                          <td className={`p-3 text-right font-bold ${o.balance_value > 0 ? 'text-emerald-600' : 'text-red-600'}`}>R$ {o.balance_value.toLocaleString('pt-BR')}</td>
                           <td className="p-3 text-right text-emerald-800 font-black">R$ {o.net_value.toLocaleString('pt-BR')}</td>
                           <td className="p-3 text-center">
-                            <span className={`p-0.5 px-2 rounded text-[9px] uppercase font-bold ${getFreightStatusMeta(o.status).className}`}>
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] uppercase font-bold ${getFreightStatusMeta(o.status).className}`}>
                               {getFreightStatusMeta(o.status).icon} {normalizeFreightOrderStatus(o.status)}
                             </span>
                           </td>
