@@ -1,96 +1,101 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
-:root {
-  --rba-bg: #f8fafc;
-  --rba-surface: #ffffff;
-  --rba-surface-muted: #f1f5f9;
-  --rba-border: #e2e8f0;
-  --rba-text: #0f172a;
-  --rba-muted: #64748b;
-  --rba-gold: #c5a866;
-  --rba-gold-dark: #9e8245;
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--rba-bg);
-  color: var(--rba-text);
-}
+@layer reset, base, theme, components, utilities;
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-.font-heading,
-.heading-font {
-  font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
-}
+@layer base {
+  :root {
+    --rba-bg: #f8fafc;
+    --rba-surface: #ffffff;
+    --rba-surface-muted: #f1f5f9;
+    --rba-border: #e2e8f0;
+    --rba-text: #0f172a;
+    --rba-muted: #64748b;
+    --rba-gold: #c5a866;
+    --rba-gold-dark: #9e8245;
+  }
 
-html {
-  scroll-behavior: smooth;
-}
+  body {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--rba-bg);
+    color: var(--rba-text);
+  }
 
-body {
-  background: var(--rba-bg);
-  color: var(--rba-text);
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .font-heading,
+  .heading-font {
+    font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  :where(input, select, textarea) {
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  :where(input:focus, select:focus, textarea:focus) {
+    outline: none;
+    border-color: var(--rba-gold);
+    box-shadow: 0 0 0 3px rgba(197, 168, 102, 0.2);
+  }
 }
 
 /* Custom Premium Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+@layer utilities {
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
 
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
+  ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
 
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 9999px;
-}
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 9999px;
+  }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  /* Soft Animations */
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(4px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .animate-slide-in {
+    animation: slideIn 0.2s ease-out forwards;
+  }
 }
 
 /* Premium Card & Panels styles */
-.card-premium {
-  background: var(--rba-surface);
-  border: 1px solid var(--rba-border);
-  border-radius: 1rem;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.card-premium:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
-}
-
-/* Input elements default enhancements */
-input, select, textarea {
-  transition: border-color 0.25s ease, box-shadow 0.25s ease !important;
-}
-
-input:focus, select:focus, textarea:focus {
-  outline: none !important;
-  border-color: var(--rba-gold) !important;
-  box-shadow: 0 0 0 3px rgba(197, 168, 102, 0.2) !important;
-}
-
-/* Soft Animations */
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px) scale(0.98);
+@layer components {
+  .card-premium {
+    background: var(--rba-surface);
+    border: 1px solid var(--rba-border);
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
 
-.animate-slide-in {
-  animation: slideIn 0.2s ease-out forwards;
+  .card-premium:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+  }
 }
