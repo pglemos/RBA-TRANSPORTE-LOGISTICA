@@ -292,8 +292,10 @@ const id = params?.id;
     <HeaderAndSidebar>
       <div className="space-y-6">
 
-        {/* Navigation Breadcrumb & Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 border rounded-3xl border-slate-200">
+        <div className="space-y-6 print:hidden">
+
+          {/* Navigation Breadcrumb & Toolbar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 border rounded-3xl border-slate-200">
           <div className="flex items-center gap-3">
             <Link href="/ordens" className="p-2 border hover:bg-slate-50 text-slate-700 rounded-xl">
               <ArrowLeft className="h-4 w-4" />
@@ -835,6 +837,8 @@ const id = params?.id;
             </div>
 
           </div>
+
+        </div>
 
         </div>
 

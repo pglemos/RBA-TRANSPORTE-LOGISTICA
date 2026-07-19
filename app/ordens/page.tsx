@@ -146,9 +146,11 @@ export default function OrdersListPage() {
   return (
     <HeaderAndSidebar>
       <div className="space-y-6">
-        
-        {/* Header section */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200">
+
+        <div className="space-y-6 print:hidden">
+
+          {/* Header section */}
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200">
           <div>
             <h1 className="text-xl font-black text-slate-900 tracking-tight">Fichas e Ordens de Fretes Digitais</h1>
             <p className="text-xs text-slate-500 mt-1">Veja todos os contratos digitais vigentes. Imprima fichas no padrão Sefaz ou gerencie status operacionais.</p>
@@ -566,6 +568,8 @@ export default function OrdersListPage() {
 
           </div>
         )}
+
+        </div>
 
         {/* PRINTABLE PDF POPUP DIALOG TRIGGER */}
         {selectedOrderForPDF && (
