@@ -1469,7 +1469,7 @@ export class RBADatabase {
     return order ? withFreightOrderDefaults(order) : undefined;
   }
 
-  public static async createFreightOrder(orderData: Omit<FreightOrder, 'id' | 'order_number' | 'created_at' | 'updated_at' | 'total_expenses' | 'net_value'>, operatorId: string, operatorName: string) {
+  public static async createFreightOrder(orderData: Omit<FreightOrder, 'id' | 'order_number' | 'created_at' | 'updated_at' | 'total_expenses' | 'net_value' | 'balance_value'> & { balance_value?: number }, operatorId: string, operatorName: string) {
     const financials = calculateFreightOrderFinancials(orderData);
     const { cte_discount_value: _cteDiscountValue, net_revenue: _netRevenue, ...persistedFinancials } = financials;
     const newId = generateId('ord');
@@ -1582,7 +1582,7 @@ export class RBADatabase {
     return newOrder;
   }
 
-  public static async updateFreightOrder(id: string, orderData: Partial<FreightOrder>, operatorId: string, operatorName: string) {
+  public static async updateFreightOrder(id: string, orderData: Partial<Omit<FreightOrder, 'balance_value'>> & { balance_value?: number }, operatorId: string, operatorName: string) {
     if (isSupabaseServerConfigured) {
       const { data: oldValArray } = await supabaseDataClient().from('freight_orders').select('*').eq('id', id).limit(1);
       const oldVal = (oldValArray && oldValArray[0]) || null;

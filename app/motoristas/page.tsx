@@ -138,7 +138,7 @@ export default function DriversPage() {
     setMsg('');
 
     const normalizedCpf = normalizeDocument(cpf);
-    const normalizedBeneficiaryDocument = normalizeDocument(beneficiaryDocument || cpf);
+    const normalizedBeneficiaryDocument = beneficiaryDocument.trim() ? normalizeDocument(beneficiaryDocument) : '';
 
     if (name.trim().length < 3) {
       setErrorMsg("Nome completo do motorista é obrigatório.");
@@ -148,21 +148,32 @@ export default function DriversPage() {
       setErrorMsg("CPF do motorista inválido.");
       return;
     }
-    if (!isValidBrazilianPhone(phone)) {
+    if (phone.trim() && !isValidBrazilianPhone(phone)) {
       setErrorMsg("Telefone do motorista inválido.");
       return;
     }
-    if (!isValidPixKey(pixKey)) {
-      setErrorMsg("Chave Pix inválida. Use CPF/CNPJ válido, telefone, e-mail ou chave aleatória UUID.");
-      return;
-    }
-    if ((beneficiaryName || name).trim().length < 3) {
-      setErrorMsg("Nome do favorecido é obrigatório.");
-      return;
-    }
-    if (!isValidCpfOrCnpj(normalizedBeneficiaryDocument)) {
-      setErrorMsg("CPF/CNPJ do favorecido inválido.");
-      return;
+
+    const hasBankDetails = 
+      bankName.trim() !== '' || 
+      bankAgency.trim() !== '' || 
+      bankAccount.trim() !== '' || 
+      pixKey.trim() !== '' || 
+      beneficiaryName.trim() !== '' || 
+      beneficiaryDocument.trim() !== '';
+
+    if (hasBankDetails) {
+      if (pixKey.trim() && !isValidPixKey(pixKey)) {
+        setErrorMsg("Chave Pix inválida. Use CPF/CNPJ válido, telefone, e-mail ou chave aleatória UUID.");
+        return;
+      }
+      if (beneficiaryName.trim() && beneficiaryName.trim().length < 3) {
+        setErrorMsg("Nome do favorecido deve ter pelo menos 3 caracteres.");
+        return;
+      }
+      if (normalizedBeneficiaryDocument && !isValidCpfOrCnpj(normalizedBeneficiaryDocument)) {
+        setErrorMsg("CPF/CNPJ do favorecido inválido.");
+        return;
+      }
     }
 
     setSaving(true);
@@ -176,7 +187,7 @@ export default function DriversPage() {
       bank_agency: bankAgency.trim(),
       bank_account: bankAccount.trim(),
       pix_key: pixKey.trim(),
-      beneficiary_name: (beneficiaryName || name).trim(),
+      beneficiary_name: beneficiaryName.trim(),
       beneficiary_document: normalizedBeneficiaryDocument
     };
 

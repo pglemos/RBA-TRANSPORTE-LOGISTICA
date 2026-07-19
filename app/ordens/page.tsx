@@ -17,7 +17,9 @@ import {
   Printer, 
   AlertCircle,
   HelpCircle,
-  AlertTriangle
+  AlertTriangle,
+  MoreVertical,
+  Eye
 } from 'lucide-react';
 
 export default function OrdersListPage() {
@@ -33,6 +35,7 @@ export default function OrdersListPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedOrderForPDF, setSelectedOrderForPDF] = useState<any | null>(null);
+  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
 
   // Messages
   const [msg, setMsg] = useState('');
@@ -316,8 +319,7 @@ export default function OrdersListPage() {
                     <th className="p-4">Valor CTE</th>
                     <th className="p-4 min-w-[128px]">Saldo do Frete</th>
                     <th className="p-4">Status Geral</th>
-                    <th className="p-4 text-center">Imprimir</th>
-                    <th className="p-4 text-right">Ações de Pátio</th>
+                    <th className="p-4 text-right">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-150 font-semibold text-slate-700">
@@ -375,10 +377,10 @@ export default function OrdersListPage() {
                             </p>
                           ) : (
                             <>
-                              <p className="whitespace-nowrap border-b border-slate-200 pb-1">
+                              <p className={`whitespace-nowrap border-b border-slate-200 pb-1 ${(Number(o.advance_value) || 0) > 0 ? 'text-emerald-600' : 'text-red-650'}`}>
                                 AD R$ {(Number(o.advance_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                               </p>
-                              <p className={`whitespace-nowrap pt-1 ${o.balance_value < 0 ? 'text-red-600' : 'text-slate-900'}`}>
+                              <p className={`whitespace-nowrap pt-1 ${o.balance_value > 0 ? 'text-emerald-600' : 'text-red-650'}`}>
                                 SD R$ {o.balance_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                               </p>
                             </>
@@ -393,40 +395,71 @@ export default function OrdersListPage() {
                         </span>
                       </td>
 
-                      {/* Print PDF triggers */}
-                      <td className="p-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedOrderForPDF(o)}
-                          className="p-1 px-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg inline-flex items-center gap-1 cursor-pointer select-none font-bold"
-                        >
-                          <Printer className="h-3 w-3" />
-                          PDF
-                        </button>
-                      </td>
-
-                      {/* Sub CRUD and view edit toggles */}
+                      {/* Kebab action dropdown menu */}
                       <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link
-                            href={`/ordens/${o.id}`}
-                            className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] uppercase font-extrabold"
-                          >
-                            Detalhes
-                          </Link>
-                          <Link
-                            href={`/ordens/${o.id}/editar`}
-                            className="p-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[10px]"
-                          >
-                            Editar
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(o.id)}
-                            className="p-1.5 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                        <div className="flex items-center justify-end">
+                          <div className="relative inline-block text-left">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveDropdownId(activeDropdownId === o.id ? null : o.id);
+                              }}
+                              className="p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors focus:outline-hidden"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </button>
+
+                            {activeDropdownId === o.id && (
+                              <>
+                                <div 
+                                  className="fixed inset-0 z-10" 
+                                  onClick={() => setActiveDropdownId(null)}
+                                />
+                                <div className="absolute right-0 mt-1 w-36 rounded-lg bg-white border border-slate-200 shadow-lg py-1 z-20 text-left font-semibold text-slate-700">
+                                  <Link
+                                    href={`/ordens/${o.id}`}
+                                    onClick={() => setActiveDropdownId(null)}
+                                    className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 text-xs w-full text-left"
+                                  >
+                                    <Eye className="h-3.5 w-3.5 text-slate-400" />
+                                    Detalhes
+                                  </Link>
+                                  <Link
+                                    href={`/ordens/${o.id}/editar`}
+                                    onClick={() => setActiveDropdownId(null)}
+                                    className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 text-xs w-full text-left"
+                                  >
+                                    <Edit3 className="h-3.5 w-3.5 text-slate-400" />
+                                    Editar
+                                  </Link>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveDropdownId(null);
+                                      setSelectedOrderForPDF(o);
+                                    }}
+                                    className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 text-xs w-full text-left"
+                                  >
+                                    <Printer className="h-3.5 w-3.5 text-slate-400" />
+                                    Imprimir
+                                  </button>
+                                  <div className="border-t border-slate-100 my-1" />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveDropdownId(null);
+                                      handleDelete(o.id);
+                                    }}
+                                    className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 hover:text-red-700 text-red-600 text-xs w-full text-left"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    Excluir
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </td>
 
@@ -490,10 +523,10 @@ export default function OrdersListPage() {
                           </p>
                         ) : (
                           <>
-                            <p className="border-b border-slate-200 pb-0.5">
+                            <p className={`border-b border-slate-200 pb-0.5 ${(Number(o.advance_value) || 0) > 0 ? 'text-emerald-600' : 'text-red-650'}`}>
                               AD R$ {(Number(o.advance_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </p>
-                            <p className={`pt-0.5 ${o.balance_value < 0 ? 'text-red-600' : 'text-slate-950'}`}>
+                            <p className={`pt-0.5 ${o.balance_value > 0 ? 'text-emerald-600' : 'text-red-650'}`}>
                               SD R$ {o.balance_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </p>
                           </>
