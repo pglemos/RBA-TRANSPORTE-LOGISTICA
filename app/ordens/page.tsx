@@ -14,7 +14,7 @@ import {
   Edit3, 
   Trash2, 
   Filter, 
-  Printer,
+  Printer, 
   AlertCircle,
   HelpCircle,
   AlertTriangle,
@@ -35,7 +35,7 @@ export default function OrdersListPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedOrderForPDF, setSelectedOrderForPDF] = useState<any | null>(null);
-  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
 
   // Messages
   const [msg, setMsg] = useState('');
@@ -318,26 +318,25 @@ export default function OrdersListPage() {
                     <th className="p-4">Veículo Conjugado</th>
                     <th className="p-4">Origem ➔ Destino</th>
                     <th className="p-4">Cliente Pagador</th>
-                    <th className="p-4">Valor CTE</th>
-                    <th className="p-4">Valor do Frete</th>
-                    <th className="p-4 min-w-[128px]">Saldo do Frete</th>
+                    <th className="p-4">Valor CTE / Frete</th>
+                    <th className="p-4 min-w-[170px]">Saldo do Frete</th>
                     <th className="p-4">Status Geral</th>
                     <th className="p-4 text-right">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-150 font-semibold text-slate-700">
-                  {filteredOrders.map((o, idx) => (
+                <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                  {filteredOrders.map((o) => (
                     <tr key={o.id} className="hover:bg-slate-50">
                       
               <td className="p-4">
                 <Link
                   href={`/ordens/${o.id}`}
-                  className={`font-black text-xs hover:underline inline-flex items-center gap-1 ${o.cte_number ? 'text-black' : 'text-black italic'}`}
+                  className="font-bold text-sm hover:underline inline-flex items-center gap-1 text-slate-900 dark:text-slate-100"
                 >
                   {!o.cte_number && <AlertTriangle className="h-3 w-3 animate-pulse text-red-500" />}
                   {o.cte_number || 'A emitir'}
                 </Link>
-                <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-slate-700">
+                <p className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-400">
                   Emissão: {formatFreightOrderEmissionDate(o)}
                 </p>
               </td>
@@ -345,53 +344,53 @@ export default function OrdersListPage() {
                       {/* Driver mask dynamically rendered */}
                       <td className="p-4">
                         <div>
-                          <p className="font-extrabold text-black">{o.driver_name}</p>
-                          <p className="text-[10px] text-slate-600 font-bold">CPF: {o.driver_cpf}</p>
+                          <p className="font-bold text-slate-900">{o.driver_name}</p>
+                          <p className="text-xs text-slate-500">CPF: {o.driver_cpf}</p>
                         </div>
                       </td>
 
                       {/* Vehicle Plates */}
                       <td className="p-4">
                         <div>
-                          <p className="font-extrabold text-xs text-black">{o.vehicle_tractor_plate} | {o.vehicle_trailer_plate}</p>
-                          <p className="text-[10px] text-slate-600 font-bold">{o.vehicle_model}</p>
+                          <p className="font-bold text-sm text-slate-900">{o.vehicle_tractor_plate} | {o.vehicle_trailer_plate}</p>
+                          <p className="text-xs text-slate-400">{o.vehicle_model}</p>
                         </div>
                       </td>
 
                       {/* Origin Destination */}
-                      <td className="p-4 text-black font-bold">
+                      <td className="p-4 text-slate-800">
                         <div>
                           <p>{o.origin} ➔ {o.destination}</p>
                         </div>
                       </td>
 
                       {/* Cliente */}
-                      <td className="p-4 text-black font-bold truncate max-w-[120px]">{o.client_name}</td>
+                      <td className="p-4 text-slate-550 truncate max-w-[120px]">{o.client_name}</td>
 
-                      {/* CTE value */}
-                      <td className="p-4 min-w-[108px] whitespace-nowrap text-[11px] font-black leading-tight tracking-normal text-black">
-                        R$ {(Number(o.cte_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      {/* CTE value & Frete value */}
+                      <td className="p-4 min-w-[140px] whitespace-nowrap text-xs leading-tight tracking-normal">
+                        <p className="font-bold text-slate-900">
+                          <span className="text-[10px] text-slate-400 uppercase font-extrabold mr-1">CTE:</span>
+                          R$ {(Number(o.cte_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                        <p className="text-slate-600 mt-0.5 font-medium">
+                          <span className="text-[10px] text-slate-400 uppercase font-extrabold mr-1">Frete:</span>
+                          R$ {(Number(o.freight_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
                       </td>
-
-                      {/* Valor do Frete */}
-                      <td className="p-4 min-w-[108px] whitespace-nowrap text-[11px] font-black leading-tight tracking-normal text-black">
-                        R$ {(Number(o.freight_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </td>
-
-                      {/* Residual driver balance - SINGLE LINE */}
-                      <td className="p-4 whitespace-nowrap font-bold text-black">
-                        <div className="whitespace-nowrap text-[11px] leading-tight tracking-normal">
+                      <td className="p-4 min-w-[170px] font-bold text-slate-900">
+                        <div className="w-max text-xs leading-tight tracking-normal">
                           {(Number(o.cash_value) || 0) > 0 ? (
-                            <span className="whitespace-nowrap text-emerald-700 font-black">
+                            <p className="whitespace-nowrap text-emerald-700">
                               À vista R$ {(Number(o.cash_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </span>
+                            </p>
                           ) : (
-                            <div className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                              <span className="whitespace-nowrap text-black font-bold">
+                            <div className="flex items-center gap-2 whitespace-nowrap">
+                              <span className={(Number(o.advance_value) || 0) > 0 ? 'text-emerald-600' : 'text-red-600'}>
                                 AD R$ {(Number(o.advance_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                               </span>
-                              <span className="text-slate-300">|</span>
-                              <span className={`whitespace-nowrap font-bold ${o.balance_value < 0 ? 'text-red-600' : 'text-black'}`}>
+                              <span className="text-slate-300 font-normal">|</span>
+                              <span className={o.balance_value > 0 ? 'text-emerald-600' : 'text-red-600'}>
                                 SD R$ {(Number(o.balance_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                               </span>
                             </div>
@@ -400,75 +399,77 @@ export default function OrdersListPage() {
                       </td>
 
                       {/* Status label */}
-                      <td className="p-4 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wide whitespace-nowrap inline-flex items-center gap-1 ${getFreightStatusMeta(o.status).className}`}>
+                      <td className="p-4">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide ${getFreightStatusMeta(o.status).className}`}>
                           {getFreightStatusMeta(o.status).icon} {normalizeFreightOrderStatus(o.status)}
                         </span>
                       </td>
 
-                      {/* Actions Dropdown */}
-                      <td className="p-4 text-right relative">
-                        <div className="inline-block text-left">
-                          <button
-                            type="button"
-                            onClick={() => setOpenDropdownId(openDropdownId === o.id ? null : o.id)}
-                            className="p-2 hover:bg-slate-100 rounded-full text-slate-500 hover:text-slate-700 transition-colors focus:outline-none cursor-pointer"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </button>
-                          {openDropdownId === o.id && (
-                            <>
-                              <div 
-                                className="fixed inset-0 z-10" 
-                                onClick={() => setOpenDropdownId(null)}
-                              />
-                              <div className={`absolute right-0 w-40 rounded-xl bg-white border border-slate-200 shadow-lg py-1 z-20 ${
-                                idx >= filteredOrders.length - 2 && filteredOrders.length > 2
-                                  ? 'bottom-full mb-2' 
-                                  : 'mt-2'
-                              }`}>
-                                <Link
-                                  href={`/ordens/${o.id}`}
-                                  onClick={() => setOpenDropdownId(null)}
-                                  className="flex items-center px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
-                                >
-                                  <FileText className="h-4 w-4 text-slate-400 mr-2 shrink-0" />
-                                  Detalhes
-                                </Link>
-                                <Link
-                                  href={`/ordens/${o.id}/editar`}
-                                  onClick={() => setOpenDropdownId(null)}
-                                  className="flex items-center px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
-                                >
-                                  <Edit3 className="h-4 w-4 text-slate-400 mr-2 shrink-0" />
-                                  Editar
-                                </Link>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setOpenDropdownId(null);
-                                    setSelectedOrderForPDF(o);
-                                  }}
-                                  className="flex items-center w-full text-left px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
-                                >
-                                  <Printer className="h-4 w-4 text-slate-400 mr-2 shrink-0" />
-                                  Imprimir
-                                </button>
-                                <div className="border-t border-slate-100 my-1" />
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setOpenDropdownId(null);
-                                    handleDelete(o.id);
-                                  }}
-                                  className="flex items-center w-full text-left px-4 py-2 text-xs font-semibold text-red-655 hover:bg-red-50 transition-colors cursor-pointer"
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-400 mr-2 shrink-0" />
-                                  Excluir
-                                </button>
-                              </div>
-                            </>
-                          )}
+                      {/* Kebab action dropdown menu */}
+                      <td className="p-4 text-right">
+                        <div className="flex items-center justify-end">
+                          <div className="relative inline-block text-left">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveDropdownId(activeDropdownId === o.id ? null : o.id);
+                              }}
+                              className="p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors focus:outline-hidden"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </button>
+
+                            {activeDropdownId === o.id && (
+                              <>
+                                <div 
+                                  className="fixed inset-0 z-10" 
+                                  onClick={() => setActiveDropdownId(null)}
+                                />
+                                <div className="absolute right-0 mt-1.5 w-36 rounded-xl bg-white border border-slate-200 shadow-lg py-1.5 z-20 text-left font-semibold text-slate-750 animate-slide-in">
+                                  <Link
+                                    href={`/ordens/${o.id}`}
+                                    onClick={() => setActiveDropdownId(null)}
+                                    className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 text-xs w-full text-left"
+                                  >
+                                    <Eye className="h-3.5 w-3.5 text-slate-400" />
+                                    Detalhes
+                                  </Link>
+                                  <Link
+                                    href={`/ordens/${o.id}/editar`}
+                                    onClick={() => setActiveDropdownId(null)}
+                                    className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 text-xs w-full text-left"
+                                  >
+                                    <Edit3 className="h-3.5 w-3.5 text-slate-400" />
+                                    Editar
+                                  </Link>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveDropdownId(null);
+                                      setSelectedOrderForPDF(o);
+                                    }}
+                                    className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 text-xs w-full text-left"
+                                  >
+                                    <Printer className="h-3.5 w-3.5 text-slate-400" />
+                                    Imprimir
+                                  </button>
+                                  <div className="border-t border-slate-100 my-1" />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveDropdownId(null);
+                                      handleDelete(o.id);
+                                    }}
+                                    className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 hover:text-red-700 text-red-600 text-xs w-full text-left"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    Excluir
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </td>
 
@@ -480,86 +481,27 @@ export default function OrdersListPage() {
 
             {/* Mobile Cards View */}
             <div className="block md:hidden divide-y divide-slate-150">
-              {filteredOrders.map((o, idx) => (
+              {filteredOrders.map((o) => (
                 <div key={o.id} className="p-4 space-y-4 hover:bg-slate-50">
                   <div className="flex justify-between items-start">
                     <div>
                       <span className="text-[10px] text-slate-400 font-bold uppercase block tracking-wider">CTE/MANIFESTO</span>
-                      <Link
-                        href={`/ordens/${o.id}`}
-                        className={`font-extrabold text-sm hover:underline inline-flex items-center gap-1 ${o.cte_number ? 'text-slate-900' : 'text-slate-400 italic'}`}
-                      >
-                        {!o.cte_number && <AlertTriangle className="h-3.5 w-3.5 animate-pulse text-red-500" />}
-                        {o.cte_number || 'A emitir'}
-                      </Link>
-                      <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                        Emissão: {formatFreightOrderEmissionDate(o)}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1.5 relative">
+                <Link
+                  href={`/ordens/${o.id}`}
+                  className="font-extrabold text-sm hover:underline inline-flex items-center gap-1 text-slate-900 dark:text-slate-100"
+                >
+                  {!o.cte_number && <AlertTriangle className="h-3.5 w-3.5 animate-pulse text-red-500" />}
+                  {o.cte_number || 'A emitir'}
+                </Link>
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                  Emissão: {formatFreightOrderEmissionDate(o)}
+                </p>
+              </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block tracking-wider text-right mb-1">STATUS</span>
                       <span className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-wide inline-flex items-center gap-1 ${getFreightStatusMeta(o.status).className}`}>
                         {getFreightStatusMeta(o.status).icon} {normalizeFreightOrderStatus(o.status)}
                       </span>
-                      {/* Three dots dropdown on mobile */}
-                      <div className="inline-block text-left mt-1">
-                        <button
-                          type="button"
-                          onClick={() => setOpenDropdownId(openDropdownId === o.id ? null : o.id)}
-                          className="p-1 hover:bg-slate-100 rounded-full text-slate-500 hover:text-slate-700 transition-colors focus:outline-none cursor-pointer"
-                        >
-                          <MoreVertical className="h-4.5 w-4.5" />
-                        </button>
-                        {openDropdownId === o.id && (
-                          <>
-                            <div className="fixed inset-0 z-10" onClick={() => setOpenDropdownId(null)} />
-                            <div className={`absolute right-0 w-40 rounded-xl bg-white border border-slate-200 shadow-lg py-1 z-20 ${
-                              idx >= filteredOrders.length - 2 && filteredOrders.length > 2
-                                ? 'bottom-full mb-2'
-                                : 'mt-1'
-                            }`}>
-                              <Link
-                                href={`/ordens/${o.id}`}
-                                onClick={() => setOpenDropdownId(null)}
-                                className="flex items-center px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                              >
-                                <FileText className="h-4 w-4 text-slate-400 mr-2 shrink-0" />
-                                Detalhes
-                              </Link>
-                              <Link
-                                href={`/ordens/${o.id}/editar`}
-                                onClick={() => setOpenDropdownId(null)}
-                                className="flex items-center px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                              >
-                                <Edit3 className="h-4 w-4 text-slate-400 mr-2 shrink-0" />
-                                Editar
-                              </Link>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setOpenDropdownId(null);
-                                  setSelectedOrderForPDF(o);
-                                }}
-                                className="flex items-center w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
-                              >
-                                <Printer className="h-4 w-4 text-slate-400 mr-2 shrink-0" />
-                                Imprimir
-                              </button>
-                              <div className="border-t border-slate-100 my-1" />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setOpenDropdownId(null);
-                                  handleDelete(o.id);
-                                }}
-                                className="flex items-center w-full text-left px-4 py-2.5 text-xs font-semibold text-red-655 hover:bg-red-50 cursor-pointer"
-                              >
-                                <Trash2 className="h-4 w-4 text-red-400 mr-2 shrink-0" />
-                                Excluir
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
                     </div>
                   </div>
 
@@ -579,32 +521,61 @@ export default function OrdersListPage() {
                       <p className="text-slate-800 mt-0.5">{o.origin} ➔ {o.destination}</p>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Valor CTE</span>
-                      <p className="font-extrabold text-slate-950 mt-0.5">R$ {(Number(o.cte_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Valor CTE / Frete</span>
+                      <p className="font-extrabold text-slate-950 mt-0.5 text-xs">
+                        <span className="text-[10px] text-slate-400 uppercase mr-1">CTE:</span>
+                        R$ {(Number(o.cte_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                      <p className="font-semibold text-slate-700 text-[11px] mt-0.5">
+                        <span className="text-[10px] text-slate-400 uppercase mr-1">Frete:</span>
+                        R$ {(Number(o.freight_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Valor do Frete</span>
-                      <p className="font-extrabold text-slate-950 mt-0.5">R$ {(Number(o.freight_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                    </div>
-                    <div className="col-span-2">
                       <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Saldo Frete</span>
-                      <div className="text-[11px] mt-0.5 font-bold text-black leading-tight">
+                      <div className="text-[11px] mt-0.5 font-bold text-slate-950 leading-tight">
                         {(Number(o.cash_value) || 0) > 0 ? (
-                          <p className="text-emerald-700 font-black">
+                          <p className="text-emerald-700">
                             À vista R$ {(Number(o.cash_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </p>
                         ) : (
-                          <div className="flex items-center gap-2 whitespace-nowrap">
-                            <span className="whitespace-nowrap text-black font-bold">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={(Number(o.advance_value) || 0) > 0 ? 'text-emerald-600' : 'text-red-650'}>
                               AD R$ {(Number(o.advance_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </span>
-                            <span className="text-slate-300">|</span>
-                            <span className={`whitespace-nowrap font-bold ${o.balance_value < 0 ? 'text-red-600' : 'text-black'}`}>
+                            <span className="text-slate-300 font-normal">|</span>
+                            <span className={o.balance_value > 0 ? 'text-emerald-600' : 'text-red-650'}>
                               SD R$ {(Number(o.balance_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </span>
                           </div>
                         )}
                       </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-slate-100 pt-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedOrderForPDF(o)}
+                      className="p-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg inline-flex items-center gap-1.5 cursor-pointer text-[10px] uppercase font-bold"
+                    >
+                      <Printer className="h-3 w-3" />
+                      Imprimir PDF
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/ordens/${o.id}/editar`}
+                        className="p-2 bg-slate-950 hover:bg-slate-800 text-white rounded-lg text-[10px] uppercase font-bold"
+                      >
+                        Editar
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(o.id)}
+                        className="p-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 </div>
