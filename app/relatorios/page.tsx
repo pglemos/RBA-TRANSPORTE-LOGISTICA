@@ -396,7 +396,7 @@ export default function ReportsPage() {
                           <td className="p-3 text-right text-red-600 font-semibold">R$ {totalExpensesRow.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                           <td className="p-3 text-right font-black" style={{ color: liquidoRBA >= 0 ? '#065f46' : '#b91c1c' }}>R$ {liquidoRBA.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                           <td className="p-3 text-center">
-                            <span className={`p-0.5 px-2 rounded text-[9px] uppercase font-bold ${getFreightStatusMeta(o.status).className}`}>
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] uppercase font-bold ${getFreightStatusMeta(o.status).className}`}>
                               {getFreightStatusMeta(o.status).icon} {normalizeFreightOrderStatus(o.status)}
                             </span>
                           </td>

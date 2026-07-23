@@ -1,187 +1,138 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
-:root {
-  --rba-bg: oklch(96.5% 0.01 83);
-  --rba-surface: oklch(98.5% 0.006 83);
-  --rba-surface-muted: oklch(97.2% 0.01 83);
-  --rba-border: oklch(88.5% 0.018 83);
-  --rba-text: oklch(19% 0.025 255);
-  --rba-muted: oklch(48% 0.04 255);
-  --rba-gold: oklch(76% 0.13 82);
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--rba-bg);
+@layer reset, base, theme, components, utilities;
+
+@layer base {
+  :root {
+    --rba-bg: #f8fafc;
+    --rba-surface: #ffffff;
+    --rba-surface-muted: #f1f5f9;
+    --rba-border: #e2e8f0;
+    --rba-text: #0f172a;
+    --rba-muted: #64748b;
+    --rba-gold: #c5a866;
+    --rba-gold-dark: #9e8245;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--rba-bg);
+    color: var(--rba-text);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .font-heading,
+  .heading-font {
+    font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  :where(input, select, textarea) {
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  :where(input:focus, select:focus, textarea:focus) {
+    outline: none;
+    border-color: var(--rba-gold);
+    box-shadow: 0 0 0 3px rgba(197, 168, 102, 0.2);
+  }
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-.font-heading,
-.heading-font {
-  font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+/* Custom Premium Scrollbar */
+@layer utilities {
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  /* Soft Animations */
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(4px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .animate-slide-in {
+    animation: slideIn 0.2s ease-out forwards;
+  }
 }
 
-html {
-  scroll-behavior: smooth;
+/* Premium Card & Panels styles */
+@layer components {
+  .card-premium {
+    background: var(--rba-surface);
+    border: 1px solid var(--rba-border);
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+
+  .card-premium:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+  }
 }
 
-body {
-  background: var(--rba-bg);
-}
+/* Print Media Overrides */
+@media print {
+  body, html, #rba-app-root {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
 
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+  #pdf-modal-overlay {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    display: block !important;
+    z-index: auto !important;
+  }
 
-::-webkit-scrollbar-track {
-  background: #eef2f7;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border: 2px solid #eef2f7;
-  border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #9aa7b7;
-}
-
-.glass-panel {
-  background: var(--rba-surface);
-  border: 1px solid var(--rba-border);
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
-}
-
-.glass-panel-hover {
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.glass-panel-hover:hover {
-  border-color: rgba(216, 180, 93, 0.45);
-  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.1);
-  transform: translateY(-2px);
-}
-
-#rba-app-root {
-  background:
-    radial-gradient(circle at top left, oklch(76% 0.13 82 / 0.12), transparent 28rem),
-    linear-gradient(180deg, var(--rba-bg) 0%, oklch(94.5% 0.012 83) 100%) !important;
-  color: var(--rba-text) !important;
-}
-
-#rba-app-root .bg-white {
-  background-color: var(--rba-surface) !important;
-  color: var(--rba-text) !important;
-}
-
-#rba-app-root .bg-slate-950,
-#rba-app-root .bg-slate-900 {
-  background-color: var(--rba-surface) !important;
-  color: var(--rba-text) !important;
-}
-
-#rba-app-root .bg-slate-100,
-#rba-app-root .bg-slate-55,
-#rba-app-root .bg-slate-50 {
-  background-color: var(--rba-surface-muted) !important;
-  color: #334155 !important;
-}
-
-#rba-app-root .border,
-#rba-app-root .border-b,
-#rba-app-root .border-t,
-#rba-app-root .border-l,
-#rba-app-root .border-r,
-#rba-app-root .border-slate-100,
-#rba-app-root .border-slate-150,
-#rba-app-root .border-slate-200,
-#rba-app-root .border-slate-850,
-#rba-app-root .border-slate-900 {
-  border-color: var(--rba-border) !important;
-}
-
-#rba-app-root .text-white,
-#rba-app-root .text-slate-100,
-#rba-app-root .text-slate-200,
-#rba-app-root .text-slate-300,
-#rba-app-root .text-slate-800,
-#rba-app-root .text-slate-900 {
-  color: #0f172a !important;
-}
-
-#rba-app-root .text-slate-650,
-#rba-app-root .text-slate-700 {
-  color: #334155 !important;
-}
-
-#rba-app-root .text-slate-400,
-#rba-app-root .text-slate-450,
-#rba-app-root .text-slate-500,
-#rba-app-root .text-slate-550,
-#rba-app-root .text-slate-600 {
-  color: #64748b !important;
-}
-
-#rba-app-root input,
-#rba-app-root select,
-#rba-app-root textarea {
-  background: var(--rba-surface) !important;
-  border: 1px solid #cbd5e1 !important;
-  color: #0f172a !important;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
-}
-
-#rba-app-root input:focus,
-#rba-app-root select:focus,
-#rba-app-root textarea:focus {
-  border-color: rgba(216, 180, 93, 0.9) !important;
-  box-shadow: 0 0 0 4px rgba(216, 180, 93, 0.16) !important;
-}
-
-#rba-app-root table,
-#rba-app-root tr,
-#rba-app-root td,
-#rba-app-root th,
-#rba-app-root .divide-slate-150,
-#rba-app-root .divide-y > :not([hidden]) ~ :not([hidden]) {
-  border-color: #e2e8f0 !important;
-}
-
-#rba-app-root .hover\:bg-slate-50:hover {
-  background: #f8fafc !important;
-}
-
-#rba-app-root .bg-emerald-50,
-#rba-app-root .bg-emerald-100 {
-  background: #ecfdf5 !important;
-  border-color: #bbf7d0 !important;
-}
-
-#rba-app-root .bg-red-50,
-#rba-app-root .bg-red-100 {
-  background: #fff1f2 !important;
-  border-color: #fecdd3 !important;
-}
-
-#rba-app-root .bg-yellow-50,
-#rba-app-root .bg-yellow-100,
-#rba-app-root .bg-yellow-400\/10 {
-  background: #fff7df !important;
-  border-color: #ead18b !important;
-}
-
-#rba-app-root .bg-blue-50,
-#rba-app-root .bg-blue-100 {
-  background: #eff6ff !important;
-  border-color: #bfdbfe !important;
-}
-
-#rba-app-root .bg-purple-100 {
-  background: #f5f3ff !important;
-  border-color: #ddd6fe !important;
+  #pdf-modal-overlay > div {
+    max-width: 100% !important;
+    width: 100% !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
 }

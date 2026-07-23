@@ -41,8 +41,8 @@ export async function POST(req: NextRequest) {
       bank_agency: String(body.bank_agency || '').trim(),
       bank_account: String(body.bank_account || '').trim(),
       pix_key: String(body.pix_key || '').trim(),
-      beneficiary_name: String(body.beneficiary_name || body.name || '').trim(),
-      beneficiary_document: normalizeDocument(body.beneficiary_document || body.cpf || ''),
+      beneficiary_name: body.beneficiary_name ? String(body.beneficiary_name).trim() : '',
+      beneficiary_document: body.beneficiary_document ? normalizeDocument(body.beneficiary_document) : '',
     };
 
     const parsed = DriverSchema.safeParse(payload);
@@ -63,6 +63,9 @@ export async function POST(req: NextRequest) {
         bank_name: parsed.data.bank_name || '',
         bank_agency: parsed.data.bank_agency || '',
         bank_account: parsed.data.bank_account || '',
+        pix_key: parsed.data.pix_key || '',
+        beneficiary_name: parsed.data.beneficiary_name || '',
+        beneficiary_document: parsed.data.beneficiary_document || '',
       },
       session.id,
       session.name,

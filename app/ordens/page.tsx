@@ -14,11 +14,12 @@ import {
   Edit3, 
   Trash2, 
   Filter, 
-  Printer, 
+  Printer,
   AlertCircle,
   HelpCircle,
   AlertTriangle,
-  MoreVertical
+  MoreVertical,
+  Eye
 } from 'lucide-react';
 
 export default function OrdersListPage() {
@@ -145,9 +146,11 @@ export default function OrdersListPage() {
   return (
     <HeaderAndSidebar>
       <div className="space-y-6">
-        
-        {/* Header section */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200">
+
+        <div className="space-y-6 print:hidden">
+
+          {/* Header section */}
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200">
           <div>
             <h1 className="text-xl font-black text-slate-900 tracking-tight">Fichas e Ordens de Fretes Digitais</h1>
             <p className="text-xs text-slate-500 mt-1">Veja todos os contratos digitais vigentes. Imprima fichas no padrão Sefaz ou gerencie status operacionais.</p>
@@ -307,9 +310,9 @@ export default function OrdersListPage() {
             
             {/* Desktop Table View */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full min-w-[1200px] text-left text-xs border-collapse">
+              <table className="w-full min-w-[1200px] text-left text-sm border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 text-slate-400 font-bold border-b border-slate-200 text-[10px]">
+                  <tr className="bg-slate-50 text-slate-500 font-heading font-semibold border-b border-slate-200 text-xs uppercase tracking-wider">
                     <th className="p-4">CTE/MANIFESTO</th>
                     <th className="p-4">Motorista Condutor</th>
                     <th className="p-4">Veículo Conjugado</th>
@@ -610,6 +613,8 @@ export default function OrdersListPage() {
 
           </div>
         )}
+
+        </div>
 
         {/* PRINTABLE PDF POPUP DIALOG TRIGGER */}
         {selectedOrderForPDF && (

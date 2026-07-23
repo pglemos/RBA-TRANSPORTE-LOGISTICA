@@ -167,7 +167,7 @@ export default function FreightOrderForm({ initialData }: Props) {
   const [freightValue, setFreightValue] = useState(initialData?.freight_value || 0);
   const [advanceValue, setAdvanceValue] = useState(initialData?.advance_value || 0);
   const [cashValue, setCashValue] = useState(initialData?.cash_value || 0);
-  const [balanceValue, setBalanceValue] = useState(initialData?.balance_value || 0);
+  const [balanceValue, setBalanceValue] = useState<number | ''>(initialData?.balance_value !== undefined ? initialData.balance_value : '');
   const [loadingExpense, setLoadingExpense] = useState(initialData?.loading_expense || 0);
   const [unloadingExpense, setUnloadingExpense] = useState(initialData?.unloading_expense || 0);
   const [otherExpenses, setOtherExpenses] = useState(initialData?.other_expenses || 0);
@@ -401,7 +401,7 @@ export default function FreightOrderForm({ initialData }: Props) {
       setErrorMessage("O valor do frete é obrigatório e deve ser maior que zero.");
       return;
     }
-    if (balanceValue < 0 && !confirmNegativeBalance) {
+    if (typeof balanceValue === 'number' && balanceValue < 0 && !confirmNegativeBalance) {
       setErrorMessage("⚠️ ATENÇÃO: O saldo do frete restou negativo! Marque a confirmação de override no campo SALDO.");
       return;
     }
@@ -433,7 +433,7 @@ export default function FreightOrderForm({ initialData }: Props) {
       freight_value: freightValue,
       advance_value: advanceValue,
       cash_value: cashValue,
-      balance_value: balanceValue,
+      balance_value: balanceValue === '' ? undefined : balanceValue,
       loading_expense: loadingExpense,
       unloading_expense: unloadingExpense,
       other_expenses: otherExpenses,
@@ -490,11 +490,11 @@ export default function FreightOrderForm({ initialData }: Props) {
   }
 
   // ---- Shared style tokens to mimic the printed sheet ----
-  const cell = "flex items-stretch border-b-2 border-slate-900 last:border-b-0";
-  const label = "flex items-center px-2 py-1.5 text-[10px] md:text-[11px] font-extrabold uppercase tracking-tight text-slate-900 whitespace-nowrap shrink-0";
-  const field = "flex-1 min-w-0 bg-transparent outline-none px-2 py-1.5 text-xs md:text-sm font-semibold text-blue-800";
+  const cell = "flex items-stretch border-b border-slate-150 last:border-b-0";
+  const label = "flex items-center px-3 py-2 text-[10px] md:text-[11px] font-bold uppercase tracking-wider text-slate-500 bg-slate-50 border-r border-slate-150 whitespace-nowrap shrink-0 select-none";
+  const field = "flex-1 min-w-0 bg-white outline-none px-3 py-2 text-xs md:text-sm font-bold text-slate-900 focus:bg-amber-500/5";
   const selectField = field + " cursor-pointer";
-  const divider = "border-l-2 border-slate-900";
+  const divider = "border-l border-slate-150";
   const canEnterBuonnyCode = buonnyStatus === 'Aprovado';
 
   return (
@@ -521,11 +521,11 @@ export default function FreightOrderForm({ initialData }: Props) {
       <form id="freight-order-master-form" onSubmit={handleSaveOrder}>
 
         {/* ===================== FICHA DE FRETE (réplica do papel) ===================== */}
-        <div className="mx-auto max-w-3xl bg-white border-2 border-slate-900 shadow-lg">
+        <div className="mx-auto max-w-3xl bg-white border border-slate-200 rounded-2xl shadow-md overflow-hidden">
 
           {/* TÍTULO */}
-          <div className="border-b-2 border-slate-900 px-3 py-2.5">
-            <h2 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900 uppercase text-center leading-none">
+          <div className="border-b border-slate-200 bg-slate-50 px-6 py-4">
+            <h2 className="text-xl md:text-2xl font-black tracking-tight text-slate-900 uppercase text-center leading-none">
               RBA Transporte e Logística
             </h2>
           </div>
@@ -649,16 +649,17 @@ export default function FreightOrderForm({ initialData }: Props) {
                   name="balance_value"
                   type="number"
                   step="0.01"
-                  value={balanceValue || ''}
-                  onChange={(e) => setBalanceValue(Number(e.target.value))}
-                  className={`${field} font-black ${balanceValue < 0 ? 'text-rose-600' : 'text-blue-800'}`}
+                  value={balanceValue !== undefined && balanceValue !== null ? balanceValue : ''}
+                  placeholder={String(freightValue - advanceValue - cashValue)}
+                  onChange={(e) => setBalanceValue(e.target.value === '' ? '' : Number(e.target.value))}
+                  className={`${field} font-black ${typeof balanceValue === 'number' && balanceValue < 0 ? 'text-rose-600' : 'text-blue-800'}`}
                 />
               </div>
           </div>
 
           {/* Override saldo negativo */}
-          {balanceValue < 0 && (
-            <div className="border-b-2 border-slate-900 bg-red-50 px-2 py-1.5">
+          {typeof balanceValue === 'number' && balanceValue < 0 && (
+            <div className="border-b border-slate-200 bg-red-50/50 px-4 py-3">
               <label className="flex items-center gap-2 text-[11px] font-bold text-red-800 cursor-pointer select-none">
                 <input id="chk-negative-balance" name="confirm_negative_balance" type="checkbox" checked={confirmNegativeBalance} onChange={(e) => setConfirmNegativeBalance(e.target.checked)} className="h-4 w-4" />
                 Saldo negativo — confirmo e assumo override operacional desta ficha.
@@ -769,7 +770,7 @@ export default function FreightOrderForm({ initialData }: Props) {
               </div>
 
               {/* Liberação de Embarque / Resp. */}
-              <div className="mt-2 flex items-stretch border-t-2 border-slate-900">
+              <div className="flex items-stretch border-t border-slate-200">
                 <div className="flex items-stretch flex-1 min-w-0">
                   <span className={label}>Liberação de Embarque:</span>
                   <div className="flex flex-1 min-w-0 items-stretch">
@@ -799,7 +800,7 @@ export default function FreightOrderForm({ initialData }: Props) {
                         maxLength={20}
                         placeholder="Código Buonny"
                         aria-label="Código da consulta Buonny"
-                        className={`${field} w-[45%] flex-none border-l-2 border-slate-900 tracking-wide placeholder:font-semibold placeholder:tracking-normal placeholder:text-slate-400`}
+                        className={`${field} w-[45%] flex-none border-l border-slate-150 tracking-wide placeholder:font-semibold placeholder:tracking-normal placeholder:text-slate-400`}
                       />
                     )}
                   </div>
@@ -820,7 +821,7 @@ export default function FreightOrderForm({ initialData }: Props) {
             </div>
             {/* CTE */}
             <div className={`flex flex-col w-[34%] ${divider}`}>
-              <span className={`${label} border-b-2 border-slate-900 justify-center`}>CTE:</span>
+              <span className={`${label} border-b border-slate-150 justify-center`}>CTE:</span>
               <input
                 id="ip-cte"
                 name="cte_number"
@@ -830,7 +831,7 @@ export default function FreightOrderForm({ initialData }: Props) {
                 placeholder="0000 / 0000"
                 className={field + ' text-center text-base font-bold'}
               />
-              <span className={`${label} border-t-2 border-slate-900 justify-center`}>Valor do CTE:</span>
+              <span className={`${label} border-t border-slate-150 justify-center`}>Valor do CTE:</span>
               <input
                 id="ip-cte-value"
                 name="cte_value"
@@ -845,7 +846,7 @@ export default function FreightOrderForm({ initialData }: Props) {
 
           {/* Justificativa override liberação */}
           {shipmentReleaseStatus !== 'Contratar' && buonnyStatus !== 'Aprovado' && (
-            <div className="border-b-2 border-slate-900 bg-amber-50 px-2 py-1.5">
+            <div className="border-b border-slate-200 bg-amber-50/50 px-4 py-3">
               <input
                 id="ip-justification"
                 name="release_justification"
@@ -876,14 +877,14 @@ export default function FreightOrderForm({ initialData }: Props) {
 
           {/* TIPO DE VEÍCULO (2 linhas) */}
           <div className={cell}>
-            <div className="flex items-center px-2 w-[28%] shrink-0 border-r-2 border-slate-900">
+            <div className="flex items-center px-3 w-[28%] shrink-0 border-r border-slate-150">
               <span className="text-[10px] md:text-[11px] font-extrabold uppercase tracking-tight text-slate-900 leading-tight">
                 Tipo de Veículo:
               </span>
             </div>
             <div className="flex-1 min-w-0">
               {/* busca do conjunto */}
-              <div className="flex items-stretch border-b-2 border-slate-900">
+              <div className="flex items-stretch border-b border-slate-150">
                 <VehicleCombobox
                   vehicles={vehicles}
                   value={vehicleId}
@@ -898,7 +899,7 @@ export default function FreightOrderForm({ initialData }: Props) {
                   name="vehicle_type"
                   value={vehicleDraft.vehicle_type || 'Carreta'}
                   onChange={(e) => updateVehicleDraft({ vehicle_type: e.target.value as VehicleDraft['vehicle_type'] })}
-                  className={`${selectField} w-[34%] flex-none border-l-2 border-slate-900`}
+                  className={`${selectField} w-[34%] flex-none border-l border-slate-150`}
                   disabled={isEdit && !!vehicleId}
                 >
                   {VEHICLE_TYPES.map((type) => (
@@ -907,7 +908,7 @@ export default function FreightOrderForm({ initialData }: Props) {
                 </select>
               </div>
               {/* PLACA CAV / CARR */}
-              <div className="flex items-stretch border-b-2 border-slate-900">
+              <div className="flex items-stretch border-b border-slate-150">
                 <div className="flex items-stretch flex-1 min-w-0">
                   <span className={label}>Placa Cav.:</span>
                   <VehicleCombobox
@@ -952,7 +953,7 @@ export default function FreightOrderForm({ initialData }: Props) {
                     placeholder="Fab."
                     readOnly={isEdit && !!vehicleId}
                   />
-                  <span className="flex items-center border-l-2 border-r-2 border-slate-900 px-2 text-sm font-black text-slate-900">/</span>
+                  <span className="flex items-center border-l border-r border-slate-150 px-2 text-sm font-black text-slate-500 bg-slate-50">/</span>
                   <input
                     id="ip-vehicle-model-year"
                     name="vehicle_model_year"
@@ -1012,8 +1013,8 @@ export default function FreightOrderForm({ initialData }: Props) {
           </div>
 
           {/* DADOS ADICIONAIS VEÍCULO (cabeçalho) */}
-          <div className="border-b-2 border-slate-900 px-2 py-1.5">
-            <span className="text-[11px] md:text-xs font-black uppercase tracking-tight text-slate-900">Dados Adicionais Veículo</span>
+          <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+            <span className="text-[11px] md:text-xs font-bold uppercase tracking-tight text-slate-500">Dados Adicionais Veículo</span>
           </div>
 
           {/* PROPRIETÁRIO */}
@@ -1260,7 +1261,7 @@ function DriverCombobox({
         className={inputClass}
       />
       {open && (
-        <div className="absolute z-30 left-0 right-0 top-full mt-0.5 max-h-60 overflow-auto bg-white border-2 border-slate-900 rounded-md shadow-xl">
+        <div className="absolute z-30 left-0 right-0 top-full mt-1 max-h-60 overflow-auto bg-white border border-slate-200 rounded-xl shadow-xl animate-slide-in">
           {filtered.length === 0 ? (
             <div className="px-3 py-2 text-xs text-slate-500">Nenhum motorista encontrado.</div>
           ) : (
@@ -1271,7 +1272,7 @@ function DriverCombobox({
                 tabIndex={0}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => { onChange(d.id); setEditing(false); setOpen(false); setQuery(''); }}
-                className={`w-full text-left px-3 py-2 border-b border-slate-100 last:border-b-0 hover:bg-yellow-50 ${d.id === value ? 'bg-yellow-100' : ''}`}
+                className={`w-full text-left px-3 py-2 border-b border-slate-100 last:border-b-0 hover:bg-amber-500/10 hover:text-slate-950 ${d.id === value ? 'bg-amber-500/10 text-slate-950 font-bold' : 'text-slate-700'}`}
               >
                 <span className="block text-xs font-bold text-slate-900">
                   {d.name}{d.status === 'Bloqueado' ? ' ⚠ (BLOQUEADO)' : ''}
@@ -1370,7 +1371,7 @@ function VehicleCombobox({
         className={inputClass}
       />
       {open && (
-        <div className="absolute z-30 left-0 right-0 top-full mt-0.5 max-h-60 overflow-auto bg-white border-2 border-slate-900 rounded-md shadow-xl">
+        <div className="absolute z-30 left-0 right-0 top-full mt-1 max-h-60 overflow-auto bg-white border border-slate-200 rounded-xl shadow-xl animate-slide-in">
           {filtered.length === 0 ? (
             <div className="px-3 py-2 text-xs text-slate-500">Nenhum veículo encontrado.</div>
           ) : (
@@ -1381,7 +1382,7 @@ function VehicleCombobox({
                 tabIndex={0}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => { onChange(v.id); setEditing(false); setOpen(false); setQuery(''); }}
-                className={`w-full text-left px-3 py-2 border-b border-slate-100 last:border-b-0 hover:bg-yellow-50 ${v.id === value ? 'bg-yellow-100' : ''}`}
+                className={`w-full text-left px-3 py-2 border-b border-slate-100 last:border-b-0 hover:bg-amber-500/10 hover:text-slate-950 ${v.id === value ? 'bg-amber-500/10 text-slate-950 font-bold' : 'text-slate-700'}`}
               >
                 <span className="block text-xs font-bold text-slate-900">
                   {v.tractor_plate || '—'} / {v.trailer_plate || '—'}{v.status === 'Bloqueado' ? ' ⚠ (BLOQUEADO)' : ''}
