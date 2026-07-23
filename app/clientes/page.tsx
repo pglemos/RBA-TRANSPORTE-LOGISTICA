@@ -235,96 +235,110 @@ export default function ClientsPage() {
 
         {/* INPUT COLLAPSIBLE PANEL */}
         {showForm && (
-          <div className="bg-white border-2 border-yellow-500/20 rounded-3xl p-6 shadow-xs space-y-4">
-            <div className="border-b pb-3 flex justify-between items-center">
-              <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">
-                {editingId ? 'Editar Cliente Tomador' : 'Adicionar Novo Tomador de Frete'}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="text-xs font-semibold text-slate-500 hover:text-slate-700"
-              >
-                Cancelar
-              </button>
+          <div className="fixed inset-0 z-50 overflow-hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+            <div className="absolute inset-0 overflow-hidden">
+              {/* Dark backdrop overlay */}
+              <div 
+                className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity duration-300" 
+                onClick={() => setShowForm(false)} 
+              />
+
+              <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+                <div className="pointer-events-auto w-screen max-w-2xl transform transition duration-500 ease-in-out sm:duration-700">
+                  <div className="flex h-full flex-col overflow-y-scroll bg-white p-6 shadow-2xl space-y-6">
+                    <div className="border-b pb-3 flex justify-between items-center">
+                      <h3 id="slide-over-title" className="text-xs font-black text-slate-900 uppercase tracking-widest">
+                        {editingId ? 'Editar Cliente Tomador' : 'Adicionar Novo Tomador de Frete'}
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => setShowForm(false)}
+                        className="text-xs font-semibold text-slate-500 hover:text-slate-700"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleSaveClient} className="space-y-6 flex-1 flex flex-col justify-between">
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold text-slate-500">Razão Social / Nome Fantasia *</label>
+                            <input
+                              id="ip-cli-name"
+                              type="text"
+                              required
+                              placeholder="Ex: Coca Cola Brasil S.A."
+                              value={name}
+                              onChange={(e) => setName(e.target.value)}
+                              className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold text-slate-500">CNPJ / CPF de Cobrança *</label>
+                            <input
+                              id="ip-cli-doc"
+                              type="text"
+                              required
+                              placeholder="Ex: 12.345.678/0001-90"
+                              value={document}
+                              onChange={(e) => setDocument(formatCpfOrCnpj(e.target.value))}
+                              className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold text-slate-500">Faturamento E-mail Contato</label>
+                            <input
+                              id="ip-cli-email"
+                              type="email"
+                              placeholder="Ex: financeiro@cliente.com"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                              className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold text-slate-500">Telefone / Sac Logística</label>
+                            <input
+                              id="ip-cli-phone"
+                              type="text"
+                              placeholder="Ex: (11) 4004-0000"
+                              value={phone}
+                              onChange={(e) => setPhone(formatTelefone(e.target.value))}
+                              className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-2 border-t pt-4 mt-8">
+                        <button
+                          type="button"
+                          onClick={() => setShowForm(false)}
+                          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-lg"
+                        >
+                          Fechar
+                        </button>
+                        <button
+                          id="cli-save-btn"
+                          type="submit"
+                          disabled={saving}
+                          className="px-5 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-extrabold text-xs rounded-lg flex items-center gap-1 shadow-md"
+                        >
+                          <Save className="h-4.5 w-4.5" />
+                          {saving ? 'Salvando...' : 'Salvar Registro'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
             </div>
-
-            <form onSubmit={handleSaveClient} className="space-y-4">
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Razão Social / Nome Fantasia *</label>
-                  <input
-                    id="ip-cli-name"
-                    type="text"
-                    required
-                    placeholder="Ex: Coca Cola Brasil S.A."
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">CNPJ / CPF de Cobrança *</label>
-                  <input
-                    id="ip-cli-doc"
-                    type="text"
-                    required
-                    placeholder="Ex: 12.345.678/0001-90"
-                    value={document}
-                    onChange={(e) => setDocument(formatCpfOrCnpj(e.target.value))}
-                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Faturamento E-mail Contato</label>
-                  <input
-                    id="ip-cli-email"
-                    type="email"
-                    placeholder="Ex: financeiro@cliente.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Telefone / Sac Logística</label>
-                  <input
-                    id="ip-cli-phone"
-                    type="text"
-                    placeholder="Ex: (11) 4004-0000"
-                    value={phone}
-                    onChange={(e) => setPhone(formatTelefone(e.target.value))}
-                    className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 border-t pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-lg"
-                >
-                  Fechar
-                </button>
-                <button
-                  id="cli-save-btn"
-                  type="submit"
-                  disabled={saving}
-                  className="px-5 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-extrabold text-xs rounded-lg flex items-center gap-1 shadow-md"
-                >
-                  <Save className="h-4.5 w-4.5" />
-                  {saving ? 'Salvando...' : 'Salvar Registo'}
-                </button>
-              </div>
-
-            </form>
           </div>
         )}
 

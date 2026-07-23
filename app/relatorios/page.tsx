@@ -82,8 +82,10 @@ export default function ReportsPage() {
   // Aggregated totals
   const reportSummary = summarizeFreightOrders(filteredOrders);
   const totalGrossRevenue = reportSummary.totalGrossRevenue;
+  const totalDriverFreight = reportSummary.totalDriverFreight;
   const totalAdvance = reportSummary.totalAdvance;
   const totalBalance = reportSummary.totalBalanceToPay;
+  const totalExpenses = reportSummary.totalExpenses;
   const totalNet = reportSummary.totalNet;
 
   const handleExportCSV = () => {
@@ -276,41 +278,58 @@ export default function ReportsPage() {
                 Período: {startDate || endDate ? `${startDate ? formatDateBR(startDate) : 'Início'} até ${endDate ? formatDateBR(endDate) : 'Fim'}` : 'Todo o período'}
               </p>
                        {/* FINANCIAL BLOCKS VIEW */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               
               <div className="bg-white border rounded-2xl p-4 text-center">
-                <span className="text-[9px] text-slate-450 font-black block uppercase tracking-wider mb-2">Faturamento Bruto</span>
+                <span className="text-[9px] text-slate-450 font-black block uppercase tracking-wider mb-2">Faturamento Bruto (CTE)</span>
                 <span className="text-md md:text-lg font-black text-slate-900 block">
                   R$ {totalGrossRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
                 <span className="text-[8px] text-slate-400 block mt-1">Soma do valor bruto do CTE</span>
               </div>
 
+              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-center">
+                <span className="text-[9px] text-blue-700 font-black block uppercase tracking-wider mb-2">Frete ao Motorista</span>
+                <span className="text-md md:text-lg font-black text-blue-900 block">
+                  R$ {totalDriverFreight.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </span>
+                <span className="text-[8px] text-blue-500 block mt-1">Valor de frete acordado (sem despesas)</span>
+              </div>
+
               <div className="bg-white border rounded-2xl p-4 text-center">
                 <span className="text-[9px] text-slate-450 font-black block uppercase tracking-wider mb-2">Adiantamentos Faturados</span>
-                <span className="text-md md:text-lg font-black text-slate-900 block text-sky-700">
+                <span className="text-md md:text-lg font-black text-sky-700 block">
                   R$ {totalAdvance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
-                <span className="text-[8px] text-slate-400 block mt-1">Adiantamentos já repassados in Pix</span>
+                <span className="text-[8px] text-slate-400 block mt-1">Adiantamentos já repassados via Pix</span>
               </div>
 
               <div className="bg-white border rounded-2xl p-4 text-center bg-yellow-500/5 border-yellow-500/10">
-                <span className="text-[9px] text-slate-450 font-black block uppercase tracking-wider mb-2">Saldos Residuais Restantes</span>
+                <span className="text-[9px] text-slate-450 font-black block uppercase tracking-wider mb-2">Saldos Residuais</span>
                 <span className="text-md md:text-lg font-black text-yellow-800 block">
                   R$ {totalBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
                 <span className="text-[8px] text-slate-455 block mt-1">A pagar na entrega do romaneio</span>
               </div>
 
+              <div className="bg-red-50 border border-red-100 rounded-2xl p-4 text-center">
+                <span className="text-[9px] text-red-700 font-black block uppercase tracking-wider mb-2">Despesas Adicionais RBA</span>
+                <span className="text-md md:text-lg font-black text-red-900 block">
+                  R$ {totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </span>
+                <span className="text-[8px] text-red-400 block mt-1">Carga / Descarga / Outros (não é frete)</span>
+              </div>
+
               <div className="bg-white border rounded-2xl p-4 text-center bg-emerald-500/5 border-emerald-500/10">
-                <span className="text-[9px] text-slate-450 font-black block uppercase tracking-wider mb-2">Lucro Líquido Estimado</span>
+                <span className="text-[9px] text-slate-450 font-black block uppercase tracking-wider mb-2">Lucro Líquido RBA</span>
                 <span className="text-md md:text-lg font-black text-emerald-800 block">
                   R$ {totalNet.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
-                  <span className="text-[8px] text-slate-450 block mt-1">CTE líquido - motorista - despesas</span>
+                  <span className="text-[8px] text-slate-450 block mt-1">CTE líquido − frete motorista − despesas</span>
               </div>
 
             </div>      </div>
+
 
             {/* DETAILED SPREADSHEET */}
             <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xs">
@@ -333,19 +352,33 @@ export default function ReportsPage() {
                         <th className="p-3">Origem ➔ Destino</th>
                         <th className="p-3">Cliente</th>
                         <th className="p-3 text-right">CTE (R$)</th>
+                        <th className="p-3 text-right">Frete Motorista (R$)</th>
                         <th className="p-3 text-right">Adiantamento (R$)</th>
-                        <th className="p-3 text-right">Saldo (R$)</th>
-                        <th className="p-3 text-right">Líquido (R$)</th>
+                        <th className="p-3 text-right">Saldo Motorista (R$)</th>
+                        <th className="p-3 text-right">Despesas RBA (R$)</th>
+                        <th className="p-3 text-right">Líquido RBA (R$)</th>
                         <th className="p-3 text-center">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-150">
-                      {filteredOrders.map(o => (
+                      {filteredOrders.map(o => {
+                        const cteVal = Number(o.cte_value) || 0;
+                        const freightVal = Number(o.freight_value) || 0;
+                        const advanceVal = Number(o.advance_value) || 0;
+                        const cashVal = Number(o.cash_value) || 0;
+                        const totalExpensesRow = Number(o.total_expenses) || 0;
+                        const discountPct = Number(o.cte_discount_percent ?? 10);
+                        const discountVal = cteVal * discountPct / 100;
+                        // Saldo do MOTORISTA = frete - adiantamento - pago à vista
+                        const saldoMotorista = freightVal - advanceVal - cashVal;
+                        // Líquido RBA = CTE - desconto CTE - frete motorista - despesas adicionais
+                        const liquidoRBA = cteVal - discountVal - freightVal - totalExpensesRow;
+                        return (
                         <tr key={o.id} className="hover:bg-slate-50">
                           <td className="p-3">
                             <Link
                               href={`/ordens/${o.id}`}
-                              className={`font-extrabold text-xs hover:underline ${o.cte_number ? 'text-amber-600 dark:text-amber-500' : 'text-red-600'}`}
+                              className={`font-extrabold text-xs hover:underline ${o.cte_number ? 'text-slate-900' : 'text-slate-400 italic'}`}
                             >
                               {o.cte_number || 'A emitir'}
                             </Link>
@@ -356,17 +389,20 @@ export default function ReportsPage() {
                           <td className="p-3 font-bold text-slate-900">{o.driver_name}</td>
                           <td className="p-3 truncate max-w-[120px]">{o.origin} ➔ {o.destination}</td>
                           <td className="p-3 truncate max-w-[110px] text-slate-500">{o.client_name}</td>
-                          <td className="p-3 text-right font-bold text-slate-900">R$ {(Number(o.cte_value) || 0).toLocaleString('pt-BR')}</td>
-                          <td className="p-3 text-right text-slate-500">R$ {o.advance_value.toLocaleString('pt-BR')}</td>
-                          <td className="p-3 text-right text-slate-500">R$ {o.balance_value.toLocaleString('pt-BR')}</td>
-                          <td className="p-3 text-right text-emerald-800 font-black">R$ {o.net_value.toLocaleString('pt-BR')}</td>
+                          <td className="p-3 text-right font-bold text-slate-900">R$ {cteVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                          <td className="p-3 text-right text-blue-700 font-bold">R$ {freightVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                          <td className="p-3 text-right text-slate-500">R$ {advanceVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                          <td className="p-3 text-right text-amber-700 font-bold">R$ {saldoMotorista.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                          <td className="p-3 text-right text-red-600 font-semibold">R$ {totalExpensesRow.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                          <td className="p-3 text-right font-black" style={{ color: liquidoRBA >= 0 ? '#065f46' : '#b91c1c' }}>R$ {liquidoRBA.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                           <td className="p-3 text-center">
                             <span className={`p-0.5 px-2 rounded text-[9px] uppercase font-bold ${getFreightStatusMeta(o.status).className}`}>
                               {getFreightStatusMeta(o.status).icon} {normalizeFreightOrderStatus(o.status)}
                             </span>
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

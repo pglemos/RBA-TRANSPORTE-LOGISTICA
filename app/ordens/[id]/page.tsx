@@ -490,63 +490,14 @@ const id = params?.id;
               </div>
             </div>
 
-            {/* 3. DADOS DE CUSTOS E VALORES */}
+            {/* DETALHAMENTO FINANCEIRO — MEMÓRIA DE CÁLCULO COMPLETA */}
             {canViewFreightFinancialDetails && (
             <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4">
-              <div className="border-b pb-3">
+              {/* Header */}
+              <div className="border-b pb-3 flex items-center justify-between">
                 <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                   <DollarSign className="h-4.5 w-4.5 text-emerald-600" />
                   Detalhamento Financeiro do Frete
-                </h2>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs font-medium">
-                <div className="space-y-2">
-                  <h4 className="text-[9px] font-black uppercase tracking-wider text-slate-400">Fluxos de Pagamentos</h4>
-                  <div className="flex justify-between border-b pb-1.5 text-slate-600">
-                    <span>Valor do Frete ao Motorista:</span>
-                    <strong className="text-slate-900">R$ {order.freight_value.toLocaleString('pt-BR')}</strong>
-                  </div>
-                  <div className="flex justify-between border-b pb-1.5 text-red-700">
-                    <span>(-) Adiantamento faturado:</span>
-                    <strong>R$ {order.advance_value.toLocaleString('pt-BR')}</strong>
-                  </div>
-                  <div className="flex justify-between border-b pb-1.5 text-red-700">
-                    <span>(-) Pedágio / Pago à Vista:</span>
-                    <strong>R$ {order.cash_value.toLocaleString('pt-BR')}</strong>
-                  </div>
-                  <div className="flex justify-between text-slate-950 font-black pt-1.5 bg-yellow-500/10 p-2.5 rounded-lg border border-yellow-500/20">
-                    <span>SALDO DE FRETE A PAGAR:</span>
-                    <strong>R$ {((Number(order.freight_value) || 0) - (Number(order.advance_value) || 0) - (Number(order.cash_value) || 0)).toLocaleString('pt-BR')}</strong>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <h4 className="text-[9px] font-black uppercase tracking-wider text-slate-400">Custos e Ajustes de Carga</h4>
-                  <div className="flex justify-between border-b pb-1.5 text-slate-550">
-                    <span>Ajudante de Carga:</span>
-                    <span>R$ {order.loading_expense.toLocaleString('pt-BR')}</span>
-                  </div>
-                  <div className="flex justify-between border-b pb-1.5 text-slate-550">
-                    <span>Pedágio / Descarga duto:</span>
-                    <span>R$ {order.unloading_expense.toLocaleString('pt-BR')}</span>
-                  </div>
-                  <div className="flex justify-between border-b pb-1.5 text-slate-550">
-                    <span>Outros custos operacionais:</span>
-                    <span>R$ {order.other_expenses.toLocaleString('pt-BR')}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            )}
-
-            {/* 4. FATURAMENTO (CTE) — MEMÓRIA DE CÁLCULO EDITÁVEL */}
-            {canManageFaturamento && (
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4">
-              <div className="border-b pb-3 flex items-center justify-between">
-                <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <FileCheck2 className="h-4 w-4 text-emerald-600" />
-                  Faturamento (CTE) — Memória de Cálculo
                 </h2>
                 {order.cte_number && (
                   <span className="text-[10px] bg-slate-100 p-1 px-2.5 rounded-full font-bold text-slate-600">
@@ -555,81 +506,131 @@ const id = params?.id;
                 )}
               </div>
 
-              {/* Entradas editáveis */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <label className="block">
-                  <span className="text-[9px] text-slate-450 font-bold uppercase block mb-1">Valor do CTE (Receita Bruta)</span>
-                  <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:border-emerald-500">
-                    <span className="px-3 text-xs font-bold text-slate-500 bg-slate-50 self-stretch flex items-center">R$</span>
-                    <input
-                      id="det-cte-value"
-                      type="number" step="0.01" min="0"
-                      value={cteValueEdit || ''}
-                      onChange={(e) => setCteValueEdit(Number(e.target.value))}
-                      placeholder="0,00"
-                      className="flex-1 min-w-0 px-3 py-2 text-sm font-bold text-slate-900 outline-none"
-                    />
-                  </div>
-                </label>
-                <label className="block">
-                  <span className="text-[9px] text-slate-450 font-bold uppercase block mb-1">Desconto sobre o CTE</span>
-                  <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:border-emerald-500">
-                    <input
-                      id="det-cte-discount"
-                      type="number" step="0.01" min="0" max="100"
-                      value={cteDiscountEdit}
-                      onChange={(e) => setCteDiscountEdit(Number(e.target.value))}
-                      placeholder="10"
-                      className="flex-1 min-w-0 px-3 py-2 text-sm font-bold text-slate-900 outline-none"
-                    />
-                    <span className="px-3 text-xs font-bold text-slate-500 bg-slate-50 self-stretch flex items-center">%</span>
-                  </div>
-                </label>
-              </div>
+              {/* Campos editáveis de CTE — só para quem pode gerenciar */}
+              {canManageFaturamento && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <label className="block">
+                    <span className="text-[9px] text-slate-450 font-bold uppercase block mb-1">Valor do CTE (Receita Bruta)</span>
+                    <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:border-emerald-500">
+                      <span className="px-3 text-xs font-bold text-slate-500 bg-slate-50 self-stretch flex items-center">R$</span>
+                      <input
+                        id="det-cte-value"
+                        type="number" step="0.01" min="0"
+                        value={cteValueEdit || ''}
+                        onChange={(e) => setCteValueEdit(Number(e.target.value))}
+                        placeholder="0,00"
+                        className="flex-1 min-w-0 px-3 py-2 text-sm font-bold text-slate-900 outline-none"
+                      />
+                    </div>
+                  </label>
+                  <label className="block">
+                    <span className="text-[9px] text-slate-450 font-bold uppercase block mb-1">Desconto sobre o CTE</span>
+                    <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:border-emerald-500">
+                      <input
+                        id="det-cte-discount"
+                        type="number" step="0.01" min="0" max="100"
+                        value={cteDiscountEdit}
+                        onChange={(e) => setCteDiscountEdit(Number(e.target.value))}
+                        placeholder="10"
+                        className="flex-1 min-w-0 px-3 py-2 text-sm font-bold text-slate-900 outline-none"
+                      />
+                      <span className="px-3 text-xs font-bold text-slate-500 bg-slate-50 self-stretch flex items-center">%</span>
+                    </div>
+                  </label>
+                </div>
+              )}
 
-              {/* Memória de cálculo (ao vivo) */}
-              <div className="bg-emerald-50/60 border border-emerald-200 rounded-xl p-4 space-y-1.5 text-xs font-medium">
-                <div className="flex justify-between text-slate-700">
-                  <span>Receita Bruta (CTE)</span>
+              {/* MEMÓRIA DE CÁLCULO COMPLETA — vertical, uma linha por item */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden text-xs font-medium">
+
+                {/* BLOCO 1: Faturamento CTE */}
+                <div className="px-4 pt-3 pb-1">
+                  <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 mb-2">Faturamento (CTE) — Receita</p>
+                </div>
+                <div className="px-4 py-1.5 flex justify-between text-slate-700 border-b border-slate-100">
+                  <span>VALOR DO CTE (Receita Bruta)</span>
                   <strong className="text-blue-800">R$ {fmtBR(cteValueEdit)}</strong>
                 </div>
-                <div className="flex justify-between text-red-700">
-                  <span>(−) Desconto ({Number(cteDiscountEdit) || 0}%)</span>
+                <div className="px-4 py-1.5 flex justify-between text-red-600 border-b border-slate-100">
+                  <span>(−) Desconto sobre o CTE ({Number(cteDiscountEdit) || 0}%)</span>
                   <strong>− R$ {fmtBR(fatDescontoValor)}</strong>
                 </div>
-                <div className="flex justify-between text-red-700">
-                  <span>(−) Valor de Frete <span className="text-slate-400">(motorista: AD. + saldo)</span></span>
+
+                {/* BLOCO 2: Pagamentos ao Motorista */}
+                <div className="px-4 pt-3 pb-1 border-t border-slate-200 bg-slate-100/60">
+                  <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 mb-2">Fluxos de Pagamentos ao Motorista</p>
+                </div>
+                <div className="px-4 py-1.5 flex justify-between text-slate-700 border-b border-slate-100">
+                  <span>Valor do Frete ao Motorista</span>
+                  <strong className="text-slate-900">R$ {fmtBR(Number(order.freight_value))}</strong>
+                </div>
+                <div className="px-4 py-1.5 flex justify-between text-red-600 border-b border-slate-100">
+                  <span className="pl-3">(−) Adiantamento faturado</span>
+                  <strong>− R$ {fmtBR(Number(order.advance_value))}</strong>
+                </div>
+                <div className="px-4 py-1.5 flex justify-between text-red-600 border-b border-slate-100">
+                  <span className="pl-3">(−) Pago à Vista</span>
+                  <strong>− R$ {fmtBR(Number(order.cash_value))}</strong>
+                </div>
+                <div className="px-4 py-2 flex justify-between font-black text-amber-800 bg-yellow-50 border-b border-yellow-200">
+                  <span>SALDO DE FRETE A PAGAR</span>
+                  <strong>R$ {fmtBR((Number(order.freight_value) || 0) - (Number(order.advance_value) || 0) - (Number(order.cash_value) || 0))}</strong>
+                </div>
+                <div className="px-4 py-1.5 flex justify-between text-red-600 border-b border-slate-100 bg-slate-50">
+                  <span>(−) Valor de Frete <span className="text-slate-400 font-normal">(motorista: AD. + saldo)</span></span>
                   <strong>− R$ {fmtBR(fatFrete)}</strong>
                 </div>
-                <div className="flex justify-between text-red-700">
-                  <span>(−) Despesas <span className="text-slate-400">(carga / descarga / outros)</span></span>
+
+                {/* BLOCO 3: Despesas Adicionais */}
+                <div className="px-4 pt-3 pb-1 border-t border-slate-200 bg-slate-100/60">
+                  <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 mb-2">Despesas Adicionais (da RBA)</p>
+                </div>
+                <div className="px-4 py-1.5 flex justify-between text-slate-600 border-b border-slate-100">
+                  <span className="pl-3">Carga (Ajudante)</span>
+                  <span>R$ {fmtBR(Number(order.loading_expense))}</span>
+                </div>
+                <div className="px-4 py-1.5 flex justify-between text-slate-600 border-b border-slate-100">
+                  <span className="pl-3">Descarga duto</span>
+                  <span>R$ {fmtBR(Number(order.unloading_expense))}</span>
+                </div>
+                <div className="px-4 py-1.5 flex justify-between text-slate-600 border-b border-slate-100">
+                  <span className="pl-3">Outros custos operacionais</span>
+                  <span>R$ {fmtBR(Number(order.other_expenses))}</span>
+                </div>
+                <div className="px-4 py-1.5 flex justify-between text-red-600 border-b border-slate-100">
+                  <span>(−) Despesas <span className="text-slate-400 font-normal">(carga / descarga / outros)</span></span>
                   <strong>− R$ {fmtBR(fatDespesas)}</strong>
                 </div>
-                <div className={`flex justify-between font-black pt-2 mt-1 border-t border-emerald-200 ${fatLiquido < 0 ? 'text-red-600' : 'text-emerald-800'}`}>
-                  <span className="uppercase">Resultado Líquido RBA</span>
-                  <strong className="text-sm">R$ {fmtBR(fatLiquido)}</strong>
+
+                {/* TOTAL FINAL */}
+                <div className={`px-4 py-3 flex justify-between font-black text-sm border-t-2 ${fatLiquido < 0 ? 'border-red-300 bg-red-50 text-red-700' : 'border-emerald-300 bg-emerald-50 text-emerald-800'}`}>
+                  <span className="uppercase tracking-wide">Resultado Líquido RBA</span>
+                  <strong className="text-base">R$ {fmtBR(fatLiquido)}</strong>
                 </div>
               </div>
 
-              {/* Ações */}
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                {fatMsg ? (
-                  <span className={`text-[11px] font-bold ${fatMsg.type === 'ok' ? 'text-emerald-700' : 'text-red-600'}`}>
-                    {fatMsg.text}
-                  </span>
-                ) : <span />}
-                <button
-                  id="det-fat-save"
-                  onClick={handleSaveFaturamento}
-                  disabled={savingFat || !fatDirty}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 cursor-pointer"
-                >
-                  {savingFat ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
-                  {savingFat ? 'Salvando...' : 'Salvar Faturamento'}
-                </button>
-              </div>
+              {/* Botão Salvar */}
+              {canManageFaturamento && (
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  {fatMsg ? (
+                    <span className={`text-[11px] font-bold ${fatMsg.type === 'ok' ? 'text-emerald-700' : 'text-red-600'}`}>
+                      {fatMsg.text}
+                    </span>
+                  ) : <span />}
+                  <button
+                    id="det-fat-save"
+                    onClick={handleSaveFaturamento}
+                    disabled={savingFat || !fatDirty}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 cursor-pointer"
+                  >
+                    {savingFat ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
+                    {savingFat ? 'Salvando...' : 'Salvar Faturamento'}
+                  </button>
+                </div>
+              )}
             </div>
             )}
+
 
           </div>
 

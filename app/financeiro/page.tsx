@@ -222,7 +222,7 @@ export default function FinancePage() {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200">
           <div>
             <h1 className="text-xl font-black text-slate-900 tracking-tight">Controle Financeiro & Caixa de Logística</h1>
-            <p className="text-xs text-slate-500 mt-1">Monitore e dê baixas em adiantamentos, adubações operacionais, pedágios e saldos finais de entrega.</p>
+            <p className="text-xs text-slate-500 mt-1">Monitore e dê baixas em adiantamentos, adubações operacionais, despesas e saldos finais de entrega.</p>
           </div>
 
           {!showForm && (
@@ -344,7 +344,7 @@ export default function FinancePage() {
                   >
                     <option value="Adiantamento">Adiantamento em Viagem</option>
                     <option value="Saldo">Saldo Final de Entrega</option>
-                    <option value="Taxa de Carga">Taxa de Carga / Pedágio</option>
+                    <option value="Taxa de Carga">Taxa de Carga</option>
                     <option value="Outros">Outras Despesas de Campo</option>
                   </select>
                 </div>
@@ -493,8 +493,8 @@ export default function FinancePage() {
                     const valCTE = Number(order?.cte_value) || 0;
                     const valFrete = Number(order?.freight_value) || 0;
                     const valAdto = Number(order?.advance_value) || 0;
-                    const valPedagio = Number(order?.cash_value) || 0;
-                    const valSaldo = valFrete - valAdto - valPedagio;
+                    const valAVista = Number(order?.cash_value) || 0;
+                    const valSaldo = valFrete - valAdto - valAVista;
 
                     const valAjudante = Number(order?.loading_expense) || 0;
                     const valDescarga = Number(order?.unloading_expense) || 0;
@@ -636,8 +636,8 @@ export default function FinancePage() {
                                       <strong>R$ {valAdto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
                                     </div>
                                     <div className="flex justify-between border-b pb-1 text-red-700">
-                                      <span>(-) Pedágio / Pago à Vista:</span>
-                                      <strong>R$ {valPedagio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                                      <span>(-) Pago à Vista:</span>
+                                      <strong>R$ {valAVista.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
                                     </div>
                                     <div className="flex justify-between text-slate-950 font-black pt-1 bg-yellow-500/10 p-2 rounded-lg border border-yellow-500/20">
                                       <span>SALDO DE FRETE A PAGAR:</span>
@@ -660,7 +660,7 @@ export default function FinancePage() {
                                       <strong>R$ {valAjudante.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
                                     </div>
                                     <div className="flex justify-between border-b pb-1 text-slate-500">
-                                      <span>Pedágio / Descarga duto:</span>
+                                      <span>Descarga duto:</span>
                                       <strong>R$ {valDescarga.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
                                     </div>
                                     <div className="flex justify-between border-b pb-1 text-slate-500">

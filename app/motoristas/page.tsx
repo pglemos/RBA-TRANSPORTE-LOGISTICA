@@ -269,187 +269,200 @@ export default function DriversPage() {
           </div>
         )}
 
-        {/* INPUT COLLAPSIBLE PANEL */}
         {showForm && (
-          <div className="bg-white border-2 border-yellow-500/20 rounded-3xl p-6 shadow-sm space-y-6">
-            <div className="border-b pb-3 flex justify-between items-center">
-              <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">
-                {editingId ? 'Editar Detalhes do Condutor' : 'Lançar Ficha de Novo Motorista'}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="text-xs font-semibold text-slate-500 hover:text-slate-700"
-              >
-                Cancelar
-              </button>
+          <div className="fixed inset-0 z-50 overflow-hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+            <div className="absolute inset-0 overflow-hidden">
+              {/* Dark backdrop overlay */}
+              <div 
+                className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity duration-300" 
+                onClick={() => setShowForm(false)} 
+              />
+
+              <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+                <div className="pointer-events-auto w-screen max-w-2xl transform transition duration-500 ease-in-out sm:duration-700">
+                  <div className="flex h-full flex-col overflow-y-scroll bg-white p-6 shadow-2xl space-y-6">
+                    <div className="border-b pb-3 flex justify-between items-center">
+                      <h3 id="slide-over-title" className="text-xs font-black text-slate-900 uppercase tracking-widest">
+                        {editingId ? 'Editar Detalhes do Condutor' : 'Lançar Ficha de Novo Motorista'}
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => setShowForm(false)}
+                        className="text-xs font-semibold text-slate-500 hover:text-slate-700"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleSaveDriver} className="space-y-6 flex-1 flex flex-col justify-between">
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div className="space-y-1.5 md:col-span-2">
+                            <label className="text-[10px] uppercase font-bold text-slate-500">Nome Completo do Piloto *</label>
+                            <input
+                              id="ip-drv-name"
+                              type="text"
+                              required
+                              placeholder="Ex: João da Silva Santos"
+                              value={name}
+                              onChange={(e) => setName(e.target.value)}
+                              className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold text-slate-500">CPF (Somente Números) *</label>
+                            <input
+                              id="ip-drv-cpf"
+                              type="text"
+                              required
+                              placeholder="Ex: 123.456.789-00"
+                              value={cpf}
+                              onChange={(e) => setCpf(formatCPF(e.target.value))}
+                              className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold text-slate-500">Documento de Identidade RG</label>
+                            <input
+                              id="ip-drv-rg"
+                              type="text"
+                              placeholder="Ex: 50.123.456-7"
+                              value={rg}
+                              onChange={(e) => setRg(e.target.value)}
+                              className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold text-slate-500">Telefone / Whatsapp do Piloto *</label>
+                            <input
+                              id="ip-drv-phone"
+                              type="text"
+                              placeholder="Ex: (11) 98765-4321"
+                              value={phone}
+                              onChange={(e) => setPhone(formatTelefone(e.target.value))}
+                              className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold text-slate-500">Status Operacional Cadastral</label>
+                            <select
+                              id="ip-drv-status"
+                              value={status}
+                              onChange={(e) => setStatus(e.target.value as any)}
+                              className="w-full text-xs font-black px-3 py-2.5 bg-slate-50 border border-slate-250 rounded-lg outline-none"
+                            >
+                              <option value="Ativo">🟢 Ativo / Seguro Geral Liberado</option>
+                              <option value="Bloqueado">🔴 Bloqueado / Restrição de Risco</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Sub-form section: Snapshot Banking pix parameters */}
+                        <div className="border-t pt-5 space-y-4">
+                          <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Dados Bancários / Recebimento de Frete (Pix)</h4>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] uppercase font-bold text-slate-500">Instituição Financeira / Banco</label>
+                              <input
+                                type="text"
+                                placeholder="Ex: Banco Itaú"
+                                value={bankName}
+                                onChange={(e) => setBankName(e.target.value)}
+                                className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                              />
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] uppercase font-bold text-slate-500">Agência Bancária</label>
+                              <input
+                                type="text"
+                                placeholder="Ex: 0001"
+                                value={bankAgency}
+                                onChange={(e) => setBankAgency(e.target.value)}
+                                className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                              />
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] uppercase font-bold text-slate-500">Conta Corrente / Conta Poupança</label>
+                              <input
+                                type="text"
+                                placeholder="Ex: 12345-6"
+                                value={bankAccount}
+                                onChange={(e) => setBankAccount(e.target.value)}
+                                className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                              />
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] uppercase font-bold text-slate-500 text-emerald-800">Chave PIX Oficial *</label>
+                              <input
+                                id="ip-drv-pix"
+                                type="text"
+                                placeholder="E-mail, CPF, celular ou aleatória..."
+                                value={pixKey}
+                                onChange={(e) => setPixKey(e.target.value)}
+                                className="w-full text-xs font-semibold px-3 py-2.5 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-lg outline-none"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] uppercase font-bold text-slate-500">Nome Favorecido Completo (Se diferente)</label>
+                              <input
+                                type="text"
+                                placeholder="Deixe em branco se for o próprio motorista"
+                                value={beneficiaryName}
+                                onChange={(e) => setBeneficiaryName(e.target.value)}
+                                className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                              />
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] uppercase font-bold text-slate-500">CPF/CNPJ do Favorecido *</label>
+                              <input
+                                type="text"
+                                placeholder="Deixe em branco se for o próprio motorista"
+                                value={beneficiaryDocument}
+                                onChange={(e) => setBeneficiaryDocument(formatCpfOrCnpj(e.target.value))}
+                                className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-2 border-t pt-4 mt-8">
+                        <button
+                          type="button"
+                          onClick={() => setShowForm(false)}
+                          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-lg"
+                        >
+                          Fechar
+                        </button>
+                        <button
+                          id="driver-save-btn"
+                          type="submit"
+                          disabled={saving}
+                          className="px-5 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-extrabold text-xs rounded-lg flex items-center gap-1 shadow-md"
+                        >
+                          <Save className="h-4.5 w-4.5" />
+                          {saving ? 'Gravando...' : 'Gravar Piloto'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
             </div>
-
-            <form onSubmit={handleSaveDriver} className="space-y-6">
-              
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Nome Completo do Piloto *</label>
-                  <input
-                    id="ip-drv-name"
-                    type="text"
-                    required
-                    placeholder="Ex: João da Silva Santos"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-50 border border-slate-250 rounded-lg outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">CPF (Somente Números) *</label>
-                  <input
-                    id="ip-drv-cpf"
-                    type="text"
-                    required
-                    placeholder="Ex: 123.456.789-00"
-                    value={cpf}
-                    onChange={(e) => setCpf(formatCPF(e.target.value))}
-                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Documento de Identidade RG</label>
-                  <input
-                    id="ip-drv-rg"
-                    type="text"
-                    placeholder="Ex: 50.123.456-7"
-                    value={rg}
-                    onChange={(e) => setRg(e.target.value)}
-                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Telefone / Whatsapp do Piloto *</label>
-                  <input
-                    id="ip-drv-phone"
-                    type="text"
-                    placeholder="Ex: (11) 98765-4321"
-                    value={phone}
-                    onChange={(e) => setPhone(formatTelefone(e.target.value))}
-                    className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-50 border border-slate-250 rounded-lg outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Status Operacional Cadastral</label>
-                  <select
-                    id="ip-drv-status"
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value as any)}
-                    className="w-full text-xs font-black px-3 py-2.5 bg-slate-50 border border-slate-250 rounded-lg outline-none"
-                  >
-                    <option value="Ativo">🟢 Ativo / Seguro Geral Liberado</option>
-                    <option value="Bloqueado">🔴 Bloqueado / Restrição de Risco</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Sub-form section: Snapshot Banking pix parameters */}
-              <div className="border-t pt-5 space-y-4">
-                <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Dados Bancários / Recebimento de Frete (Pix)</h4>
-                
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Instituição Financeira / Banco</label>
-                    <input
-                      type="text"
-                      placeholder="Ex: Banco Itaú"
-                      value={bankName}
-                      onChange={(e) => setBankName(e.target.value)}
-                      className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Agência Bancária</label>
-                    <input
-                      type="text"
-                      placeholder="Ex: 0001"
-                      value={bankAgency}
-                      onChange={(e) => setBankAgency(e.target.value)}
-                      className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Conta Corrente / Conta Poupança</label>
-                    <input
-                      type="text"
-                      placeholder="Ex: 12345-6"
-                      value={bankAccount}
-                      onChange={(e) => setBankAccount(e.target.value)}
-                      className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold text-slate-500 text-emerald-800">Chave PIX Oficial *</label>
-                    <input
-                      id="ip-drv-pix"
-                      type="text"
-                      placeholder="E-mail, CPF, celular ou aleatória..."
-                      value={pixKey}
-                      onChange={(e) => setPixKey(e.target.value)}
-                      className="w-full text-xs font-semibold px-3 py-2.5 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-lg outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold text-slate-500">Nome Favorecido Completo (Se diferente)</label>
-                    <input
-                      type="text"
-                      placeholder="Deixe em branco se for o próprio motorista"
-                      value={beneficiaryName}
-                      onChange={(e) => setBeneficiaryName(e.target.value)}
-                      className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold text-slate-500">CPF/CNPJ do Favorecido *</label>
-                    <input
-                      type="text"
-                      placeholder="Deixe em branco se for o próprio motorista"
-                      value={beneficiaryDocument}
-                      onChange={(e) => setBeneficiaryDocument(formatCpfOrCnpj(e.target.value))}
-                      className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 border-t pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-lg"
-                >
-                  Fechar
-                </button>
-                <button
-                  id="driver-save-btn"
-                  type="submit"
-                  disabled={saving}
-                  className="px-5 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-extrabold text-xs rounded-lg flex items-center gap-1 shadow-md"
-                >
-                  <Save className="h-4.5 w-4.5" />
-                  {saving ? 'Gravando...' : 'Gravar Piloto'}
-                </button>
-              </div>
-
-            </form>
           </div>
         )}
 

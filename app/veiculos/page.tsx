@@ -280,196 +280,214 @@ export default function VehiclesPage() {
 
         {/* INPUT COLLAPSIBLE PANEL */}
         {showForm && (
-          <div className="bg-white border-2 border-yellow-500/20 rounded-3xl p-6 shadow-xs space-y-6">
-            <div className="border-b pb-3 flex justify-between items-center">
-              <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">
-                {editingId ? 'Editar Detalhes do Equipamento' : 'Novo Registro de Veículo Conjugado'}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="text-xs font-semibold text-slate-500 hover:text-slate-700"
-              >
-                Cancelar
-              </button>
+          <div className="fixed inset-0 z-50 overflow-hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+            <div className="absolute inset-0 overflow-hidden">
+              {/* Dark backdrop overlay */}
+              <div 
+                className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity duration-300" 
+                onClick={() => setShowForm(false)} 
+              />
+
+              <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+                <div className="pointer-events-auto w-screen max-w-2xl transform transition duration-500 ease-in-out sm:duration-700">
+                  <div className="flex h-full flex-col overflow-y-scroll bg-white p-6 shadow-2xl space-y-6">
+                    <div className="border-b pb-3 flex justify-between items-center">
+                      <h3 id="slide-over-title" className="text-xs font-black text-slate-900 uppercase tracking-widest">
+                        {editingId ? 'Editar Detalhes do Equipamento' : 'Novo Registro de Veículo Conjugado'}
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => setShowForm(false)}
+                        className="text-xs font-semibold text-slate-500 hover:text-slate-700"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleSaveVehicle} className="space-y-6 flex-1 flex flex-col justify-between">
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold text-slate-500">Modelo Mecânico / Chassi *</label>
+                            <input
+                              id="ip-vhc-model"
+                              type="text"
+                              required
+                              placeholder="Ex: Scania R 450"
+                              value={model}
+                              onChange={(e) => setModel(e.target.value)}
+                              className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold text-slate-500">Tipo de Veículo *</label>
+                            <select
+                              id="ip-vhc-type"
+                              value={vehicleType}
+                              onChange={(e) => setVehicleType(e.target.value as any)}
+                              className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                            >
+                              <option value="Utilitário">Utilitário</option>
+                              <option value="VUC">VUC</option>
+                              <option value="3/4">3/4</option>
+                              <option value="Toco">Toco</option>
+                              <option value="Truck">Truck</option>
+                              <option value="Bitruck">Bitruck</option>
+                              <option value="Carreta">Carreta</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold text-slate-500">Ano de Fabricação *</label>
+                            <input
+                              id="ip-vhc-manufacture-year"
+                              type="number"
+                              min="1980"
+                              max={new Date().getFullYear() + 2}
+                              placeholder="Ex: 2020"
+                              value={manufactureYear}
+                              onChange={(e) => setManufactureYear(e.target.value)}
+                              className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold text-slate-500">Ano Modelo *</label>
+                            <input
+                              id="ip-vhc-model-year"
+                              type="number"
+                              min="1980"
+                              max={new Date().getFullYear() + 2}
+                              placeholder="Ex: 2021"
+                              value={modelYear}
+                              onChange={(e) => setModelYear(e.target.value)}
+                              className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold text-slate-500">Estado UF de Registro Principal *</label>
+                            <input
+                              id="ip-vhc-uf"
+                              type="text"
+                              maxLength={2}
+                              placeholder="Ex: SP"
+                              value={uf}
+                              onChange={(e) => setUf(normalizeUf(e.target.value))}
+                              className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold text-slate-500">Placa Cavalo Trator *</label>
+                            <input
+                              id="ip-vhc-tractor"
+                              type="text"
+                              required
+                              maxLength={7}
+                              placeholder="Ex: ABC1D23"
+                              value={tractorPlate}
+                              onChange={(e) => setTractorPlate(normalizePlate(e.target.value).slice(0, 7))}
+                              className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold text-slate-500">
+                              Placa Semi-Reboque (Carreta){vehicleType === 'Carreta' ? ' *' : ''}
+                            </label>
+                            <input
+                              id="ip-vhc-trailer"
+                              type="text"
+                              required={vehicleType === 'Carreta'}
+                              maxLength={7}
+                              placeholder="Ex: XYZ9W87"
+                              value={trailerPlate}
+                              onChange={(e) => setTrailerPlate(normalizePlate(e.target.value).slice(0, 7))}
+                              className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold text-slate-500">ANTT Registro</label>
+                            <input
+                              id="ip-vhc-antt"
+                              type="text"
+                              placeholder="Ex: ANTT-9034123"
+                              value={antt}
+                              onChange={(e) => setAntt(e.target.value)}
+                              className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold text-slate-500">RENAVAM ID</label>
+                            <input
+                              id="ip-vhc-renavam"
+                              type="text"
+                              placeholder="Ex: 12345678901"
+                              value={renavam}
+                              onChange={(e) => setRenavam(e.target.value)}
+                              className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold text-slate-500">Nome Proprietário Unidade</label>
+                            <input
+                              type="text"
+                              placeholder="João da Silva ou RBA Frota"
+                              value={ownerName}
+                              onChange={(e) => setOwnerName(e.target.value)}
+                              className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold text-slate-500">CPF/CNPJ do Proprietário *</label>
+                            <input
+                              type="text"
+                              placeholder="Ex: 12.345.678/0001-90"
+                              value={ownerDocument}
+                              onChange={(e) => setOwnerDocument(e.target.value)}
+                              className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-2 border-t pt-4 mt-8">
+                        <button
+                          type="button"
+                          onClick={() => setShowForm(false)}
+                          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-lg"
+                        >
+                          Fechar
+                        </button>
+                        <button
+                          id="vhc-save-btn"
+                          type="submit"
+                          disabled={saving}
+                          className="px-5 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-extrabold text-xs rounded-lg flex items-center gap-1 shadow-md"
+                        >
+                          <Save className="h-4.5 w-4.5" />
+                          {saving ? 'Salvando...' : 'Salvar Veículo'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
             </div>
-
-            <form onSubmit={handleSaveVehicle} className="space-y-4">
-              
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Modelo Mecânico / Chassi *</label>
-                  <input
-                    id="ip-vhc-model"
-                    type="text"
-                    required
-                    placeholder="Ex: Scania R 450"
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Tipo de Veículo *</label>
-                  <select
-                    id="ip-vhc-type"
-                    value={vehicleType}
-                    onChange={(e) => setVehicleType(e.target.value as any)}
-                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                  >
-                    <option value="Utilitário">Utilitário</option>
-                    <option value="VUC">VUC</option>
-                    <option value="3/4">3/4</option>
-                    <option value="Toco">Toco</option>
-                    <option value="Truck">Truck</option>
-                    <option value="Bitruck">Bitruck</option>
-                    <option value="Carreta">Carreta</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Ano de Fabricação *</label>
-                  <input
-                    id="ip-vhc-manufacture-year"
-                    type="number"
-                    min="1980"
-                    max={new Date().getFullYear() + 2}
-                    placeholder="Ex: 2020"
-                    value={manufactureYear}
-                    onChange={(e) => setManufactureYear(e.target.value)}
-                    className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Ano Modelo *</label>
-                  <input
-                    id="ip-vhc-model-year"
-                    type="number"
-                    min="1980"
-                    max={new Date().getFullYear() + 2}
-                    placeholder="Ex: 2021"
-                    value={modelYear}
-                    onChange={(e) => setModelYear(e.target.value)}
-                    className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Estado UF de Registro Principal *</label>
-                  <input
-                    id="ip-vhc-uf"
-                    type="text"
-                    maxLength={2}
-                    placeholder="Ex: SP"
-                    value={uf}
-                    onChange={(e) => setUf(normalizeUf(e.target.value))}
-                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Placa Cavalo Trator *</label>
-                  <input
-                    id="ip-vhc-tractor"
-                    type="text"
-                    required
-                    maxLength={7}
-                    placeholder="Ex: ABC1D23"
-                    value={tractorPlate}
-                    onChange={(e) => setTractorPlate(normalizePlate(e.target.value).slice(0, 7))}
-                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">
-                    Placa Semi-Reboque (Carreta){vehicleType === 'Carreta' ? ' *' : ''}
-                  </label>
-                  <input
-                    id="ip-vhc-trailer"
-                    type="text"
-                    required={vehicleType === 'Carreta'}
-                    maxLength={7}
-                    placeholder="Ex: XYZ9W87"
-                    value={trailerPlate}
-                    onChange={(e) => setTrailerPlate(normalizePlate(e.target.value).slice(0, 7))}
-                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">ANTT Registro</label>
-                  <input
-                    id="ip-vhc-antt"
-                    type="text"
-                    placeholder="Ex: ANTT-9034123"
-                    value={antt}
-                    onChange={(e) => setAntt(e.target.value)}
-                    className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">RENAVAM ID</label>
-                  <input
-                    id="ip-vhc-renavam"
-                    type="text"
-                    placeholder="Ex: 12345678901"
-                    value={renavam}
-                    onChange={(e) => setRenavam(e.target.value)}
-                    className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">Nome Proprietário Unidade</label>
-                  <input
-                    type="text"
-                    placeholder="João da Silva ou RBA Frota"
-                    value={ownerName}
-                    onChange={(e) => setOwnerName(e.target.value)}
-                    className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold text-slate-500">CPF/CNPJ do Proprietário *</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: 12.345.678/0001-90"
-                    value={ownerDocument}
-                    onChange={(e) => setOwnerDocument(e.target.value)}
-                    className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 border-t pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-lg"
-                >
-                  Fechar
-                </button>
-                <button
-                  id="vhc-save-btn"
-                  type="submit"
-                  disabled={saving}
-                  className="px-5 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-extrabold text-xs rounded-lg flex items-center gap-1 shadow-md"
-                >
-                  <Save className="h-4.5 w-4.5" />
-                  {saving ? 'Salvando...' : 'Salvar Veículo'}
-                </button>
-              </div>
-
-            </form>
           </div>
         )}
 

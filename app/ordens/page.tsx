@@ -329,12 +329,12 @@ export default function OrdersListPage() {
               <td className="p-4">
                 <Link
                   href={`/ordens/${o.id}`}
-                  className={`font-extrabold text-xs hover:underline inline-flex items-center gap-1 ${o.cte_number ? 'text-amber-600 dark:text-amber-500' : 'text-rose-600 dark:text-rose-400'}`}
+                  className={`font-black text-xs hover:underline inline-flex items-center gap-1 ${o.cte_number ? 'text-black' : 'text-black italic'}`}
                 >
                   {!o.cte_number && <AlertTriangle className="h-3 w-3 animate-pulse text-red-500" />}
                   {o.cte_number || 'A emitir'}
                 </Link>
-                <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-slate-700">
                   Emissão: {formatFreightOrderEmissionDate(o)}
                 </p>
               </td>
@@ -342,62 +342,63 @@ export default function OrdersListPage() {
                       {/* Driver mask dynamically rendered */}
                       <td className="p-4">
                         <div>
-                          <p className="font-bold text-slate-900">{o.driver_name}</p>
-                          <p className="text-[10px] text-slate-500">CPF: {o.driver_cpf}</p>
+                          <p className="font-extrabold text-black">{o.driver_name}</p>
+                          <p className="text-[10px] text-slate-600 font-bold">CPF: {o.driver_cpf}</p>
                         </div>
                       </td>
 
                       {/* Vehicle Plates */}
                       <td className="p-4">
                         <div>
-                          <p className="font-extrabold text-xs text-slate-900">{o.vehicle_tractor_plate} | {o.vehicle_trailer_plate}</p>
-                          <p className="text-[10px] text-slate-450">{o.vehicle_model}</p>
+                          <p className="font-extrabold text-xs text-black">{o.vehicle_tractor_plate} | {o.vehicle_trailer_plate}</p>
+                          <p className="text-[10px] text-slate-600 font-bold">{o.vehicle_model}</p>
                         </div>
                       </td>
 
                       {/* Origin Destination */}
-                      <td className="p-4 text-slate-800">
+                      <td className="p-4 text-black font-bold">
                         <div>
                           <p>{o.origin} ➔ {o.destination}</p>
                         </div>
                       </td>
 
                       {/* Cliente */}
-                      <td className="p-4 text-slate-550 truncate max-w-[120px]">{o.client_name}</td>
+                      <td className="p-4 text-black font-bold truncate max-w-[120px]">{o.client_name}</td>
 
                       {/* CTE value */}
-                      <td className="p-4 min-w-[108px] whitespace-nowrap text-[11px] font-bold leading-tight tracking-normal text-slate-900">
+                      <td className="p-4 min-w-[108px] whitespace-nowrap text-[11px] font-black leading-tight tracking-normal text-black">
                         R$ {(Number(o.cte_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </td>
 
                       {/* Valor do Frete */}
-                      <td className="p-4 min-w-[108px] whitespace-nowrap text-[11px] font-bold leading-tight tracking-normal text-slate-900">
+                      <td className="p-4 min-w-[108px] whitespace-nowrap text-[11px] font-black leading-tight tracking-normal text-black">
                         R$ {(Number(o.freight_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </td>
 
-                      {/* Residual driver balance */}
-                      <td className="p-4 min-w-[128px] font-bold text-slate-900">
-                        <div className="w-max min-w-[108px] text-[11px] leading-tight tracking-normal">
+                      {/* Residual driver balance - SINGLE LINE */}
+                      <td className="p-4 whitespace-nowrap font-bold text-black">
+                        <div className="whitespace-nowrap text-[11px] leading-tight tracking-normal">
                           {(Number(o.cash_value) || 0) > 0 ? (
-                            <p className="whitespace-nowrap text-emerald-700">
+                            <span className="whitespace-nowrap text-emerald-700 font-black">
                               À vista R$ {(Number(o.cash_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </p>
+                            </span>
                           ) : (
-                            <>
-                              <p className="whitespace-nowrap border-b border-slate-200 pb-1">
+                            <div className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                              <span className="whitespace-nowrap text-black font-bold">
                                 AD R$ {(Number(o.advance_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                              </p>
-                              <p className={`whitespace-nowrap pt-1 ${o.balance_value < 0 ? 'text-red-655' : 'text-slate-900'}`}>
-                                SD R$ {o.balance_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                              </p>
-                            </>
+                              </span>
+                              <span className="text-slate-300">|</span>
+                              <span className={`whitespace-nowrap font-bold ${o.balance_value < 0 ? 'text-red-600' : 'text-black'}`}>
+                                SD R$ {(Number(o.balance_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
                           )}
                         </div>
                       </td>
 
                       {/* Status label */}
-                      <td className="p-4">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wide ${getFreightStatusMeta(o.status).className}`}>
+                      <td className="p-4 whitespace-nowrap">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wide whitespace-nowrap inline-flex items-center gap-1 ${getFreightStatusMeta(o.status).className}`}>
                           {getFreightStatusMeta(o.status).icon} {normalizeFreightOrderStatus(o.status)}
                         </span>
                       </td>
@@ -483,7 +484,7 @@ export default function OrdersListPage() {
                       <span className="text-[10px] text-slate-400 font-bold uppercase block tracking-wider">CTE/MANIFESTO</span>
                       <Link
                         href={`/ordens/${o.id}`}
-                        className={`font-extrabold text-sm hover:underline inline-flex items-center gap-1 ${o.cte_number ? 'text-amber-600 dark:text-amber-500' : 'text-rose-600 dark:text-rose-400'}`}
+                        className={`font-extrabold text-sm hover:underline inline-flex items-center gap-1 ${o.cte_number ? 'text-slate-900' : 'text-slate-400 italic'}`}
                       >
                         {!o.cte_number && <AlertTriangle className="h-3.5 w-3.5 animate-pulse text-red-500" />}
                         {o.cte_number || 'A emitir'}
@@ -584,19 +585,20 @@ export default function OrdersListPage() {
                     </div>
                     <div className="col-span-2">
                       <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Saldo Frete</span>
-                      <div className="text-[11px] mt-0.5 font-bold text-slate-950 leading-tight">
+                      <div className="text-[11px] mt-0.5 font-bold text-black leading-tight">
                         {(Number(o.cash_value) || 0) > 0 ? (
-                          <p className="text-emerald-700">
+                          <p className="text-emerald-700 font-black">
                             À vista R$ {(Number(o.cash_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </p>
                         ) : (
-                          <div className="flex gap-4">
-                            <p className="pb-0.5">
+                          <div className="flex items-center gap-2 whitespace-nowrap">
+                            <span className="whitespace-nowrap text-black font-bold">
                               AD R$ {(Number(o.advance_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </p>
-                            <p className={`pt-0.5 ${o.balance_value < 0 ? 'text-red-655' : 'text-slate-950'}`}>
-                              SD R$ {o.balance_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </p>
+                            </span>
+                            <span className="text-slate-300">|</span>
+                            <span className={`whitespace-nowrap font-bold ${o.balance_value < 0 ? 'text-red-600' : 'text-black'}`}>
+                              SD R$ {(Number(o.balance_value) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </span>
                           </div>
                         )}
                       </div>
