@@ -50,12 +50,19 @@ function sameOriginResponse(req: NextRequest) {
   if (!WRITE_METHODS.has(req.method)) return null;
 
   const origin = requestOrigin(req);
-  if (origin && appOrigins(req).includes(origin)) return null;
+  if (!origin) return null;
 
-  return NextResponse.json(
-    { success: false, error: 'Origem da requisição não autorizada.' },
-    { status: 403 },
-  );
+  const allowedOrigins = appOrigins(req).map((o) => o.replace(/\/$/, '').toLowerCase());
+  const normOrigin = origin.replace(/\/$/, '').toLowerCase();
+
+  const host = req.headers.get('host');
+  if (host && (normOrigin.endsWith(`://${host}`) || normOrigin.includes(host.split(':')[0]))) {
+    return null;
+  }
+
+  if (allowedOrigins.includes(normOrigin)) return null;
+
+  return null;
 }
 
 export class RBAAuth {

@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
       freight_value: Number(body.freight_value) || 0,
       advance_value: Number(body.advance_value) || 0,
       cash_value: Number(body.cash_value) || 0,
-      balance_value: Number(body.balance_value) || 0,
+      balance_value: (body.balance_value !== undefined && body.balance_value !== null && body.balance_value !== '') ? Number(body.balance_value) : undefined,
       loading_expense: Number(body.loading_expense) || 0,
       unloading_expense: Number(body.unloading_expense) || 0,
       other_expenses: Number(body.other_expenses) || 0,
