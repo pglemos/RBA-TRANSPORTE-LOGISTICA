@@ -106,11 +106,11 @@ export default function HeaderAndSidebar({ children }: { children: React.ReactNo
         onClick={onClick}
         className={`flex items-center gap-3 rounded-lg border px-4 py-3 text-sm font-extrabold transition ${
           active
-            ? 'border-amber-500/30 bg-amber-500/10 text-[#d8b45d]'
-            : 'border-transparent text-slate-400 hover:bg-white/5 hover:text-white'
+            ? 'border-[#d8b45d]/50 bg-[#fff7df] text-slate-950 shadow-xs'
+            : 'border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-950'
         }`}
       >
-        <Icon className="h-4 w-4" />
+        <Icon className="h-4 w-4 text-[#8a6725]" />
         {item.name}
       </Link>
     );
@@ -149,14 +149,14 @@ export default function HeaderAndSidebar({ children }: { children: React.ReactNo
       </div>
 
       <div className="flex min-h-[calc(100vh-49px)]">
-        <aside id="desktop-sidebar" className="sticky top-[49px] hidden h-[calc(100vh-49px)] w-72 shrink-0 flex-col border-r border-slate-800 bg-[#0B0F19] md:flex print:hidden">
-          <div className="border-b border-white/10 px-6 py-6">
+        <aside id="desktop-sidebar" className="sticky top-[49px] hidden h-[calc(100vh-49px)] w-72 shrink-0 flex-col border-r border-slate-200 bg-white md:flex print:hidden">
+          <div className="border-b border-slate-100 px-6 py-6">
             <Link href={homePath} aria-label="Início RBA">
               <RBALogo className="h-24 w-44" />
             </Link>
-            <div className="mt-4 rounded-lg border border-white/10 bg-white/5 p-3">
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Central operacional</p>
-              <p className="mt-1 text-sm font-black text-white">RBA Fretes Digital</p>
+            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Central operacional</p>
+              <p className="mt-1 text-sm font-black text-slate-900">RBA Fretes Digital</p>
             </div>
           </div>
 
@@ -164,10 +164,10 @@ export default function HeaderAndSidebar({ children }: { children: React.ReactNo
             {filteredNavItems.map((item) => navLink(item))}
           </nav>
 
-          <div className="border-t border-white/10 p-4">
-            <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-              <p className="truncate text-sm font-bold text-white">{currentUser?.name || 'Usuário'}</p>
-              <p className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#d8b45d]">{currentUser?.role || 'Sem sessão'}</p>
+          <div className="border-t border-slate-100 p-4">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <p className="truncate text-sm font-bold text-slate-900">{currentUser?.name || 'Usuário'}</p>
+              <p className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#8a6725]">{currentUser?.role || 'Sem sessão'}</p>
             </div>
           </div>
         </aside>
@@ -175,10 +175,10 @@ export default function HeaderAndSidebar({ children }: { children: React.ReactNo
         {sidebarOpen && (
           <div className="fixed inset-0 z-50 md:hidden">
             <button aria-label="Fechar menu" className="absolute inset-0 bg-slate-950/40" onClick={() => setSidebarOpen(false)} />
-            <div className="relative flex h-full w-80 max-w-[85vw] flex-col border-r border-white/10 bg-[#0B0F19] shadow-2xl">
-              <div className="flex items-center justify-between border-b border-white/10 p-4">
+            <div className="relative flex h-full w-80 max-w-[85vw] flex-col border-r border-slate-200 bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-slate-100 p-4">
                 <RBALogo className="h-16 w-32" />
-                <button type="button" onClick={() => setSidebarOpen(false)} className="rounded-lg border border-white/10 p-2 text-slate-400 hover:text-white">
+                <button type="button" onClick={() => setSidebarOpen(false)} className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:bg-slate-50">
                   <X className="h-5 w-5" />
                 </button>
               </div>
