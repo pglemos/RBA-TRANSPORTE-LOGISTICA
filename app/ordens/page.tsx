@@ -336,7 +336,7 @@ export default function OrdersListPage() {
                   {!o.cte_number && <AlertTriangle className="h-3 w-3 animate-pulse text-black" />}
                   {o.cte_number || 'A emitir'}
                 </Link>
-                <p className="mt-1 text-xs font-extrabold uppercase tracking-wide text-black">
+                <p className="mt-1 text-xs font-extrabold uppercase tracking-wide text-slate-500">
                   Emissão: {formatFreightOrderEmissionDate(o)}
                 </p>
               </td>
@@ -399,8 +399,8 @@ export default function OrdersListPage() {
                       </td>
 
                       {/* Status label */}
-                      <td className="p-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide ${getFreightStatusMeta(o.status).className}`}>
+                      <td className="p-4 whitespace-nowrap">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide whitespace-nowrap inline-flex items-center gap-1.5 shrink-0 ${getFreightStatusMeta(o.status).className}`}>
                           {getFreightStatusMeta(o.status).icon} {normalizeFreightOrderStatus(o.status)}
                         </span>
                       </td>
@@ -493,13 +493,13 @@ export default function OrdersListPage() {
                   {!o.cte_number && <AlertTriangle className="h-3.5 w-3.5 animate-pulse text-black" />}
                   {o.cte_number || 'A emitir'}
                 </Link>
-                <p className="mt-1 text-[10px] font-extrabold uppercase tracking-wide text-black">
+                <p className="mt-1 text-[10px] font-extrabold uppercase tracking-wide text-slate-500">
                   Emissão: {formatFreightOrderEmissionDate(o)}
                 </p>
               </div>
                     <div>
                       <span className="text-[10px] text-slate-400 font-bold uppercase block tracking-wider text-right mb-1">STATUS</span>
-                      <span className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-wide inline-flex items-center gap-1 ${getFreightStatusMeta(o.status).className}`}>
+                      <span className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-wide whitespace-nowrap inline-flex items-center gap-1.5 shrink-0 ${getFreightStatusMeta(o.status).className}`}>
                         {getFreightStatusMeta(o.status).icon} {normalizeFreightOrderStatus(o.status)}
                       </span>
                     </div>

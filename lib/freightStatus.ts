@@ -6,22 +6,22 @@ export const FREIGHT_STATUS_META: Record<FreightOrderStatus, { icon: string; lab
   Contratar: {
     icon: '🤝',
     label: 'Contratar',
-    className: 'bg-yellow-100 text-yellow-800',
+    className: 'bg-yellow-100 text-yellow-800 whitespace-nowrap inline-flex items-center gap-1.5 shrink-0',
   },
   Carregando: {
     icon: '🚛',
     label: 'Carregando',
-    className: 'bg-orange-100 text-orange-800',
+    className: 'bg-orange-100 text-orange-800 whitespace-nowrap inline-flex items-center gap-1.5 shrink-0',
   },
   'Em Trânsito': {
     icon: '🚚',
     label: 'Em Trânsito',
-    className: 'bg-blue-100 text-blue-800',
+    className: 'bg-blue-100 text-blue-800 whitespace-nowrap inline-flex items-center gap-1.5 shrink-0',
   },
   Entregue: {
     icon: '✅',
     label: 'Entregue',
-    className: 'bg-emerald-100 text-emerald-800',
+    className: 'bg-emerald-100 text-emerald-800 whitespace-nowrap inline-flex items-center gap-1.5 shrink-0',
   },
 };
 
