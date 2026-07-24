@@ -379,8 +379,8 @@ export default function ReportsPage() {
                           <td className={`p-3 text-right font-bold ${o.advance_value > 0 ? 'text-emerald-600' : 'text-red-600'}`}>R$ {o.advance_value.toLocaleString('pt-BR')}</td>
                           <td className={`p-3 text-right font-bold ${o.balance_value > 0 ? 'text-emerald-600' : 'text-red-600'}`}>R$ {o.balance_value.toLocaleString('pt-BR')}</td>
                           <td className="p-3 text-right text-emerald-800 font-black">R$ {o.net_value.toLocaleString('pt-BR')}</td>
-                          <td className="p-3 text-center">
-                            <span className={`px-2.5 py-1 rounded-full text-[10px] uppercase font-bold ${getFreightStatusMeta(o.status).className}`}>
+                          <td className="p-3 text-center whitespace-nowrap">
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] uppercase font-bold whitespace-nowrap inline-flex items-center gap-1.5 shrink-0 ${getFreightStatusMeta(o.status).className}`}>
                               {getFreightStatusMeta(o.status).icon} {normalizeFreightOrderStatus(o.status)}
                             </span>
                           </td>
