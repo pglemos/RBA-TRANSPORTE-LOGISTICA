@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
         order_status: order ? (order.status || 'Contratar') : 'N/A',
         destination: order ? order.destination : 'N/A',
         driver_name: driver ? driver.name : 'Desconhecido',
+        pix_key: driver ? driver.pix_key : '',
       };
     });
 

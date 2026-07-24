@@ -331,12 +331,12 @@ export default function OrdersListPage() {
               <td className="p-4">
                 <Link
                   href={`/ordens/${o.id}`}
-                  className="font-bold text-sm hover:underline inline-flex items-center gap-1 text-slate-900 dark:text-slate-100"
+                  className="font-extrabold text-sm hover:underline inline-flex items-center gap-1 text-black"
                 >
-                  {!o.cte_number && <AlertTriangle className="h-3 w-3 animate-pulse text-red-500" />}
+                  {!o.cte_number && <AlertTriangle className="h-3 w-3 animate-pulse text-black" />}
                   {o.cte_number || 'A emitir'}
                 </Link>
-                <p className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-400">
+                <p className="mt-1 text-xs font-extrabold uppercase tracking-wide text-black">
                   Emissão: {formatFreightOrderEmissionDate(o)}
                 </p>
               </td>
@@ -485,15 +485,15 @@ export default function OrdersListPage() {
                 <div key={o.id} className="p-4 space-y-4 hover:bg-slate-50">
                   <div className="flex justify-between items-start">
                     <div>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase block tracking-wider">CTE/MANIFESTO</span>
+                      <span className="text-[10px] text-black font-extrabold uppercase block tracking-wider">CTE/MANIFESTO</span>
                 <Link
                   href={`/ordens/${o.id}`}
-                  className="font-extrabold text-sm hover:underline inline-flex items-center gap-1 text-slate-900 dark:text-slate-100"
+                  className="font-extrabold text-sm hover:underline inline-flex items-center gap-1 text-black"
                 >
-                  {!o.cte_number && <AlertTriangle className="h-3.5 w-3.5 animate-pulse text-red-500" />}
+                  {!o.cte_number && <AlertTriangle className="h-3.5 w-3.5 animate-pulse text-black" />}
                   {o.cte_number || 'A emitir'}
                 </Link>
-                <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                <p className="mt-1 text-[10px] font-extrabold uppercase tracking-wide text-black">
                   Emissão: {formatFreightOrderEmissionDate(o)}
                 </p>
               </div>

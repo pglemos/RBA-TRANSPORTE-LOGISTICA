@@ -1510,29 +1510,24 @@ export class RBADatabase {
           .select()
           .single();
         if (!error && data) {
-          // Auto-create initial advance payments if specified
-        if (financials.advance_value > 0) {
+          // Auto-create advance payment as Pendente so Finance can approve it.
+          // Cash (à vista) and balance (saldo) must be manually registered by Finance
+          // after actual payment occurs — never auto-created to avoid phantom records.
+          if (financials.advance_value > 0) {
             const newPayId = generateId('pay');
             await supabaseDataClient().from('freight_payments').insert({
               id: newPayId,
               freight_order_id: newId,
               type: 'Adiantamento',
-            amount: financials.advance_value,
+              amount: financials.advance_value,
               payment_date: new Date().toISOString().split('T')[0],
               payment_method: 'Pix',
               proof_url: '',
               status: 'Pendente',
-              notes: 'Adiantamento gerado automaticamente a aprovar.',
+              notes: 'Adiantamento gerado automaticamente — aguardando aprovação do financeiro.',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             });
-          }
-          const paidAutomaticPayments = buildAutomaticFreightPayments(newId, {
-            ...financials,
-            advance_value: 0,
-          });
-          if (paidAutomaticPayments.length > 0) {
-            await supabaseDataClient().from('freight_payments').insert(paidAutomaticPayments);
           }
           await this.addAuditLog(operatorId, operatorName, "Criar Ordem Frete", "Ordem de Frete", newId, null, data);
           return data as FreightOrder;
@@ -1556,6 +1551,9 @@ export class RBADatabase {
     const newOrder: FreightOrder = cleanPayload as FreightOrder;
     db.freight_orders.push(newOrder);
 
+    // Auto-create advance payment as Pendente so Finance can approve it.
+    // Cash (à vista) and balance (saldo) must be manually registered by Finance
+    // after actual payment occurs — never auto-created to avoid phantom records.
     if (newOrder.advance_value > 0) {
       const newPay: FreightPayment = {
         id: generateId('pay'),
@@ -1566,16 +1564,12 @@ export class RBADatabase {
         payment_method: 'Pix',
         proof_url: '',
         status: 'Pendente',
-        notes: 'Adiantamento gerado automaticamente a aprovar.',
+        notes: 'Adiantamento gerado automaticamente — aguardando aprovação do financeiro.',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
       db.freight_payments.push(newPay);
     }
-    db.freight_payments.push(...buildAutomaticFreightPayments(newOrder.id, {
-      ...financials,
-      advance_value: 0,
-    }));
 
     await this.addAuditLog(operatorId, operatorName, "Criar Ordem Frete", "Ordem de Frete", newOrder.id, null, newOrder);
     this.save(db);
