@@ -55,7 +55,7 @@ export default function OrdersListPage() {
     try {
       setLoading(true);
       setErrorMsg('');
-      const params = new URLSearchParams({ page: '1', page_size: '100' });
+      const params = new URLSearchParams({ page: '1', page_size: '1000' });
       if (search.trim()) params.set('search', search.trim());
       if (statusFilter) params.set('status', statusFilter);
       const res = await fetch(`/api/orders?${params.toString()}`);

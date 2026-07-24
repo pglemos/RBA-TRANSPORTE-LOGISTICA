@@ -1351,13 +1351,13 @@ export class RBADatabase {
   // Freight Orders CRUD
   public static async getFreightOrders(options: { page?: number; pageSize?: number; status?: string; driverId?: string; clientId?: string; search?: string; startDate?: string; endDate?: string } = {}) {
     const page = Math.max(1, Number(options.page) || 1);
-    const pageSize = Math.min(100, Math.max(1, Number(options.pageSize) || 50));
+    const pageSize = Math.min(10000, Math.max(1, Number(options.pageSize) || 1000));
     if (isSupabaseServerConfigured) {
       let query = supabaseServer
         .from('freight_orders')
         .select('*')
-        .order('cte_number', { ascending: false, nullsFirst: false })
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .order('cte_number', { ascending: false, nullsFirst: false });
 
       if (options.status) query = query.eq('status', options.status);
       if (options.driverId) query = query.eq('driver_id', options.driverId);

@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     const startDate = searchParams.get('start_date') || '';
     const endDate = searchParams.get('end_date') || '';
     const page = Number(searchParams.get('page') || '1');
-    const pageSize = Number(searchParams.get('page_size') || '50');
+    const pageSize = Number(searchParams.get('page_size') || '1000');
  
     const orders = await RBADatabase.getFreightOrders({ search, status: '', driverId, clientId, page, pageSize, startDate, endDate });
 
