@@ -167,7 +167,7 @@ export default function FreightOrderForm({ initialData }: Props) {
   const [freightValue, setFreightValue] = useState(initialData?.freight_value || 0);
   const [advanceValue, setAdvanceValue] = useState(initialData?.advance_value || 0);
   const [cashValue, setCashValue] = useState(initialData?.cash_value || 0);
-  const [balanceValue, setBalanceValue] = useState<number | ''>(initialData?.balance_value !== undefined ? initialData.balance_value : '');
+  const [balanceValue, setBalanceValue] = useState<number | ''>(initialData?.balance_value !== undefined ? initialData.balance_value : 0);
   const [loadingExpense, setLoadingExpense] = useState(initialData?.loading_expense || 0);
   const [unloadingExpense, setUnloadingExpense] = useState(initialData?.unloading_expense || 0);
   const [otherExpenses, setOtherExpenses] = useState(initialData?.other_expenses || 0);
@@ -603,7 +603,6 @@ export default function FreightOrderForm({ initialData }: Props) {
                 onChange={(e) => {
                   const val = Number(e.target.value);
                   setFreightValue(val);
-                  setBalanceValue(val - advanceValue - cashValue);
                 }}
                 className={field}
               />
@@ -620,7 +619,6 @@ export default function FreightOrderForm({ initialData }: Props) {
                 onChange={(e) => {
                   const val = Number(e.target.value);
                   setAdvanceValue(val);
-                  setBalanceValue(freightValue - val - cashValue);
                 }}
                 className={field}
               />
@@ -637,7 +635,6 @@ export default function FreightOrderForm({ initialData }: Props) {
                 onChange={(e) => {
                   const val = Number(e.target.value);
                   setCashValue(val);
-                  setBalanceValue(freightValue - advanceValue - val);
                 }}
                 className={field}
               />
@@ -650,7 +647,7 @@ export default function FreightOrderForm({ initialData }: Props) {
                   type="number"
                   step="0.01"
                   value={balanceValue !== undefined && balanceValue !== null ? balanceValue : ''}
-                  placeholder={String(freightValue - advanceValue - cashValue)}
+                  placeholder="0"
                   onChange={(e) => setBalanceValue(e.target.value === '' ? '' : Number(e.target.value))}
                   className={`${field} font-black ${typeof balanceValue === 'number' && balanceValue < 0 ? 'text-rose-600' : 'text-blue-800'}`}
                 />

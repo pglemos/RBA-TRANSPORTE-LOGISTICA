@@ -58,7 +58,7 @@ export function normalizeInlineDriverPayload(input: InlineDriverInput = {}) {
     bank_name: String(input.bank_name || '').trim(),
     bank_agency: String(input.bank_agency || '').trim(),
     bank_account: String(input.bank_account || '').trim(),
-    pix_key: String(input.pix_key || cpf).trim(),
+    pix_key: String(input.pix_key || '').trim(),
     beneficiary_name: String(input.beneficiary_name || name).trim(),
     beneficiary_document: normalizeDocument(input.beneficiary_document || cpf),
     status: input.status || 'Ativo',
