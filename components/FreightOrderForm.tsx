@@ -490,11 +490,11 @@ export default function FreightOrderForm({ initialData }: Props) {
   }
 
   // ---- Shared style tokens to mimic the printed sheet ----
-  const cell = "flex items-stretch border-b border-slate-150 last:border-b-0";
-  const label = "flex items-center px-3 py-2 text-[10px] md:text-[11px] font-bold uppercase tracking-wider text-slate-500 bg-slate-50 border-r border-slate-150 whitespace-nowrap shrink-0 select-none";
+  const cell = "flex items-stretch border-b border-slate-100 last:border-b-0";
+  const label = "flex items-center px-3 py-2 text-[10px] md:text-[11px] font-bold uppercase tracking-wider text-slate-500 bg-slate-50 border-r border-slate-100 whitespace-nowrap shrink-0 select-none";
   const field = "flex-1 min-w-0 bg-white outline-none px-3 py-2 text-xs md:text-sm font-bold text-slate-900 focus:bg-amber-500/5";
   const selectField = field + " cursor-pointer";
-  const divider = "border-l border-slate-150";
+  const divider = "border-l border-slate-100";
   const canEnterBuonnyCode = buonnyStatus === 'Aprovado';
 
   return (
@@ -800,7 +800,7 @@ export default function FreightOrderForm({ initialData }: Props) {
                         maxLength={20}
                         placeholder="Código Buonny"
                         aria-label="Código da consulta Buonny"
-                        className={`${field} w-[45%] flex-none border-l border-slate-150 tracking-wide placeholder:font-semibold placeholder:tracking-normal placeholder:text-slate-400`}
+                        className={`${field} w-[45%] flex-none border-l border-slate-100 tracking-wide placeholder:font-semibold placeholder:tracking-normal placeholder:text-slate-400`}
                       />
                     )}
                   </div>
@@ -821,7 +821,7 @@ export default function FreightOrderForm({ initialData }: Props) {
             </div>
             {/* CTE */}
             <div className={`flex flex-col w-[34%] ${divider}`}>
-              <span className={`${label} border-b border-slate-150 justify-center`}>CTE:</span>
+              <span className={`${label} border-b border-slate-100 justify-center`}>CTE:</span>
               <input
                 id="ip-cte"
                 name="cte_number"
@@ -831,7 +831,7 @@ export default function FreightOrderForm({ initialData }: Props) {
                 placeholder="0000 / 0000"
                 className={field + ' text-center text-base font-bold'}
               />
-              <span className={`${label} border-t border-slate-150 justify-center`}>Valor do CTE:</span>
+              <span className={`${label} border-t border-slate-100 justify-center`}>Valor do CTE:</span>
               <input
                 id="ip-cte-value"
                 name="cte_value"
@@ -877,14 +877,14 @@ export default function FreightOrderForm({ initialData }: Props) {
 
           {/* TIPO DE VEÍCULO (2 linhas) */}
           <div className={cell}>
-            <div className="flex items-center px-3 w-[28%] shrink-0 border-r border-slate-150">
+            <div className="flex items-center px-3 w-[28%] shrink-0 border-r border-slate-100">
               <span className="text-[10px] md:text-[11px] font-extrabold uppercase tracking-tight text-slate-900 leading-tight">
                 Tipo de Veículo:
               </span>
             </div>
             <div className="flex-1 min-w-0">
               {/* busca do conjunto */}
-              <div className="flex items-stretch border-b border-slate-150">
+              <div className="flex items-stretch border-b border-slate-100">
                 <VehicleCombobox
                   vehicles={vehicles}
                   value={vehicleId}
@@ -899,7 +899,7 @@ export default function FreightOrderForm({ initialData }: Props) {
                   name="vehicle_type"
                   value={vehicleDraft.vehicle_type || 'Carreta'}
                   onChange={(e) => updateVehicleDraft({ vehicle_type: e.target.value as VehicleDraft['vehicle_type'] })}
-                  className={`${selectField} w-[34%] flex-none border-l border-slate-150`}
+                  className={`${selectField} w-[34%] flex-none border-l border-slate-100`}
                   disabled={isEdit && !!vehicleId}
                 >
                   {VEHICLE_TYPES.map((type) => (
@@ -908,7 +908,7 @@ export default function FreightOrderForm({ initialData }: Props) {
                 </select>
               </div>
               {/* PLACA CAV / CARR */}
-              <div className="flex items-stretch border-b border-slate-150">
+              <div className="flex items-stretch border-b border-slate-100">
                 <div className="flex items-stretch flex-1 min-w-0">
                   <span className={label}>Placa Cav.:</span>
                   <VehicleCombobox
@@ -953,7 +953,7 @@ export default function FreightOrderForm({ initialData }: Props) {
                     placeholder="Fab."
                     readOnly={isEdit && !!vehicleId}
                   />
-                  <span className="flex items-center border-l border-r border-slate-150 px-2 text-sm font-black text-slate-500 bg-slate-50">/</span>
+                  <span className="flex items-center border-l border-r border-slate-100 px-2 text-sm font-black text-slate-500 bg-slate-50">/</span>
                   <input
                     id="ip-vehicle-model-year"
                     name="vehicle_model_year"
@@ -1153,7 +1153,7 @@ export default function FreightOrderForm({ initialData }: Props) {
               {attachments.length > 0 && (
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1.5">
                   {attachments.map((file) => (
-                    <div key={file.id} className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-150 text-xs">
+                    <div key={file.id} className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-100 text-xs">
                       <span className="font-semibold text-slate-700 truncate max-w-xs">{file.file_name}</span>
                       <div className="flex items-center gap-2">
                         <a href={file.file_url} target="_blank" rel="noreferrer" className="text-yellow-600 font-bold hover:underline">Ver</a>

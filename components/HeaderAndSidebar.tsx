@@ -155,7 +155,7 @@ export default function HeaderAndSidebar({ children }: { children: React.ReactNo
               <RBALogo className="h-24 w-44" />
             </Link>
             <div className="mt-4 rounded-lg border border-white/10 bg-white/5 p-3">
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-450">Central operacional</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Central operacional</p>
               <p className="mt-1 text-sm font-black text-white">RBA Fretes Digital</p>
             </div>
           </div>

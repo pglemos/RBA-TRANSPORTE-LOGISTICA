@@ -192,13 +192,13 @@ export default function OrdersListPage() {
                 placeholder="Pesquisar ficha, motorista, placa, CTE ou cliente..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full text-xs font-semibold pl-9 pr-3 py-3 bg-slate-50 border border-slate-250 rounded-xl outline-none focus:border-yellow-500 transition-colors text-slate-800"
+                className="w-full text-xs font-semibold pl-9 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-yellow-500 transition-colors text-slate-800"
               />
             </div>
 
             {/* Date range picker */}
             <div className="flex items-center gap-2 w-full lg:w-auto shrink-0 flex-wrap sm:flex-nowrap">
-              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2.5 rounded-xl text-xs font-bold w-full sm:w-auto">
+              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold w-full sm:w-auto">
                 <span className="text-slate-400 text-[10px] uppercase font-black">De:</span>
                 <input
                   type="date"
@@ -207,7 +207,7 @@ export default function OrdersListPage() {
                   className="bg-transparent text-slate-700 outline-none font-bold cursor-pointer w-full sm:w-auto text-[11px]"
                 />
               </div>
-              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2.5 rounded-xl text-xs font-bold w-full sm:w-auto">
+              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold w-full sm:w-auto">
                 <span className="text-slate-400 text-[10px] uppercase font-black">Até:</span>
                 <input
                   type="date"
@@ -230,7 +230,7 @@ export default function OrdersListPage() {
 
           {/* Bottom row: Select Dropdowns */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 w-full">
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs font-bold">
               <Filter className="h-3.5 w-3.5 text-slate-500" />
               <select
                   id="status-filter"
@@ -250,7 +250,7 @@ export default function OrdersListPage() {
               </select>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs font-bold">
               <select
                 id="driver-filter"
                 value={driverFilter}
@@ -264,7 +264,7 @@ export default function OrdersListPage() {
               </select>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs font-bold">
               <select
                 id="vehicle-filter"
                 value={vehicleFilter}
@@ -278,7 +278,7 @@ export default function OrdersListPage() {
               </select>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs font-bold">
               <select
                 id="client-filter"
                 value={clientFilter}
@@ -365,7 +365,7 @@ export default function OrdersListPage() {
                       </td>
 
                       {/* Cliente */}
-                      <td className="p-4 text-slate-550 truncate max-w-[120px]">{o.client_name}</td>
+                      <td className="p-4 text-slate-600 truncate max-w-[120px]">{o.client_name}</td>
 
                       {/* CTE value & Frete value */}
                       <td className="p-4 min-w-[140px] whitespace-nowrap text-xs leading-tight tracking-normal">
@@ -426,7 +426,7 @@ export default function OrdersListPage() {
                                   className="fixed inset-0 z-10" 
                                   onClick={() => setActiveDropdownId(null)}
                                 />
-                                <div className="absolute right-0 mt-1.5 w-36 rounded-xl bg-white border border-slate-200 shadow-lg py-1.5 z-20 text-left font-semibold text-slate-750 animate-slide-in">
+                                <div className="absolute right-0 mt-1.5 w-36 rounded-xl bg-white border border-slate-200 shadow-lg py-1.5 z-20 text-left font-semibold text-slate-700 animate-slide-in">
                                   <Link
                                     href={`/ordens/${o.id}`}
                                     onClick={() => setActiveDropdownId(null)}
@@ -480,7 +480,7 @@ export default function OrdersListPage() {
             </div>
 
             {/* Mobile Cards View */}
-            <div className="block md:hidden divide-y divide-slate-150">
+            <div className="block md:hidden divide-y divide-slate-100">
               {filteredOrders.map((o) => (
                 <div key={o.id} className="p-4 space-y-4 hover:bg-slate-50">
                   <div className="flex justify-between items-start">
@@ -514,7 +514,7 @@ export default function OrdersListPage() {
                     <div>
                       <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Veículo</span>
                       <p className="font-extrabold text-slate-950 mt-0.5">{o.vehicle_tractor_plate} | {o.vehicle_trailer_plate}</p>
-                      <p className="text-[10px] text-slate-450">{o.vehicle_model}</p>
+                      <p className="text-[10px] text-slate-500">{o.vehicle_model}</p>
                     </div>
                     <div className="col-span-2">
                       <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Origem ➔ Destino</span>

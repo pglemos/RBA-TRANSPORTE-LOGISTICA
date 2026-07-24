@@ -279,10 +279,10 @@ export default function FinancePage() {
             <h4 className="text-lg font-black text-emerald-950 mt-3">
               R$ {stats.totalPaid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </h4>
-            <span className="text-[9px] text-emerald-650 block mt-1">Transações finalizadas no banco de dados</span>
+            <span className="text-[9px] text-emerald-600 block mt-1">Transações finalizadas no banco de dados</span>
           </div>
 
-          <div className="bg-yellow-50 border border-yellow-250 rounded-2xl p-5">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-5">
             <div className="flex items-center justify-between">
               <span className="text-[10px] text-yellow-700 uppercase font-black tracking-wider">Total Pendente de Entrega</span>
               <DollarSign className="h-4.5 w-4.5 text-yellow-600" />
@@ -312,7 +312,7 @@ export default function FinancePage() {
             <h4 className="text-lg font-black mt-3 text-amber-950">
               R$ {stats.totalMargin.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </h4>
-            <span className="text-[9px] text-amber-650 block mt-1">Lucro líquido operacional consolidado</span>
+            <span className="text-[9px] text-amber-600 block mt-1">Lucro líquido operacional consolidado</span>
           </div>
 
         </div>
@@ -343,7 +343,7 @@ export default function FinancePage() {
                     id="ip-pay-order"
                     value={orderId}
                     onChange={(e) => setOrderId(e.target.value)}
-                    className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                    className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none"
                   >
                     <option value="">Selecione a Ordem</option>
  {orders.map(o => (
@@ -357,7 +357,7 @@ export default function FinancePage() {
                   <select
                     value={paymentType}
                     onChange={(e) => setPaymentType(e.target.value as any)}
-                    className="w-full text-xs font-black px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                    className="w-full text-xs font-black px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none"
                   >
                     <option value="Adiantamento">Adiantamento em Viagem</option>
                     <option value="Saldo">Saldo Final de Entrega</option>
@@ -375,7 +375,7 @@ export default function FinancePage() {
                     placeholder="0.00"
                     value={amount}
                     onChange={(e) => setAmount(Number(e.target.value))}
-                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none"
                   />
                 </div>
 
@@ -387,7 +387,7 @@ export default function FinancePage() {
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value as any)}
-                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none"
                   >
                     <option value="Pendente">🟡 Pendente / Processando Lote</option>
                     <option value="Pago">🟢 Pago / Comprovante Anetado</option>
@@ -400,7 +400,7 @@ export default function FinancePage() {
                   <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value as any)}
-                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none"
                   >
                     <option value="Pix">Pix</option>
                     <option value="Transferência">Transferência Bancária</option>
@@ -417,7 +417,7 @@ export default function FinancePage() {
                     placeholder="https://exemplo.com/comprovante.pdf"
                     value={proofUrl}
                     onChange={(e) => setProofUrl(e.target.value)}
-                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-55 border border-slate-200 rounded-lg outline-none"
+                    className="w-full text-xs font-bold px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none"
                   />
                 </div>
               </div>
@@ -454,12 +454,12 @@ export default function FinancePage() {
               placeholder="Pesquisar por motorista, número da ordem..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full text-xs font-semibold pl-9 pr-3 py-2.5 bg-slate-55 border border-slate-250 rounded-xl outline-none focus:border-yellow-500 text-slate-800"
+              className="w-full text-xs font-semibold pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-yellow-500 text-slate-800"
             />
           </div>
 
           <div className="flex gap-2 shrink-0 w-full sm:w-auto">
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-250 px-3 py-2 rounded-xl text-xs font-bold">
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs font-bold">
               <Filter className="h-3.5 w-3.5 text-slate-500" />
               <select
                 value={statusFilter}
@@ -504,7 +504,7 @@ export default function FinancePage() {
                     <th className="p-4 text-right">Ação</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-150 font-semibold text-slate-700">
+                <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
                   {filteredPayments.map((p) => (
                     <tr key={p.id} className="hover:bg-slate-50">
                       <td className="p-4 text-slate-500">{p.id.slice(0, 8)}</td>
@@ -521,9 +521,9 @@ export default function FinancePage() {
                             <span className="text-[10px] text-slate-500">Ordem: #{p.order_number}</span>
                             {p.order_status && p.order_status !== 'N/A' && (
                               <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-wide ${
-                                p.order_status === 'Carregando' ? 'bg-orange-100 text-orange-850' :
-                                p.order_status === 'Em Trânsito' ? 'bg-blue-100 text-blue-850' :
-                                p.order_status === 'Entregue' ? 'bg-emerald-100 text-emerald-850' :
+                                p.order_status === 'Carregando' ? 'bg-orange-100 text-orange-900' :
+                                p.order_status === 'Em Trânsito' ? 'bg-blue-100 text-blue-900' :
+                                p.order_status === 'Entregue' ? 'bg-emerald-100 text-emerald-900' :
                                 'bg-slate-100 text-slate-700'
                               }`}>
                                 {p.order_status}
@@ -535,7 +535,7 @@ export default function FinancePage() {
                       <td className="p-4">
                         <div>
                            <p>{p.driver_name}</p>
-                           <p className="text-[10px] text-slate-450">Chave Pix: {p.pix_key}</p>
+                           <p className="text-[10px] text-slate-500">Chave Pix: {p.pix_key}</p>
                         </div>
                       </td>
                       <td className="p-4">
@@ -543,7 +543,7 @@ export default function FinancePage() {
                           <span className="px-1.5 py-0.5 text-[9px] bg-slate-100 text-slate-700 font-extrabold rounded uppercase tracking-wider">
                             {p.type}
                           </span>
-                          <span className="text-[10px] text-slate-450">{p.payment_method || 'Pix'}</span>
+                          <span className="text-[10px] text-slate-500">{p.payment_method || 'Pix'}</span>
                           {p.proof_url && (
                             <a
                               href={p.proof_url}

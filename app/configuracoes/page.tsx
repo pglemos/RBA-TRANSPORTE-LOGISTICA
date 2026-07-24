@@ -178,7 +178,7 @@ export default function SettingsPage() {
                   type="text"
                   value={insurancePolicyNumber}
                   onChange={(e) => setInsurancePolicyNumber(e.target.value)}
-                  className="w-full text-xs font-bold px-3 py-2 bg-slate-55 border border-slate-200 rounded-lg outline-none text-slate-800"
+                  className="w-full text-xs font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none text-slate-800"
                 />
               </div>
 
@@ -192,7 +192,7 @@ export default function SettingsPage() {
                   />
                   <div>
                     <span>Estrito Seguradora</span>
-                    <span className="text-[9px] text-slate-450 block font-normal leading-normal mt-0.5">
+                    <span className="text-[9px] text-slate-500 block font-normal leading-normal mt-0.5">
                       Bloquear liberação automática de pátio se Buonny reprovado.
                     </span>
                   </div>
@@ -211,7 +211,7 @@ export default function SettingsPage() {
           </div>
 
           {/* AUDIT LOG IMMUTABLE CONSOLE */}
-          <div className="lg:col-span-2 bg-slate-950 text-slate-200 border border-slate-850 rounded-3xl p-6 space-y-6 overflow-hidden">
+          <div className="lg:col-span-2 bg-slate-950 text-slate-200 border border-slate-800 rounded-3xl p-6 space-y-6 overflow-hidden">
             
             <div className="border-b border-white/5 pb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -237,7 +237,7 @@ export default function SettingsPage() {
             ) : (
               <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                 {auditLogs.map((log) => (
-                  <div key={log.id} className="p-3.5 bg-slate-900/60 border border-slate-850 hover:bg-slate-900 rounded-xl space-y-1.5 transition-colors text-[11px] leading-relaxed">
+                  <div key={log.id} className="p-3.5 bg-slate-900/60 border border-slate-800 hover:bg-slate-900 rounded-xl space-y-1.5 transition-colors text-[11px] leading-relaxed">
                     
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[10px] text-slate-500 gap-1">
                       <span className="text-yellow-450 block font-bold uppercase tracking-wider">{log.action}</span>

@@ -49,7 +49,7 @@ const id = params?.id;
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
-            <span className="text-[10px] text-slate-450 uppercase font-black block tracking-wider">Edição da Emissão</span>
+            <span className="text-[10px] text-slate-500 uppercase font-black block tracking-wider">Edição da Emissão</span>
             <h1 className="text-sm font-black text-slate-900">Editar Ficha de Frete {order ? `#${order.order_number}` : ''}</h1>
           </div>
         </div>

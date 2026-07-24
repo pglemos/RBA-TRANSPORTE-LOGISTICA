@@ -82,11 +82,18 @@ export default function ReportsPage() {
   // Aggregated totals
   const reportSummary = summarizeFreightOrders(filteredOrders);
   const totalGrossRevenue = reportSummary.totalGrossRevenue;
-  const totalDriverFreight = reportSummary.totalDriverFreight;
   const totalAdvance = reportSummary.totalAdvance;
   const totalBalance = reportSummary.totalBalanceToPay;
-  const totalExpenses = reportSummary.totalExpenses;
   const totalNet = reportSummary.totalNet;
+
+  // Count orders silently excluded due to missing emission date
+  const ordersWithoutDateCount = (startDate || endDate)
+    ? orders.filter(o => {
+        const matchesClient = selectedClient ? o.client_id === selectedClient : true;
+        const matchesStatus = statusFilter ? normalizeFreightOrderStatus(o.status) === statusFilter : true;
+        return matchesClient && matchesStatus && !getFreightOrderEmissionDateValue(o);
+      }).length
+    : 0;
 
   const handleExportCSV = () => {
     const headers = [
@@ -186,8 +193,8 @@ export default function ReportsPage() {
           
           <div className="space-y-1.5">
             <label className="text-[10px] uppercase font-bold text-slate-500 block">Filtrar por Cliente Tomador</label>
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-250 rounded-xl px-3 py-2.5">
-              <Filter className="h-4 w-4 text-slate-450 shrink-0" />
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5">
+              <Filter className="h-4 w-4 text-slate-500 shrink-0" />
               <select
                 value={selectedClient}
                 onChange={(e) => setSelectedClient(e.target.value)}
@@ -203,7 +210,7 @@ export default function ReportsPage() {
 
           <div className="space-y-1.5">
             <label className="text-[10px] uppercase font-bold text-slate-500 block">Status Operacional da Viagem</label>
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-250 rounded-xl px-3 py-2.5">
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5">
               <FileCheck className="h-4 w-4 text-slate-400 shrink-0" />
               <select
                 value={statusFilter}
@@ -236,7 +243,7 @@ export default function ReportsPage() {
               )}
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex-1 flex items-center gap-1.5 bg-slate-50 border border-slate-250 rounded-xl px-2 py-2">
+              <div className="flex-1 flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2 py-2">
                 <span className="text-[9px] uppercase font-extrabold text-slate-400">De</span>
                 <input
                   type="date"
@@ -245,7 +252,7 @@ export default function ReportsPage() {
                   className="w-full bg-transparent text-xs font-bold text-slate-700 outline-none"
                 />
               </div>
-              <div className="flex-1 flex items-center gap-1.5 bg-slate-50 border border-slate-250 rounded-xl px-2 py-2">
+              <div className="flex-1 flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2 py-2">
                 <span className="text-[9px] uppercase font-extrabold text-slate-400">Até</span>
                 <input
                   type="date"
@@ -266,70 +273,63 @@ export default function ReportsPage() {
           </div>
         ) : (
           <div className="space-y-6" id="report-print-target">
+            {/* Warning: orders excluded due to missing emission date */}
+            {ordersWithoutDateCount > 0 && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800 flex items-start gap-2 print:hidden">
+                <span className="shrink-0 mt-0.5">⚠️</span>
+                <span>
+                  {ordersWithoutDateCount} {ordersWithoutDateCount === 1 ? 'ordem foi excluída' : 'ordens foram excluídas'} deste período por não terem data de emissão preenchida.
+                  {' '}<Link href="/ordens" className="underline hover:no-underline">Ver ordens sem data</Link>.
+                </span>
+              </div>
+            )}
             
             {/* PRINT-ONLY HEADER EMBLEM */}
             <div className="hidden print:block border-b-2 border-slate-900 pb-4 mb-6">
               <RBALogo className="mb-3 h-20 w-40" />
               <h1 className="text-lg font-black tracking-tight">RBA TRANSPORTE & LOGÍSTICA S.A.</h1>
               <p className="text-xs uppercase font-bold text-slate-500">Relatório Consolidado de Contratos de Fretes e Custos Fiscais</p>
-              <p className="text-[10px] text-slate-450">
+              <p className="text-[10px] text-slate-500">
                 Filtro Cliente: {clients.find(c => c.id === selectedClient)?.name || 'Todos'} |{' '}
                 Status: {statusFilter || 'Todos'} |{' '}
                 Período: {startDate || endDate ? `${startDate ? formatDateBR(startDate) : 'Início'} até ${endDate ? formatDateBR(endDate) : 'Fim'}` : 'Todo o período'}
               </p>
                        {/* FINANCIAL BLOCKS VIEW */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               
               <div className="bg-white border rounded-2xl p-4 text-center">
-                <span className="text-[9px] text-slate-450 font-black block uppercase tracking-wider mb-2">Faturamento Bruto (CTE)</span>
+                <span className="text-[9px] text-slate-500 font-black block uppercase tracking-wider mb-2">Faturamento Bruto</span>
                 <span className="text-md md:text-lg font-black text-slate-900 block">
                   R$ {totalGrossRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
                 <span className="text-[8px] text-slate-400 block mt-1">Soma do valor bruto do CTE</span>
               </div>
 
-              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-center">
-                <span className="text-[9px] text-blue-700 font-black block uppercase tracking-wider mb-2">Frete ao Motorista</span>
-                <span className="text-md md:text-lg font-black text-blue-900 block">
-                  R$ {totalDriverFreight.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </span>
-                <span className="text-[8px] text-blue-500 block mt-1">Valor de frete acordado (sem despesas)</span>
-              </div>
-
               <div className="bg-white border rounded-2xl p-4 text-center">
-                <span className="text-[9px] text-slate-450 font-black block uppercase tracking-wider mb-2">Adiantamentos Faturados</span>
-                <span className="text-md md:text-lg font-black text-sky-700 block">
+                <span className="text-[9px] text-slate-500 font-black block uppercase tracking-wider mb-2">Adiantamentos Faturados</span>
+                <span className="text-md md:text-lg font-black text-slate-900 block text-sky-700">
                   R$ {totalAdvance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
-                <span className="text-[8px] text-slate-400 block mt-1">Adiantamentos já repassados via Pix</span>
+                <span className="text-[8px] text-slate-400 block mt-1">Adiantamentos já repassados in Pix</span>
               </div>
 
               <div className="bg-white border rounded-2xl p-4 text-center bg-yellow-500/5 border-yellow-500/10">
-                <span className="text-[9px] text-slate-450 font-black block uppercase tracking-wider mb-2">Saldos Residuais</span>
+                <span className="text-[9px] text-slate-500 font-black block uppercase tracking-wider mb-2">Saldos Residuais Restantes</span>
                 <span className="text-md md:text-lg font-black text-yellow-800 block">
                   R$ {totalBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
-                <span className="text-[8px] text-slate-455 block mt-1">A pagar na entrega do romaneio</span>
-              </div>
-
-              <div className="bg-red-50 border border-red-100 rounded-2xl p-4 text-center">
-                <span className="text-[9px] text-red-700 font-black block uppercase tracking-wider mb-2">Despesas Adicionais RBA</span>
-                <span className="text-md md:text-lg font-black text-red-900 block">
-                  R$ {totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </span>
-                <span className="text-[8px] text-red-400 block mt-1">Carga / Descarga / Outros (não é frete)</span>
+                <span className="text-[8px] text-slate-500 block mt-1">A pagar na entrega do romaneio</span>
               </div>
 
               <div className="bg-white border rounded-2xl p-4 text-center bg-emerald-500/5 border-emerald-500/10">
-                <span className="text-[9px] text-slate-450 font-black block uppercase tracking-wider mb-2">Lucro Líquido RBA</span>
+                <span className="text-[9px] text-slate-500 font-black block uppercase tracking-wider mb-2">Lucro Líquido Estimado</span>
                 <span className="text-md md:text-lg font-black text-emerald-800 block">
                   R$ {totalNet.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
-                  <span className="text-[8px] text-slate-450 block mt-1">CTE líquido − frete motorista − despesas</span>
+                  <span className="text-[8px] text-slate-500 block mt-1">CTE líquido - motorista - despesas</span>
               </div>
 
             </div>      </div>
-
 
             {/* DETAILED SPREADSHEET */}
             <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xs">
@@ -345,64 +345,47 @@ export default function ReportsPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-[11px] font-medium text-slate-700">
                     <thead>
-                      <tr className="bg-slate-55 border-b border-slate-200 font-bold text-slate-400 text-[9.5px]">
+                      <tr className="bg-slate-50 border-b border-slate-200 font-bold text-slate-400 text-[9.5px]">
                         <th className="p-3">CTE/MANIFESTO</th>
                         <th className="p-3">Data Emissão</th>
                         <th className="p-3">Motorista</th>
                         <th className="p-3">Origem ➔ Destino</th>
                         <th className="p-3">Cliente</th>
                         <th className="p-3 text-right">CTE (R$)</th>
-                        <th className="p-3 text-right">Frete Motorista (R$)</th>
                         <th className="p-3 text-right">Adiantamento (R$)</th>
-                        <th className="p-3 text-right">Saldo Motorista (R$)</th>
-                        <th className="p-3 text-right">Despesas RBA (R$)</th>
-                        <th className="p-3 text-right">Líquido RBA (R$)</th>
+                        <th className="p-3 text-right">Saldo (R$)</th>
+                        <th className="p-3 text-right">Líquido (R$)</th>
                         <th className="p-3 text-center">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-150">
-                      {filteredOrders.map(o => {
-                        const cteVal = Number(o.cte_value) || 0;
-                        const freightVal = Number(o.freight_value) || 0;
-                        const advanceVal = Number(o.advance_value) || 0;
-                        const cashVal = Number(o.cash_value) || 0;
-                        const totalExpensesRow = Number(o.total_expenses) || 0;
-                        const discountPct = Number(o.cte_discount_percent ?? 10);
-                        const discountVal = cteVal * discountPct / 100;
-                        // Saldo do MOTORISTA = frete - adiantamento - pago à vista
-                        const saldoMotorista = freightVal - advanceVal - cashVal;
-                        // Líquido RBA = CTE - desconto CTE - frete motorista - despesas adicionais
-                        const liquidoRBA = cteVal - discountVal - freightVal - totalExpensesRow;
-                        return (
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredOrders.map(o => (
                         <tr key={o.id} className="hover:bg-slate-50">
                           <td className="p-3">
                             <Link
                               href={`/ordens/${o.id}`}
-                              className={`font-extrabold text-xs hover:underline ${o.cte_number ? 'text-slate-900' : 'text-slate-400 italic'}`}
+                              className={`font-extrabold text-xs hover:underline ${o.cte_number ? 'text-amber-600 dark:text-amber-500' : 'text-red-600'}`}
                             >
                               {o.cte_number || 'A emitir'}
                             </Link>
                           </td>
-                          <td className="p-3 text-slate-450">
+                          <td className="p-3 text-slate-500">
                             {formatFreightOrderEmissionDate(o)}
                           </td>
                           <td className="p-3 font-bold text-slate-900">{o.driver_name}</td>
                           <td className="p-3 truncate max-w-[120px]">{o.origin} ➔ {o.destination}</td>
                           <td className="p-3 truncate max-w-[110px] text-slate-500">{o.client_name}</td>
-                          <td className="p-3 text-right font-bold text-slate-900">R$ {cteVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                          <td className="p-3 text-right text-blue-700 font-bold">R$ {freightVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                          <td className="p-3 text-right text-slate-500">R$ {advanceVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                          <td className="p-3 text-right text-amber-700 font-bold">R$ {saldoMotorista.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                          <td className="p-3 text-right text-red-600 font-semibold">R$ {totalExpensesRow.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                          <td className="p-3 text-right font-black" style={{ color: liquidoRBA >= 0 ? '#065f46' : '#b91c1c' }}>R$ {liquidoRBA.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                          <td className="p-3 text-right font-bold text-slate-900">R$ {(Number(o.cte_value) || 0).toLocaleString('pt-BR')}</td>
+                          <td className={`p-3 text-right font-bold ${o.advance_value > 0 ? 'text-emerald-600' : 'text-red-600'}`}>R$ {o.advance_value.toLocaleString('pt-BR')}</td>
+                          <td className={`p-3 text-right font-bold ${o.balance_value > 0 ? 'text-emerald-600' : 'text-red-600'}`}>R$ {o.balance_value.toLocaleString('pt-BR')}</td>
+                          <td className="p-3 text-right text-emerald-800 font-black">R$ {o.net_value.toLocaleString('pt-BR')}</td>
                           <td className="p-3 text-center">
                             <span className={`px-2.5 py-1 rounded-full text-[10px] uppercase font-bold ${getFreightStatusMeta(o.status).className}`}>
                               {getFreightStatusMeta(o.status).icon} {normalizeFreightOrderStatus(o.status)}
                             </span>
                           </td>
                         </tr>
-                        );
-                      })}
+                      ))}
                     </tbody>
                   </table>
                 </div>

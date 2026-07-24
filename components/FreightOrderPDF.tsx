@@ -88,7 +88,7 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
             <button
               id="close-pdf-btn"
               onClick={onClose}
-              className="p-2 border border-slate-750 hover:bg-slate-800 rounded-xl text-slate-450 hover:text-white cursor-pointer"
+              className="p-2 border border-slate-700 hover:bg-slate-800 rounded-xl text-slate-500 hover:text-white cursor-pointer"
             >
               <XCircle className="h-5 w-5" />
             </button>
@@ -190,13 +190,13 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
                 </div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold block uppercase mb-0.5">Placa Trator (Cavalo)</span>
-                  <p className="text-slate-900 font-bold border-2 border-slate-600 bg-slate-55 rounded px-2 w-fit">
+                  <p className="text-slate-900 font-bold border-2 border-slate-600 bg-slate-50 rounded px-2 w-fit">
                     {order.vehicle_tractor_plate}
                   </p>
                 </div>
                 <div>
                   <span className="text-[9px] text-slate-400 font-extrabold block uppercase mb-0.5">Placa Carreta (Reboque)</span>
-                  <p className="text-slate-900 font-bold border-2 border-slate-600 bg-slate-55 rounded px-2 w-fit">
+                  <p className="text-slate-900 font-bold border-2 border-slate-600 bg-slate-50 rounded px-2 w-fit">
                     {order.vehicle_trailer_plate}
                   </p>
                 </div>
@@ -213,11 +213,11 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
                 <span>4. DEMONSTRATIVO FINANCEIRO DO FRETE</span>
                 <span className="text-[8px] bg-yellow-400 text-black px-1.5 rounded">CÁLCULO SISTÊMICO RBA</span>
               </div>
-              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 divide-y md:divide-y-0 md:divide-x divide-slate-250 font-medium">
+              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 divide-y md:divide-y-0 md:divide-x divide-slate-200 font-medium">
                 
                 {/* Contractual credits */}
                 <div className="space-y-3.5 pr-0 md:pr-4">
-                  <h4 className="text-[10px] font-black text-slate-550 uppercase tracking-wider block">Créditos Contratuais</h4>
+                  <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Créditos Contratuais</h4>
                   <div className="flex justify-between text-xs">
                     <span className="text-slate-500 font-bold">Valor do Frete ao Motorista</span>
                     <strong className="text-slate-950 text-sm leading-none">R$ {order.freight_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
@@ -244,7 +244,7 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
 
                 {/* Costs deductions and outputs */}
                 <div className="space-y-3.5 pt-4 md:pt-0 pl-0 md:pl-6">
-                  <h4 className="text-[10px] font-black text-slate-550 uppercase tracking-wider block">Ajustes Operacionais de Campo</h4>
+                  <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Ajustes Operacionais de Campo</h4>
                   <div className="flex justify-between text-xs text-slate-600">
                     <span>Custo de Carga</span>
                     <span>R$ {order.loading_expense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
@@ -257,8 +257,8 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
                     <span>Outros Desembolsos</span>
                     <span>R$ {order.other_expenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                   </div>
-                  <div className="flex justify-between text-xs border-b border-slate-150 pb-2.5">
-                    <span className="text-slate-450 font-bold">Total Despesas Acordadas</span>
+                  <div className="flex justify-between text-xs border-b border-slate-100 pb-2.5">
+                    <span className="text-slate-500 font-bold">Total Despesas Acordadas</span>
                     <strong className="text-slate-900">R$ {order.total_expenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
                   </div>
                   <div className="flex justify-between text-sm text-emerald-900 font-extrabold bg-emerald-500/10 p-2.5 rounded-lg border border-emerald-500/20">
@@ -314,8 +314,8 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
               </div>
 
               {/* Signature stamp block */}
-              <div className="md:col-span-1 border border-slate-350 bg-slate-55/50 p-4 rounded-2xl flex flex-col justify-between gap-6 relative">
-                <span className="text-[9px] text-slate-450 font-extrabold block uppercase mb-0.5">VALIDAÇÃO SISTÊMICA DA EMISSÃO</span>
+              <div className="md:col-span-1 border border-slate-300 bg-slate-50/50 p-4 rounded-2xl flex flex-col justify-between gap-6 relative">
+                <span className="text-[9px] text-slate-500 font-extrabold block uppercase mb-0.5">VALIDAÇÃO SISTÊMICA DA EMISSÃO</span>
                 <div className="text-center pb-2">
                   <p className="text-xs font-black text-slate-700">{order.responsible_name}</p>
                   <p className="text-[9.5px] text-slate-500 tracking-wide">ASSINATURA ELETRÔNICA CONFIRMADA</p>
@@ -328,7 +328,7 @@ export default function FreightOrderPDF({ order, onClose }: Props) {
             </div>
 
             {/* Printable Terms footer info */}
-            <div className="mt-8 border-t-2 border-slate-900 pt-4 text-[9px] text-slate-450 leading-relaxed text-justify font-medium">
+            <div className="mt-8 border-t-2 border-slate-900 pt-4 text-[9px] text-slate-500 leading-relaxed text-justify font-medium">
               A presente Ordem de Frete Digital gerada em conformidade com as regras de logística terrestre Sefaz substitui integralmente a ficha em meio físico. O condutor/motorista concorda com os saldos demonstrados e assume responsabilidade irrestrita pela custódia, transporte e entrega perfeita das mercadorias confiadas até o destino balizado. A quebra injustificada do prazo sujeita o transportador a multas estabelecidas nas cláusulas gerais de fretes RBA.
             </div>
 

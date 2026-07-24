@@ -199,7 +199,7 @@ export default function QuotePage() {
                     </div>
                     
                     <div className="border-t border-red-500/20 pt-4 space-y-3">
-                      <p className="text-xs text-slate-350 font-bold">Não se preocupe! Você pode enviar os dados preenchidos diretamente usando os botões abaixo:</p>
+                      <p className="text-xs text-slate-400 font-bold">Não se preocupe! Você pode enviar os dados preenchidos diretamente usando os botões abaixo:</p>
                       <div className="flex flex-col sm:flex-row gap-2">
                         <a
                           href={`https://wa.me/5531993092821?text=${encodeURIComponent(
