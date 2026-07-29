@@ -348,11 +348,16 @@
   .report-col-money-small { width: 5.5% !important; }
   .report-col-status { width: 6.5% !important; }
 
-  .report-reference,
   .report-date,
   .report-number { white-space: nowrap !important; }
 
-  .report-reference { color: #0f172a !important; font-weight: 900 !important; }
+  .report-reference {
+    color: #0f172a !important;
+    font-weight: 900 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+  }
   .report-date { color: #475569 !important; font-weight: 700 !important; }
 
   .report-number {

@@ -183,7 +183,7 @@ test('exports header only for an empty result', () => {
 });
 
 test('creates deterministic report file names', () => {
-  const date = new Date('2026-07-29T18:30:00-03:00');
+  const date = new Date(2026, 6, 29, 12, 0, 0);
   assert.equal(buildReportFileName('csv', date), 'relatorio-executivo-rba-2026-07-29.csv');
   assert.equal(buildReportFileName('pdf', date), 'relatorio-executivo-rba-2026-07-29.pdf');
 });

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { flushSync } from 'react-dom';
 import Link from 'next/link';
 import {
   ArrowDownToLine,
@@ -327,24 +328,28 @@ export default function ReportsPage() {
     document.body.appendChild(link);
     link.click();
     link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }, [exportDisabled, reportRows]);
 
   const handlePrintReport = useCallback(() => {
     if (exportDisabled) return;
 
     const exportDate = new Date();
-    setGeneratedAt(exportDate);
+    flushSync(() => setGeneratedAt(exportDate));
     const previousTitle = document.title;
     document.title = buildReportFileName('pdf', exportDate).replace(/\.pdf$/, '');
+    let titleRestored = false;
 
     const restoreTitle = () => {
+      if (titleRestored) return;
+      titleRestored = true;
       document.title = previousTitle;
       window.removeEventListener('afterprint', restoreTitle);
     };
 
     window.addEventListener('afterprint', restoreTitle);
-    window.requestAnimationFrame(() => window.print());
+    window.print();
+    window.setTimeout(restoreTitle, 2000);
   }, [exportDisabled]);
 
   const clearFilters = () => {
