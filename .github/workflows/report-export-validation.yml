@@ -28,13 +28,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        shell: bash
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
+        run: npm install --no-audit --no-fund
 
       - name: Validate report export contract
         run: npm run test:report
