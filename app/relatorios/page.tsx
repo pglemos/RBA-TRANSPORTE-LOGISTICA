@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { flushSync } from 'react-dom';
 import Link from 'next/link';
 import {
   ArrowDownToLine,
@@ -335,7 +334,10 @@ export default function ReportsPage() {
     if (exportDisabled) return;
 
     const exportDate = new Date();
-    flushSync(() => setGeneratedAt(exportDate));
+    setGeneratedAt(exportDate);
+    document.querySelectorAll<HTMLElement>('[data-report-generated-at]').forEach((element) => {
+      element.textContent = formatGeneratedAt(exportDate);
+    });
     const previousTitle = document.title;
     document.title = buildReportFileName('pdf', exportDate).replace(/\.pdf$/, '');
     let titleRestored = false;
@@ -519,7 +521,7 @@ export default function ReportsPage() {
               </div>
             </div>
             <div className="report-print-meta">
-              <strong>Emitido em {formatGeneratedAt(generatedAt)}</strong>
+              <strong>Emitido em <span data-report-generated-at>{formatGeneratedAt(generatedAt)}</span></strong>
               <span>Documento interno - uso gerencial</span>
               <span>RBA Fretes Digital</span>
             </div>
@@ -620,7 +622,7 @@ export default function ReportsPage() {
             </div>
             <div className="report-print-document-id">
               <span>RBA TRANSPORTE & LOGÍSTICA - RELATÓRIO EXECUTIVO</span>
-              <span>Gerado em {formatGeneratedAt(generatedAt)}</span>
+              <span>Gerado em <span data-report-generated-at>{formatGeneratedAt(generatedAt)}</span></span>
             </div>
           </footer>
         </section>
