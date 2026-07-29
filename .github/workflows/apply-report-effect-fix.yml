@@ -1,0 +1,56 @@
+name: Apply Report Effect Fix
+
+on:
+  push:
+    branches:
+      - fix/executive-report-export
+
+permissions:
+  contents: write
+
+jobs:
+  apply-effect-fix:
+    if: ${{ !contains(github.event.head_commit.message, '[effect-fix-applied]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/executive-report-export
+          fetch-depth: 0
+
+      - name: Defer initial report load
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('app/relatorios/page.tsx')
+          source = path.read_text(encoding='utf-8')
+          old = """  useEffect(() => {
+            void loadReportData();
+          }, [loadReportData]);"""
+          new = """  useEffect(() => {
+            const timer = window.setTimeout(() => {
+              void loadReportData();
+            }, 0);
+
+            return () => window.clearTimeout(timer);
+          }, [loadReportData]);"""
+
+          if old not in source:
+              raise SystemExit('Expected report effect block was not found.')
+
+          path.write_text(source.replace(old, new, 1), encoding='utf-8')
+          PY
+
+      - name: Commit corrected effect
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/relatorios/page.tsx
+          git commit -m "fix(report): defer initial data load [effect-fix-applied]"
+          git push origin HEAD:fix/executive-report-export
