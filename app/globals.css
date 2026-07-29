@@ -32,9 +32,7 @@
     font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
   }
 
-  html {
-    scroll-behavior: smooth;
-  }
+  html { scroll-behavior: smooth; }
 
   :where(input, select, textarea) {
     transition: border-color 0.25s ease, box-shadow 0.25s ease;
@@ -48,38 +46,17 @@
 }
 
 @layer utilities {
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: #f1f5f9;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 9999px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #f1f5f9; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
   @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(4px) scale(0.98);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
+    from { opacity: 0; transform: translateY(4px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
   }
 
-  .animate-slide-in {
-    animation: slideIn 0.2s ease-out forwards;
-  }
+  .animate-slide-in { animation: slideIn 0.2s ease-out forwards; }
 }
 
 @layer components {
@@ -97,18 +74,14 @@
   }
 }
 
-.report-print-only {
-  display: none;
-}
+.report-print-only { display: none; }
 
 @media print {
-  @page {
-    size: A4 landscape;
-    margin: 8mm 7mm 10mm;
-  }
+  @page { size: A4 landscape; margin: 8mm 7mm 10mm; }
 
   html,
-  body {
+  body,
+  #rba-app-root {
     width: auto !important;
     min-width: 0 !important;
     height: auto !important;
@@ -131,15 +104,6 @@
     text-shadow: none !important;
   }
 
-  #rba-app-root {
-    width: auto !important;
-    min-height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: visible !important;
-    background: #ffffff !important;
-  }
-
   #rba-app-root > div,
   #rba-app-root main,
   #reports-module {
@@ -156,19 +120,15 @@
 
   #desktop-sidebar,
   #rba-app-root > div:first-child,
-  #rba-app-root header,
   .report-screen-only,
   .print\:hidden {
     display: none !important;
   }
 
-  .report-print-only {
-    display: block !important;
-  }
+  .report-print-only { display: block !important; }
 
   #report-print-target {
     position: static !important;
-    inset: auto !important;
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -179,14 +139,8 @@
   }
 
   a,
-  a:visited {
-    color: inherit !important;
-    text-decoration: none !important;
-  }
-
-  a[href]::after {
-    content: none !important;
-  }
+  a:visited { color: inherit !important; text-decoration: none !important; }
+  a[href]::after { content: none !important; }
 
   .report-print-header {
     display: flex !important;
@@ -214,9 +168,7 @@
     object-position: left center !important;
   }
 
-  .report-print-title-block {
-    min-width: 0 !important;
-  }
+  .report-print-title-block { min-width: 0 !important; }
 
   .report-print-kicker {
     margin: 0 0 0.5mm !important;
@@ -233,7 +185,6 @@
     font-size: 13pt !important;
     font-weight: 900 !important;
     line-height: 1.05 !important;
-    letter-spacing: -0.01em !important;
   }
 
   .report-print-title-block p:last-child {
@@ -255,10 +206,7 @@
     line-height: 1.2 !important;
   }
 
-  .report-print-meta strong {
-    color: #0f172a !important;
-    font-size: 6.7pt !important;
-  }
+  .report-print-meta strong { color: #0f172a !important; font-size: 6.7pt !important; }
 
   .report-print-filters {
     display: grid !important;
@@ -275,14 +223,8 @@
     break-inside: avoid !important;
   }
 
-  .report-print-filters span {
-    min-width: 0 !important;
-    overflow-wrap: anywhere !important;
-  }
-
-  .report-print-filters strong {
-    color: #0f172a !important;
-  }
+  .report-print-filters span { min-width: 0 !important; overflow-wrap: anywhere !important; }
+  .report-print-filters strong { color: #0f172a !important; }
 
   .report-print-financials {
     display: grid !important;
@@ -308,9 +250,7 @@
 
   .report-print-financials span,
   .report-print-financials small,
-  .report-print-financials strong {
-    display: block !important;
-  }
+  .report-print-financials strong { display: block !important; }
 
   .report-print-financials span {
     color: #64748b !important;
@@ -350,15 +290,8 @@
     break-inside: avoid !important;
   }
 
-  .report-print-operations span {
-    min-width: 0 !important;
-    white-space: nowrap !important;
-  }
-
-  .report-print-operations strong {
-    color: #0f172a !important;
-    font-size: 6.6pt !important;
-  }
+  .report-print-operations span { min-width: 0 !important; white-space: nowrap !important; }
+  .report-print-operations strong { color: #0f172a !important; font-size: 6.6pt !important; }
 
   .report-print-table {
     width: 100% !important;
@@ -371,13 +304,8 @@
     line-height: 1.18 !important;
   }
 
-  .report-print-table thead {
-    display: table-header-group !important;
-  }
-
-  .report-print-table tbody {
-    display: table-row-group !important;
-  }
+  .report-print-table thead { display: table-header-group !important; }
+  .report-print-table tbody { display: table-row-group !important; }
 
   .report-print-table tr {
     break-inside: avoid !important;
@@ -409,9 +337,7 @@
     hyphens: auto !important;
   }
 
-  .report-print-table tbody tr:nth-child(even) td {
-    background: #fafbfc !important;
-  }
+  .report-print-table tbody tr:nth-child(even) td { background: #fafbfc !important; }
 
   .report-col-reference { width: 7% !important; }
   .report-col-date { width: 5.5% !important; }
@@ -424,34 +350,18 @@
 
   .report-reference,
   .report-date,
-  .report-number {
-    white-space: nowrap !important;
-  }
+  .report-number { white-space: nowrap !important; }
 
-  .report-reference {
-    color: #0f172a !important;
-    font-weight: 900 !important;
-  }
-
-  .report-date {
-    color: #475569 !important;
-    font-weight: 700 !important;
-  }
+  .report-reference { color: #0f172a !important; font-weight: 900 !important; }
+  .report-date { color: #475569 !important; font-weight: 700 !important; }
 
   .report-number {
     text-align: right !important;
     font-variant-numeric: tabular-nums !important;
   }
 
-  .report-strong {
-    color: #0f172a !important;
-    font-weight: 900 !important;
-  }
-
-  .report-net {
-    color: #17603a !important;
-    font-weight: 900 !important;
-  }
+  .report-strong { color: #0f172a !important; font-weight: 900 !important; }
+  .report-net { color: #17603a !important; font-weight: 900 !important; }
 
   .report-status {
     text-align: center !important;
@@ -466,11 +376,7 @@
   .report-status-em-transito { color: #1e4f8f !important; background: #edf4ff !important; }
   .report-status-carregando { color: #9a4d0a !important; background: #fff4e8 !important; }
   .report-status-contratar { color: #7a5a10 !important; background: #fff9dc !important; }
-
-  .report-route-arrow {
-    color: #9e8245 !important;
-    font-weight: 900 !important;
-  }
+  .report-route-arrow { color: #9e8245 !important; font-weight: 900 !important; }
 
   .report-print-empty {
     padding: 12mm 4mm !important;
@@ -497,9 +403,7 @@
     text-transform: uppercase !important;
   }
 
-  .report-print-source p {
-    margin: 0 !important;
-  }
+  .report-print-source p { margin: 0 !important; }
 
   .report-print-signatures {
     display: grid !important;
