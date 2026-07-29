@@ -54,3 +54,5 @@ jobs:
           git add app/relatorios/page.tsx
           git commit -m "fix(report): defer initial data load [effect-fix-applied]"
           git push origin HEAD:fix/executive-report-export
+
+      # This workflow is temporary and will be removed after the corrective commit.
