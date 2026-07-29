@@ -63,6 +63,7 @@ const currencyFormatter = new Intl.NumberFormat('pt-BR', {
 });
 
 const integerFormatter = new Intl.NumberFormat('pt-BR');
+
 const formatCurrency = (value: number) => currencyFormatter.format(value);
 
 const formatDateInput = (dateValue: string) => {
@@ -248,7 +249,11 @@ export default function ReportsPage() {
   }, []);
 
   useEffect(() => {
-    void loadReportData();
+    const timer = window.setTimeout(() => {
+      void loadReportData();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [loadReportData]);
 
   const dateFilterError = startDate && endDate && startDate > endDate
