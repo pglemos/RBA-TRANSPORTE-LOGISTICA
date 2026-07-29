@@ -1,4 +1,4 @@
-import React from 'react';
+import Image from 'next/image';
 
 type RBALogoProps = {
   className?: string;
@@ -6,11 +6,13 @@ type RBALogoProps = {
 
 export default function RBALogo({ className = '' }: RBALogoProps) {
   return (
-    <div
-      role="img"
-      aria-label="RBA Transporte & Logística"
-      className={`overflow-hidden bg-contain bg-center bg-no-repeat ${className}`}
-      style={{ backgroundImage: "url('/rba-logo-transparent.png')" }}
+    <Image
+      src="/rba-logo-transparent.png"
+      alt="RBA Transporte & Logística"
+      width={1200}
+      height={205}
+      unoptimized
+      className={`block object-contain ${className}`}
     />
   );
 }
