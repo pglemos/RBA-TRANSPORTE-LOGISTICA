@@ -410,9 +410,7 @@ export function buildReportWorkbook(input: ReportWorkbookInput): ExcelJS.Workboo
   return workbook;
 }
 
-export async function buildReportWorkbookBuffer(input: ReportWorkbookInput): Promise<ArrayBuffer> {
+export async function buildReportWorkbookBuffer(input: ReportWorkbookInput): Promise<Uint8Array> {
   const buffer = await buildReportWorkbook(input).xlsx.writeBuffer();
-  return buffer instanceof ArrayBuffer
-    ? buffer
-    : buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+  return new Uint8Array(buffer);
 }
