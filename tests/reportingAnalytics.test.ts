@@ -59,3 +59,44 @@ test('builds expenses, status and recurrence breakdowns', () => {
   assert.equal(analytics.recurrence.drivers, 1);
   assert.equal(analytics.inProgress.length, 2);
 });
+
+test('builds client-route recurrence, profit buckets and in-progress aging', () => {
+  const extendedOrders: ReportingOrder[] = [
+    ...orders,
+    {
+      ...orders[0],
+      id: '4',
+      orderNumber: 'RBA-4',
+      cteNumber: 'CTE-4',
+      emissionDate: '20/07/2026',
+      emissionDateValue: '2026-07-20',
+      status: 'Contratar',
+      cteValue: 4000,
+      netValue: 0,
+    },
+    {
+      ...orders[0],
+      id: '5',
+      orderNumber: 'RBA-5',
+      cteNumber: 'CTE-5',
+      emissionDate: '22/07/2026',
+      emissionDateValue: '2026-07-22',
+      clientId: 'c3',
+      clientName: 'Cliente Gama',
+      netValue: -250,
+    },
+  ];
+
+  const analytics = buildReportAnalytics(extendedOrders, '2026-07-31');
+
+  assert.equal(analytics.clientRoutes[0].label, 'Cliente Alfa · Betim - MG → São Paulo - SP');
+  assert.equal(analytics.clientRoutes[0].orderCount, 2);
+  assert.equal(analytics.recurrence.clientRoutes, 1);
+  assert.equal(analytics.recurrence.leadingClientDependencyPercent, 80);
+  assert.equal(analytics.profitBuckets.find((item) => item.key === 'positive')?.orderCount, 3);
+  assert.equal(analytics.profitBuckets.find((item) => item.key === 'neutral')?.orderCount, 1);
+  assert.equal(analytics.profitBuckets.find((item) => item.key === 'negative')?.orderCount, 1);
+  assert.equal(analytics.inProgressSummary.totalOrders, 3);
+  assert.equal(analytics.inProgressSummary.oldestOpenDays, 26);
+  assert.equal(analytics.inProgressSummary.averageOpenDays, 19);
+});
