@@ -91,21 +91,41 @@ export interface TimeSeriesPoint {
   expenses: number;
 }
 
+export interface InProgressSummary {
+  totalOrders: number;
+  totalCteValue: number;
+  totalNetValue: number;
+  averageOpenDays: number;
+  oldestOpenDays: number;
+  byStatus: BreakdownItem[];
+  byClient: RankingItem[];
+  byRoute: RankingItem[];
+}
+
 export interface ReportAnalytics {
   summary: ReportSummary;
   clients: RankingItem[];
   drivers: RankingItem[];
   routes: RankingItem[];
+  clientRoutes: RankingItem[];
   origins: RankingItem[];
   destinations: RankingItem[];
   statuses: BreakdownItem[];
   expenses: BreakdownItem[];
+  profitBuckets: BreakdownItem[];
   timeSeries: TimeSeriesPoint[];
   inProgress: ReportingOrder[];
+  inProgressSummary: InProgressSummary;
   recurrence: {
     clients: number;
     drivers: number;
     routes: number;
+    clientRoutes: number;
+    recurringClientOrderPercent: number;
+    recurringDriverOrderPercent: number;
+    recurringRouteOrderPercent: number;
+    recurringClientRouteOrderPercent: number;
+    leadingClientDependencyPercent: number;
   };
 }
 
