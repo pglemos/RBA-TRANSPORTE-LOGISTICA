@@ -47,7 +47,7 @@ test('ranks clients, drivers and routes by relevant values', () => {
   assert.equal(analytics.clients[0].orderCount, 2);
   assert.equal(analytics.drivers[0].label, 'Motorista Um');
   assert.equal(analytics.drivers[0].orderCount, 2);
-  assert.equal(analytics.routes[0].label, 'Betim - MG → São Paulo - SP');
+  assert.equal(analytics.routes[0].label, 'Contagem - MG → São Paulo - SP');
 });
 
 test('builds expenses, status and recurrence breakdowns', () => {
