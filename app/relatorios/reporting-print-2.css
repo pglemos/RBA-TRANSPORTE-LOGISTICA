@@ -1,0 +1,394 @@
+@media print {
+  .rba-section-title {
+    margin-bottom: 3mm !important;
+  }
+
+  .rba-section-title h3 {
+    margin: 0 !important;
+    color: #111c32 !important;
+    font-family: Outfit, Inter, Arial, sans-serif !important;
+    font-size: 11pt !important;
+    font-weight: 900 !important;
+  }
+
+  .rba-section-title p {
+    margin: 1mm 0 0 !important;
+    color: #758094 !important;
+    font-size: 6.5pt !important;
+    font-weight: 600 !important;
+  }
+
+  .rba-overview-split {
+    display: grid !important;
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    grid-template-columns: 0.9fr 1.35fr !important;
+    gap: 5mm !important;
+  }
+
+  .rba-status-panel,
+  .rba-chart-card,
+  .rba-payment-composition,
+  .rba-comparison-box,
+  .rba-recurrence-card,
+  .rba-pipeline-panel {
+    border: 0.25mm solid #d9dee8 !important;
+    border-radius: 3mm !important;
+    background: #fff !important;
+  }
+
+  .rba-status-panel {
+    display: grid !important;
+    grid-template-columns: 1fr 42mm !important;
+    grid-template-rows: auto 1fr !important;
+    gap: 2mm 4mm !important;
+    padding: 4mm !important;
+  }
+
+  .rba-status-panel .rba-section-title {
+    grid-column: 1 / -1 !important;
+  }
+
+  .rba-status-donut {
+    position: relative !important;
+    display: grid !important;
+    width: 40mm !important;
+    height: 40mm !important;
+    place-items: center !important;
+    border-radius: 50% !important;
+    background: conic-gradient(#ba9b58 var(--rba-progress), #e6eaf0 0) !important;
+  }
+
+  .rba-status-donut::before {
+    position: absolute !important;
+    width: 29mm !important;
+    height: 29mm !important;
+    border-radius: 50% !important;
+    background: #fff !important;
+    content: '' !important;
+  }
+
+  .rba-status-donut > div {
+    position: relative !important;
+    z-index: 1 !important;
+    text-align: center !important;
+  }
+
+  .rba-status-donut strong,
+  .rba-status-donut span {
+    display: block !important;
+  }
+
+  .rba-status-donut strong {
+    color: #111c32 !important;
+    font-size: 13pt !important;
+    font-weight: 900 !important;
+  }
+
+  .rba-status-donut span {
+    margin-top: 1mm !important;
+    color: #7a8597 !important;
+    font-size: 5.2pt !important;
+    font-weight: 900 !important;
+  }
+
+  .rba-status-legend {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 3mm !important;
+  }
+
+  .rba-status-legend span {
+    display: flex !important;
+    align-items: center !important;
+    gap: 2mm !important;
+    color: #566176 !important;
+    font-size: 6.5pt !important;
+    font-weight: 700 !important;
+  }
+
+  .rba-status-legend i {
+    display: block !important;
+    width: 3mm !important;
+    height: 3mm !important;
+    border-radius: 50% !important;
+  }
+
+  .rba-status-legend strong { margin-left: auto !important; color: #111c32 !important; }
+  .rba-status-delivered { background: #2f8b5b !important; }
+  .rba-status-transit { background: #4386b6 !important; }
+  .rba-status-loading { background: #c3933f !important; }
+  .rba-status-contract { background: #b95f47 !important; }
+
+  .rba-reading-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 3mm !important;
+  }
+
+  .rba-reading-card {
+    min-width: 0 !important;
+    padding: 4mm !important;
+    border: 0.25mm solid #d9dee8 !important;
+    border-radius: 3mm !important;
+    background: #fff !important;
+  }
+
+  .rba-reading-card span,
+  .rba-reading-card strong {
+    display: block !important;
+  }
+
+  .rba-reading-card span {
+    color: #7b8699 !important;
+    font-size: 5.8pt !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+  }
+
+  .rba-reading-card strong {
+    margin-top: 1.5mm !important;
+    color: #111c32 !important;
+    font-size: 12pt !important;
+    font-weight: 900 !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .rba-reading-card p {
+    margin: 1.5mm 0 0 !important;
+    color: #69758a !important;
+    font-size: 6.2pt !important;
+    font-weight: 600 !important;
+    line-height: 1.35 !important;
+  }
+
+  .rba-financial-strip {
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    gap: 2mm !important;
+    margin-bottom: 5mm !important;
+  }
+
+  .rba-financial-strip > div {
+    padding: 4mm 2.5mm !important;
+    border-radius: 2.5mm !important;
+    background: #111c32 !important;
+    text-align: center !important;
+  }
+
+  .rba-financial-strip span,
+  .rba-financial-strip strong {
+    display: block !important;
+  }
+
+  .rba-financial-strip span {
+    color: #c9b077 !important;
+    font-size: 5.5pt !important;
+    font-weight: 900 !important;
+    text-transform: uppercase !important;
+  }
+
+  .rba-financial-strip strong {
+    margin-top: 2mm !important;
+    color: #fff !important;
+    font-size: 9pt !important;
+    font-weight: 900 !important;
+  }
+
+  .rba-payment-composition {
+    flex: 1 1 auto !important;
+    padding: 4mm !important;
+  }
+
+  .rba-payment-bar {
+    display: flex !important;
+    height: 28mm !important;
+    overflow: hidden !important;
+    border-radius: 2mm !important;
+  }
+
+  .rba-payment-bar span {
+    display: flex !important;
+    min-width: 30mm !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    padding: 3mm !important;
+    color: #fff !important;
+    font-size: 6pt !important;
+    font-weight: 700 !important;
+  }
+
+  .rba-payment-bar span:nth-child(1) { background: #111c32 !important; }
+  .rba-payment-bar span:nth-child(2) { background: #4f6d94 !important; }
+  .rba-payment-bar span:nth-child(3) { background: #b3924e !important; }
+  .rba-payment-bar strong { margin-top: 1mm !important; font-size: 10pt !important; }
+
+  .rba-operation-layout {
+    display: grid !important;
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    grid-template-columns: 1.7fr 0.7fr !important;
+    gap: 5mm !important;
+  }
+
+  .rba-pipeline-panel {
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 5mm !important;
+    background: #111c32 !important;
+    color: #fff !important;
+  }
+
+  .rba-pipeline-panel > span {
+    color: #d4ba7c !important;
+    font-size: 6pt !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.1em !important;
+  }
+
+  .rba-pipeline-panel > strong {
+    margin-top: 4mm !important;
+    font-size: 30pt !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+  }
+
+  .rba-pipeline-panel > small {
+    margin: 1mm 0 4mm !important;
+    color: #bdc6d5 !important;
+    font-size: 6pt !important;
+  }
+
+  .rba-pipeline-panel > div {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 2.5mm 0 !important;
+    border-top: 0.2mm solid rgba(255, 255, 255, 0.16) !important;
+  }
+
+  .rba-pipeline-panel p { margin: 0 !important; color: #c7cfdb !important; font-size: 6.5pt !important; }
+  .rba-pipeline-panel b { font-size: 9pt !important; }
+
+  .rba-highlight-band {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 5mm !important;
+    margin-top: 4mm !important;
+    padding: 3mm 4mm !important;
+    border-radius: 2mm !important;
+    background: #efe4ca !important;
+  }
+
+  .rba-highlight-band span { color: #8e6e2f !important; font-size: 5.6pt !important; font-weight: 900 !important; letter-spacing: 0.08em !important; }
+  .rba-highlight-band strong { color: #111c32 !important; font-size: 8pt !important; }
+
+  .rba-two-column-wide {
+    display: grid !important;
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    grid-template-columns: 1.65fr 0.75fr !important;
+    gap: 6mm !important;
+  }
+
+  .rba-side-stack {
+    display: flex !important;
+    min-height: 0 !important;
+    flex-direction: column !important;
+    gap: 3mm !important;
+  }
+
+  .rba-dual-ranking {
+    display: grid !important;
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6mm !important;
+  }
+
+  .rba-dual-ranking-tall .rba-bars { gap: 2.8mm !important; }
+
+  .rba-bars {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2.3mm !important;
+  }
+
+  .rba-bar-row {
+    display: grid !important;
+    min-width: 0 !important;
+    grid-template-columns: 8mm 52mm minmax(0, 1fr) 27mm !important;
+    gap: 2mm !important;
+    align-items: center !important;
+  }
+
+  .rba-dual-ranking .rba-bar-row {
+    grid-template-columns: 7mm 37mm minmax(0, 1fr) 23mm !important;
+  }
+
+  .rba-bar-position {
+    color: #a18443 !important;
+    font-size: 6pt !important;
+    font-weight: 900 !important;
+  }
+
+  .rba-bar-label {
+    min-width: 0 !important;
+    color: #263149 !important;
+    font-size: 6.2pt !important;
+    font-weight: 800 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .rba-bar-track {
+    display: block !important;
+    height: 3.5mm !important;
+    overflow: hidden !important;
+    border-radius: 999px !important;
+    background: #e3e7ee !important;
+  }
+
+  .rba-bar-track span {
+    display: block !important;
+    height: 100% !important;
+    border-radius: inherit !important;
+    background: linear-gradient(90deg, #111c32 0%, #c3a35d 100%) !important;
+  }
+
+  .rba-bar-row > strong {
+    color: #111c32 !important;
+    font-size: 6.3pt !important;
+    font-weight: 900 !important;
+    text-align: right !important;
+    white-space: nowrap !important;
+  }
+
+  .rba-recurrence-card {
+    padding: 4mm !important;
+  }
+
+  .rba-recurrence-card > span {
+    display: block !important;
+    margin-bottom: 2mm !important;
+    color: #8c6d2f !important;
+    font-size: 5.8pt !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.08em !important;
+  }
+
+  .rba-recurrence-card > div {
+    display: flex !important;
+    align-items: center !important;
+    gap: 3mm !important;
+    padding: 2mm 0 !important;
+    border-top: 0.2mm solid #e2e6ec !important;
+  }
+
+  .rba-recurrence-card strong { min-width: 16mm !important; color: #111c32 !important; font-size: 12pt !important; }
+  .rba-recurrence-card p { margin: 0 !important; color: #68748a !important; font-size: 6.1pt !important; }
+}
