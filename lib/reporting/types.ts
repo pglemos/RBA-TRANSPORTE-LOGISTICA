@@ -8,6 +8,8 @@ export type ReportKind =
   | 'recurrence'
   | 'in-progress';
 
+export type ReportPeriodMode = 'month' | 'year' | 'custom';
+
 export interface DateRange {
   startDate: string;
   endDate: string;
@@ -24,6 +26,8 @@ export interface ReportingOrder {
   clientName: string;
   driverId: string;
   driverName: string;
+  tractorPlate?: string;
+  trailerPlate?: string;
   origin: string;
   destination: string;
   status: string;
@@ -131,4 +135,41 @@ export interface ReportInsight {
   description: string;
   evidence: string;
   priority: number;
+}
+
+export interface ReportConfiguration {
+  kind: ReportKind;
+  periodMode: ReportPeriodMode;
+  monthValue: string;
+  yearValue: string;
+  startDate: string;
+  endDate: string;
+  clientId: string;
+  driverId: string;
+  status: string;
+  origin: string;
+  destination: string;
+  search: string;
+  includePrevious: boolean;
+  includePreviousYear: boolean;
+  includeDetails: boolean;
+  rankingLimit: number;
+}
+
+export interface GeneratedReport {
+  kind: ReportKind;
+  period: DateRange;
+  previousPeriod: DateRange | null;
+  previousYearPeriod: DateRange | null;
+  filtersLabel: string;
+  generatedAt: Date;
+  orders: ReportingOrder[];
+  current: ReportAnalytics;
+  previous: ReportAnalytics | null;
+  previousYear: ReportAnalytics | null;
+  previousComparison: ReportComparison | null;
+  previousYearComparison: ReportComparison | null;
+  insights: ReportInsight[];
+  includeDetails: boolean;
+  rankingLimit: number;
 }
