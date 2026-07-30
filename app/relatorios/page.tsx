@@ -13,10 +13,10 @@ import { serializeReportModelCsv } from '@/lib/reporting/csv';
 import { buildReportComparison, buildReportInsights } from '@/lib/reporting/insights';
 import { buildReportingOrders, filterReportingOrders, type ReportOrderSource } from '@/lib/reporting/orders';
 import {
-  getCurrentMonthRange,
   getCustomRange,
   getMonthRange,
   getPreviousEquivalentRange,
+  getPreviousMonthRange,
   getPreviousYearRange,
   getYearRange,
 } from '@/lib/reporting/periods';
@@ -32,26 +32,27 @@ interface SelectOption {
   name: string;
 }
 
-const currentDate = new Date();
-
-const buildInitialConfig = (): ReportConfiguration => ({
-  kind: 'executive',
-  periodMode: 'month',
-  monthValue: `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`,
-  yearValue: String(currentDate.getFullYear()),
-  startDate: '',
-  endDate: '',
-  clientId: '',
-  driverId: '',
-  status: '',
-  origin: '',
-  destination: '',
-  search: '',
-  includePrevious: true,
-  includePreviousYear: true,
-  includeDetails: false,
-  rankingLimit: 10,
-});
+const buildInitialConfig = (): ReportConfiguration => {
+  const currentDate = new Date();
+  return {
+    kind: 'executive',
+    periodMode: 'month',
+    monthValue: `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`,
+    yearValue: String(currentDate.getFullYear()),
+    startDate: '',
+    endDate: '',
+    clientId: '',
+    driverId: '',
+    status: '',
+    origin: '',
+    destination: '',
+    search: '',
+    includePrevious: true,
+    includePreviousYear: true,
+    includeDetails: false,
+    rankingLimit: 10,
+  };
+};
 
 const resolvePeriod = (config: ReportConfiguration): DateRange => {
   if (config.periodMode === 'month') {
@@ -70,11 +71,25 @@ const resolvePeriod = (config: ReportConfiguration): DateRange => {
   return getCustomRange(config.startDate, config.endDate);
 };
 
+const resolvePreviousPeriod = (config: ReportConfiguration, period: DateRange): DateRange => {
+  if (config.periodMode === 'month') {
+    const [year, month] = config.monthValue.split('-').map(Number);
+    return getPreviousMonthRange(year, month);
+  }
+  if (config.periodMode === 'year') {
+    return getYearRange(Number(config.yearValue) - 1);
+  }
+  return getPreviousEquivalentRange(period);
+};
+
 const fetchJson = async <Result,>(url: string): Promise<Result> => {
   const response = await fetch(url, { cache: 'no-store' });
-  const payload = await response.json().catch(() => null);
+  const payload: unknown = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(payload?.error || `Falha ao carregar ${url}.`);
+    const apiError = payload && typeof payload === 'object' && 'error' in payload
+      ? String((payload as { error?: unknown }).error || '')
+      : '';
+    throw new Error(apiError || `Falha ao carregar ${url}.`);
   }
   return payload as Result;
 };
@@ -96,8 +111,8 @@ const fetchReportingOrders = async (config: ReportConfiguration, range: DateRang
   const rawOrders = Array.isArray(payload) ? payload : [];
   const orders = buildReportingOrders(rawOrders, {
     normalizeStatus: (status) => normalizeFreightOrderStatus(typeof status === 'string' ? status : ''),
-    formatEmissionDate: (order) => formatFreightOrderEmissionDate(order),
-    getEmissionDateValue: (order) => getFreightOrderEmissionDateValue(order) || '',
+    formatEmissionDate: (order) => formatFreightOrderEmissionDate(order as never),
+    getEmissionDateValue: (order) => getFreightOrderEmissionDateValue(order as never) || '',
   });
   return filterReportingOrders(orders, {
     origin: config.origin,
@@ -131,7 +146,7 @@ const generateReportData = async (
   drivers: SelectOption[],
 ): Promise<GeneratedReport> => {
   const period = resolvePeriod(config);
-  const previousPeriod = config.includePrevious ? getPreviousEquivalentRange(period) : null;
+  const previousPeriod = config.includePrevious ? resolvePreviousPeriod(config, period) : null;
   const previousYearPeriod = config.includePreviousYear ? getPreviousYearRange(period) : null;
 
   const [orders, previousOrders, previousYearOrders] = await Promise.all([
