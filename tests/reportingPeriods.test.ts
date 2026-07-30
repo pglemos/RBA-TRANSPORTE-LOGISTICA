@@ -30,6 +30,12 @@ test('creates the exact previous calendar month, including year rollover', () =>
   assert.equal(getPreviousMonthRange(2026, 1).startDate, '2025-12-01');
 });
 
+test('rejects invalid months before creating a previous month range', () => {
+  assert.throws(() => getPreviousMonthRange(2026, 0), /Mês inválido/);
+  assert.throws(() => getPreviousMonthRange(2026, 13), /Mês inválido/);
+  assert.throws(() => getPreviousMonthRange(1999, 12), /Ano inválido/);
+});
+
 test('creates the exact range for a selected year', () => {
   assert.deepEqual(getYearRange(2026), {
     startDate: '2026-01-01',
