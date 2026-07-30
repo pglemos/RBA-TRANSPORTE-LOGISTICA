@@ -52,24 +52,24 @@ export function buildReportInsights(
   const previousComparison = previous ? buildReportComparison(current, previous) : null;
   const yearComparison = previousYear ? buildReportComparison(current, previousYear) : null;
 
-  if (previousComparison?.totalCteValue.percentChange !== null) {
-    const change = previousComparison.totalCteValue.percentChange;
-    if (change >= 10) {
+  const revenueChange = previousComparison?.totalCteValue.percentChange;
+  if (revenueChange !== undefined && revenueChange !== null) {
+    if (revenueChange >= 10) {
       addInsight(insights, {
         id: 'revenue-growth',
         kind: 'strength',
         title: 'Crescimento de receita movimentada',
-        description: 'O valor CTE registrado avançou de forma relevante frente ao período anterior equivalente.',
-        evidence: `Variação positiva de ${formatPercent(change)} no valor CTE.`,
+        description: 'O valor CTE registrado avançou de forma relevante frente ao período anterior.',
+        evidence: `Variação positiva de ${formatPercent(revenueChange)} no valor CTE.`,
         priority: 90,
       });
-    } else if (change <= -10) {
+    } else if (revenueChange <= -10) {
       addInsight(insights, {
         id: 'revenue-drop',
         kind: 'attention',
         title: 'Queda de receita movimentada',
         description: 'O valor CTE registrado recuou e merece análise por cliente, rota e volume de operações.',
-        evidence: `Variação negativa de ${formatPercent(change)} no valor CTE.`,
+        evidence: `Variação negativa de ${formatPercent(revenueChange)} no valor CTE.`,
         priority: 95,
       });
     }
@@ -129,7 +129,7 @@ export function buildReportInsights(
       evidence: `${leadingClient.label} representa ${leadingClient.sharePercent.toLocaleString('pt-BR')}% do valor CTE.`,
       priority: 88,
     });
-  } else if (current.clients.length >= 4 && leadingClient?.sharePercent < 35) {
+  } else if (current.clients.length >= 4 && leadingClient && leadingClient.sharePercent < 35) {
     addInsight(insights, {
       id: 'client-diversification',
       kind: 'strength',
@@ -171,14 +171,14 @@ export function buildReportInsights(
     });
   }
 
-  if (yearComparison?.totalNetValue.percentChange !== null) {
-    const change = yearComparison.totalNetValue.percentChange;
+  const yearNetChange = yearComparison?.totalNetValue.percentChange;
+  if (yearNetChange !== undefined && yearNetChange !== null) {
     addInsight(insights, {
       id: 'year-net-comparison',
-      kind: change >= 0 ? 'highlight' : 'attention',
-      title: change >= 0 ? 'Lucro acima do mesmo período anterior' : 'Lucro abaixo do mesmo período anterior',
+      kind: yearNetChange >= 0 ? 'highlight' : 'attention',
+      title: yearNetChange >= 0 ? 'Lucro acima do mesmo período anterior' : 'Lucro abaixo do mesmo período anterior',
       description: 'Comparação com a mesma janela de datas do ano anterior.',
-      evidence: `${change >= 0 ? 'Alta' : 'Queda'} de ${formatPercent(change)} no lucro líquido registrado.`,
+      evidence: `${yearNetChange >= 0 ? 'Alta' : 'Queda'} de ${formatPercent(yearNetChange)} no lucro líquido registrado.`,
       priority: 68,
     });
   }
