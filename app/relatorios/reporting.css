@@ -1,3 +1,25 @@
 @import './reporting-print-1.css';
 @import './reporting-print-2.css';
 @import './reporting-print-3.css';
+
+@media print {
+  .rba-cover-logo {
+    width: 42mm !important;
+    height: 14mm !important;
+  }
+
+  .rba-page-logo {
+    width: 29mm !important;
+    height: 9mm !important;
+  }
+
+  .rba-status-legend {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+  }
+
+  .rba-status-donut {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+  }
+}
