@@ -195,6 +195,23 @@ const getCteSortValue = (cteNumber?: string) => {
 
 const isUniqueViolation = (error: any) => error?.code === '23505' || /duplicate key|unique/i.test(error?.message || '');
 
+// `delivery_date`/`approved_at` are real date columns in Postgres, so an empty
+// string is rejected with "invalid input syntax for type date". The forms send
+// '' whenever the field is left blank, so normalise it on the way in.
+const FREIGHT_ORDER_DATE_COLUMNS = ['delivery_date', 'approved_at'] as const;
+
+const normalizeFreightOrderDates = <T extends Record<string, any>>(payload: T): T => {
+  const normalized: Record<string, any> = { ...payload };
+  for (const column of FREIGHT_ORDER_DATE_COLUMNS) {
+    if (column in normalized) {
+      const value = normalized[column];
+      normalized[column] =
+        value === '' || value === undefined || value === null ? null : value;
+    }
+  }
+  return normalized as T;
+};
+
 const withFreightOrderDefaults = (order: any): FreightOrder => {
   const defaults = {
     buonny_code: '',
@@ -204,7 +221,9 @@ const withFreightOrderDefaults = (order: any): FreightOrder => {
     emission_year: '',
     created_by: '',
     updated_by: '',
-    ...order
+    ...order,
+    // Keep the UI contract of string-based dates when reading back from Postgres.
+    delivery_date: order?.delivery_date ?? '',
   };
   return {
     ...defaults,
@@ -1489,7 +1508,7 @@ export class RBADatabase {
     } else {
       existingOrders = this.load().freight_orders;
     }
-    const buildPayload = (orderNumber: string) => ({
+    const buildPayload = (orderNumber: string) => normalizeFreightOrderDates({
       ...orderData,
       id: newId,
       order_number: orderNumber,
@@ -1591,14 +1610,14 @@ export class RBADatabase {
       approvedAt = new Date().toISOString();
     }
 
-    const updatePayload = {
+    const updatePayload = normalizeFreightOrderDates({
       ...orderData,
       ...persistedFinancials,
       approved_by: approvedBy,
       approved_at: approvedAt,
       updated_by: operatorName,
       updated_at: new Date().toISOString()
-    };
+    });
 
       const { data, error } = await supabaseServer
         .from('freight_orders')

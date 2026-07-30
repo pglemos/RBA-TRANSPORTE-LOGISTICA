@@ -9,6 +9,14 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   async headers() {
+    // Next.js dev builds evaluate every webpack module through eval(), and the
+    // React Refresh runtime relies on blob: workers. Without these sources the
+    // client bundle is blocked by CSP and the app never hydrates.
+    const isDev = process.env.NODE_ENV !== 'production';
+    const scriptSrc = isDev
+      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:"
+      : "script-src 'self' 'unsafe-inline'";
+
     const securityHeaders = [
       {
         key: 'Content-Security-Policy',
@@ -17,11 +25,14 @@ const nextConfig: NextConfig = {
           "base-uri 'self'",
           "frame-ancestors 'none'",
           "object-src 'none'",
-          "script-src 'self' 'unsafe-inline'",
+          scriptSrc,
+          "worker-src 'self' blob:",
           "style-src 'self' 'unsafe-inline'",
           "img-src 'self' data: blob: https://picsum.photos https://*.supabase.co",
           "font-src 'self' data:",
-          "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+          isDev
+            ? "connect-src 'self' ws: wss: https://*.supabase.co wss://*.supabase.co"
+            : "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
           "form-action 'self'",
         ].join('; '),
       },
