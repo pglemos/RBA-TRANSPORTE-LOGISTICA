@@ -200,10 +200,15 @@ export function HorizontalBars({
   );
 }
 
-function buildPolyline(points: TimeSeriesPoint[], getter: (point: TimeSeriesPoint) => number, width: number, height: number): string {
+function buildPolyline(
+  points: TimeSeriesPoint[],
+  getter: (point: TimeSeriesPoint) => number,
+  width: number,
+  height: number,
+  scaleMax: number,
+): string {
   if (points.length === 0) return '';
-  const values = points.map(getter);
-  const max = Math.max(1, ...values);
+  const max = Math.max(1, scaleMax);
   const usableWidth = width - 80;
   const usableHeight = height - 70;
   return points.map((point, index) => {
@@ -225,8 +230,9 @@ export function TrendChart({
   const width = 940;
   const height = 275;
   if (points.length === 0) return <div className="rba-empty-state">Sem dados suficientes para evolução temporal.</div>;
-  const cteLine = buildPolyline(points, (point) => point.cteValue, width, height);
-  const secondaryLine = buildPolyline(points, (point) => point[secondary], width, height);
+  const scaleMax = Math.max(1, ...points.flatMap((point) => [point.cteValue, point[secondary]]));
+  const cteLine = buildPolyline(points, (point) => point.cteValue, width, height, scaleMax);
+  const secondaryLine = buildPolyline(points, (point) => point[secondary], width, height, scaleMax);
   return (
     <div className="rba-chart-card">
       <svg className="rba-trend-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Evolução temporal do período">
