@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:report": "node --test --experimental-strip-types tests/reportExport.test.ts"
+    "test:report": "node --test --experimental-strip-types tests/*.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
