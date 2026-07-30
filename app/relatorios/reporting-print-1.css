@@ -58,12 +58,10 @@
     background: #f5f7fb !important;
     color: #101a2e !important;
     break-after: page !important;
-    page-break-after: always !important;
   }
 
   .rba-print-page:last-child {
     break-after: auto !important;
-    page-break-after: auto !important;
   }
 
   .rba-cover-page {

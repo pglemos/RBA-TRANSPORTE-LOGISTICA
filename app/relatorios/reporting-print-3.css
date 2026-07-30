@@ -276,7 +276,6 @@
   .rba-appendix-table tr {
     height: 6.35mm !important;
     break-inside: avoid !important;
-    page-break-inside: avoid !important;
   }
 
   .rba-appendix-table th {
@@ -307,7 +306,7 @@
   .rba-appendix-table-wide th:nth-child(3), .rba-appendix-table-wide td:nth-child(3) { width: 11% !important; }
   .rba-appendix-table-wide th:nth-child(4), .rba-appendix-table-wide td:nth-child(4) { width: 18% !important; }
   .rba-appendix-table-wide th:nth-child(5), .rba-appendix-table-wide td:nth-child(5) { width: 9% !important; }
-  .rba-appendix-table-wide th:nth-child(n+6):nth-child(-n+12), .rba-appendix-table-wide td:nth-child(n+6):nth-child(-n+12) { width: 6% !important; }
+  .rba-appendix-table-wide th:nth-child(n+6):nth-child(-n+12), .rba-appendix-table-wide td:nth-child(n+6):nth-child(-n+12) { width: 5.5% !important; }
   .rba-appendix-table-wide th:nth-child(13), .rba-appendix-table-wide td:nth-child(13) { width: 8% !important; }
 
   .rba-cell-number {

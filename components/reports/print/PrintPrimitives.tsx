@@ -23,8 +23,9 @@ export const formatCurrency = (value: number) => currencyFormatter.format(value)
 export const formatPercent = (value: number) => `${percentFormatter.format(value)}%`;
 export const formatCompactCurrency = (value: number) => {
   const absolute = Math.abs(value);
-  if (absolute >= 1_000_000) return `R$ ${(value / 1_000_000).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} mi`;
-  if (absolute >= 1_000) return `R$ ${(value / 1_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`;
+  const sign = value < 0 ? '-' : '';
+  if (absolute >= 1_000_000) return `${sign}R$ ${(absolute / 1_000_000).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} mi`;
+  if (absolute >= 1_000) return `${sign}R$ ${(absolute / 1_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`;
   return formatCurrency(value);
 };
 
@@ -205,15 +206,16 @@ function buildPolyline(
   getter: (point: TimeSeriesPoint) => number,
   width: number,
   height: number,
+  scaleMin: number,
   scaleMax: number,
 ): string {
   if (points.length === 0) return '';
-  const max = Math.max(1, scaleMax);
+  const range = Math.max(1, scaleMax - scaleMin);
   const usableWidth = width - 80;
   const usableHeight = height - 70;
   return points.map((point, index) => {
     const x = 50 + (points.length === 1 ? usableWidth / 2 : (index / (points.length - 1)) * usableWidth);
-    const y = 20 + usableHeight - (getter(point) / max) * usableHeight;
+    const y = 20 + usableHeight - ((getter(point) - scaleMin) / range) * usableHeight;
     return `${x},${y}`;
   }).join(' ');
 }
@@ -230,9 +232,11 @@ export function TrendChart({
   const width = 940;
   const height = 275;
   if (points.length === 0) return <div className="rba-empty-state">Sem dados suficientes para evolução temporal.</div>;
-  const scaleMax = Math.max(1, ...points.flatMap((point) => [point.cteValue, point[secondary]]));
-  const cteLine = buildPolyline(points, (point) => point.cteValue, width, height, scaleMax);
-  const secondaryLine = buildPolyline(points, (point) => point[secondary], width, height, scaleMax);
+  const chartValues = points.flatMap((point) => [point.cteValue, point[secondary]]);
+  const scaleMin = Math.min(0, ...chartValues);
+  const scaleMax = Math.max(1, ...chartValues);
+  const cteLine = buildPolyline(points, (point) => point.cteValue, width, height, scaleMin, scaleMax);
+  const secondaryLine = buildPolyline(points, (point) => point[secondary], width, height, scaleMin, scaleMax);
   return (
     <div className="rba-chart-card">
       <svg className="rba-trend-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Evolução temporal do período">
