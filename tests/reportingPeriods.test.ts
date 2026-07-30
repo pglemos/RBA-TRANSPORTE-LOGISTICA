@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   getMonthRange,
   getPreviousEquivalentRange,
+  getPreviousMonthRange,
   getPreviousYearRange,
   getYearRange,
 } from '../lib/reporting/periods.ts';
@@ -20,6 +21,15 @@ test('supports leap years when building a month range', () => {
   assert.equal(getMonthRange(2024, 2).endDate, '2024-02-29');
 });
 
+test('creates the exact previous calendar month, including year rollover', () => {
+  assert.deepEqual(getPreviousMonthRange(2026, 7), {
+    startDate: '2026-06-01',
+    endDate: '2026-06-30',
+    label: 'Junho de 2026',
+  });
+  assert.equal(getPreviousMonthRange(2026, 1).startDate, '2025-12-01');
+});
+
 test('creates the exact range for a selected year', () => {
   assert.deepEqual(getYearRange(2026), {
     startDate: '2026-01-01',
@@ -28,7 +38,7 @@ test('creates the exact range for a selected year', () => {
   });
 });
 
-test('creates an immediately previous period with the same number of days', () => {
+test('creates an immediately previous custom period with the same number of days', () => {
   assert.deepEqual(
     getPreviousEquivalentRange({ startDate: '2026-07-01', endDate: '2026-07-29', label: 'Período atual' }),
     { startDate: '2026-06-02', endDate: '2026-06-30', label: 'Período anterior equivalente' },
