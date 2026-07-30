@@ -1,631 +1,356 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import {
-  ArrowDownToLine,
-  BadgeDollarSign,
-  BarChart3,
-  CalendarDays,
-  CheckCircle2,
-  CircleDollarSign,
-  FileCheck,
-  FileWarning,
-  Filter,
-  LoaderCircle,
-  Printer,
-  ReceiptText,
-  RotateCcw,
-  Truck,
-  WalletCards,
-} from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import HeaderAndSidebar from '@/components/HeaderAndSidebar';
-import RBALogo from '@/components/RBALogo';
+import ReportBuilder from '@/components/reports/ReportBuilder';
+import ReportDashboard from '@/components/reports/ReportDashboard';
+import ReportPrintDocument from '@/components/reports/ReportPrintDocument';
+import { formatFreightOrderEmissionDate, getFreightOrderEmissionDateValue } from '@/lib/freightOrderDates';
+import { normalizeFreightOrderStatus } from '@/lib/freightStatus';
+import { buildReportAnalytics } from '@/lib/reporting/analytics';
+import { serializeReportModelCsv } from '@/lib/reporting/csv';
+import { buildReportComparison, buildReportInsights } from '@/lib/reporting/insights';
+import { buildReportingOrders, filterReportingOrders, type ReportOrderSource } from '@/lib/reporting/orders';
 import {
-  FREIGHT_ORDER_STATUSES,
-  getFreightStatusMeta,
-  normalizeFreightOrderStatus,
-} from '@/lib/freightStatus';
-import {
-  formatFreightOrderEmissionDate,
-  getFreightOrderEmissionDateValue,
-} from '@/lib/freightOrderDates';
-import {
-  buildReportFileName,
-  buildReportRows,
-  buildReportSummary,
-  serializeReportCsv,
-  type ReportOrderInput,
-  type ReportRow,
-} from '@/lib/reportExport';
+  getCustomRange,
+  getMonthRange,
+  getPreviousEquivalentRange,
+  getPreviousMonthRange,
+  getPreviousYearRange,
+  getYearRange,
+} from '@/lib/reporting/periods';
+import type {
+  DateRange,
+  GeneratedReport,
+  ReportConfiguration,
+  ReportingOrder,
+} from '@/lib/reporting/types';
 
-interface ReportOrder extends ReportOrderInput {
-  id: string;
-  client_id?: string;
-  status?: string | null;
-  created_at?: string | null;
-  emission_day?: string | number | null;
-  emission_month?: string | null;
-  emission_year?: string | number | null;
-}
-
-interface ClientOption {
+interface SelectOption {
   id: string;
   name: string;
 }
 
-const currencyFormatter = new Intl.NumberFormat('pt-BR', {
-  style: 'currency',
-  currency: 'BRL',
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
-const integerFormatter = new Intl.NumberFormat('pt-BR');
-
-const formatCurrency = (value: number) => currencyFormatter.format(value);
-
-const formatDateInput = (dateValue: string) => {
-  if (!dateValue) return '';
-  const [year, month, day] = dateValue.split('-');
-  return year && month && day ? `${day}/${month}/${year}` : dateValue;
+const buildInitialConfig = (): ReportConfiguration => {
+  const currentDate = new Date();
+  return {
+    kind: 'executive',
+    periodMode: 'month',
+    monthValue: `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`,
+    yearValue: String(currentDate.getFullYear()),
+    startDate: '',
+    endDate: '',
+    clientId: '',
+    driverId: '',
+    status: '',
+    origin: '',
+    destination: '',
+    search: '',
+    includePrevious: true,
+    includePreviousYear: true,
+    includeDetails: false,
+    rankingLimit: 10,
+  };
 };
 
-const formatGeneratedAt = (date: Date) =>
-  date.toLocaleString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+const resolvePeriod = (config: ReportConfiguration): DateRange => {
+  if (config.periodMode === 'month') {
+    const [year, month] = config.monthValue.split('-').map(Number);
+    if (!year || !month) throw new Error('Selecione um mês válido.');
+    return getMonthRange(year, month);
+  }
+
+  if (config.periodMode === 'year') {
+    const year = Number(config.yearValue);
+    if (!year) throw new Error('Informe um ano válido.');
+    return getYearRange(year);
+  }
+
+  if (!config.startDate || !config.endDate) throw new Error('Informe a data inicial e a data final.');
+  return getCustomRange(config.startDate, config.endDate);
+};
+
+const resolvePreviousPeriod = (config: ReportConfiguration, period: DateRange): DateRange => {
+  if (config.periodMode === 'month') {
+    const [year, month] = config.monthValue.split('-').map(Number);
+    return getPreviousMonthRange(year, month);
+  }
+  if (config.periodMode === 'year') {
+    return getYearRange(Number(config.yearValue) - 1);
+  }
+  return getPreviousEquivalentRange(period);
+};
+
+const fetchJson = async <Result,>(url: string): Promise<Result> => {
+  const response = await fetch(url, { cache: 'no-store' });
+  const payload: unknown = await response.json().catch(() => null);
+  if (!response.ok) {
+    const apiError = payload && typeof payload === 'object' && 'error' in payload
+      ? String((payload as { error?: unknown }).error || '')
+      : '';
+    throw new Error(apiError || `Falha ao carregar ${url}.`);
+  }
+  return payload as Result;
+};
+
+const buildOrdersUrl = (config: ReportConfiguration, range: DateRange): string => {
+  const params = new URLSearchParams({
+    page_size: '10000',
+    start_date: range.startDate,
+    end_date: range.endDate,
   });
+  if (config.clientId) params.set('client_id', config.clientId);
+  if (config.driverId) params.set('driver_id', config.driverId);
+  if (config.status) params.set('status', config.status);
+  return `/api/orders?${params.toString()}`;
+};
 
-function FinancialMetric({
-  label,
-  value,
-  helper,
-  icon: Icon,
-  accent,
-}: {
-  label: string;
-  value: string;
-  helper: string;
-  icon: React.ComponentType<{ className?: string }>;
-  accent: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</p>
-          <p className="mt-2 break-words text-xl font-black tracking-tight text-slate-950">{value}</p>
-        </div>
-        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${accent}`}>
-          <Icon className="h-5 w-5" />
-        </span>
-      </div>
-      <p className="mt-3 text-[10px] font-semibold leading-relaxed text-slate-500">{helper}</p>
-    </div>
-  );
-}
+const fetchReportingOrders = async (config: ReportConfiguration, range: DateRange): Promise<ReportingOrder[]> => {
+  const payload = await fetchJson<ReportOrderSource[]>(buildOrdersUrl(config, range));
+  const rawOrders = Array.isArray(payload) ? payload : [];
+  const orders = buildReportingOrders(rawOrders, {
+    normalizeStatus: (status) => normalizeFreightOrderStatus(typeof status === 'string' ? status : ''),
+    formatEmissionDate: (order) => formatFreightOrderEmissionDate(order as never),
+    getEmissionDateValue: (order) => getFreightOrderEmissionDateValue(order as never) || '',
+  });
+  return filterReportingOrders(orders, {
+    origin: config.origin,
+    destination: config.destination,
+    search: config.search,
+  });
+};
 
-function OperationalMetric({ label, value, helper }: { label: string; value: string; helper: string }) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-      <p className="text-[9px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</p>
-      <p className="mt-1 text-lg font-black text-slate-950">{value}</p>
-      <p className="mt-1 text-[9px] font-semibold text-slate-500">{helper}</p>
-    </div>
-  );
-}
+const optionName = (options: SelectOption[], id: string, fallback: string): string =>
+  options.find((option) => option.id === id)?.name || fallback;
 
-function ScreenReportTable({ rows }: { rows: ReportRow[] }) {
-  return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex flex-col gap-1 border-b border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xs font-black uppercase tracking-[0.12em] text-slate-900">Viagens consolidadas</h2>
-          <p className="mt-1 text-[10px] font-semibold text-slate-500">
-            {integerFormatter.format(rows.length)} registros com valores reproduzidos do sistema.
-          </p>
-        </div>
-        <span className="text-[10px] font-bold text-slate-500">Valores em reais (R$)</span>
-      </div>
+const buildFiltersLabel = (
+  config: ReportConfiguration,
+  clients: SelectOption[],
+  drivers: SelectOption[],
+): string => {
+  const labels = [
+    config.clientId ? `Cliente: ${optionName(clients, config.clientId, 'Selecionado')}` : 'Todos os clientes',
+    config.driverId ? `Motorista: ${optionName(drivers, config.driverId, 'Selecionado')}` : 'Todos os motoristas',
+    config.status ? `Status: ${config.status}` : 'Todos os status',
+  ];
+  if (config.origin) labels.push(`Origem contém: ${config.origin}`);
+  if (config.destination) labels.push(`Destino contém: ${config.destination}`);
+  if (config.search) labels.push(`Busca: ${config.search}`);
+  return labels.join(' · ');
+};
 
-      {rows.length === 0 ? (
-        <div className="flex min-h-56 flex-col items-center justify-center px-6 text-center">
-          <FileWarning className="h-9 w-9 text-slate-300" />
-          <p className="mt-3 text-sm font-black text-slate-700">Nenhuma viagem encontrada</p>
-          <p className="mt-1 max-w-md text-xs leading-relaxed text-slate-500">
-            Ajuste os filtros para gerar o relatório. O arquivo CSV continuará disponível com o cabeçalho estrutural.
-          </p>
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-[1320px] w-full text-left text-[11px] text-slate-700">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-100 text-[9px] font-black uppercase tracking-[0.08em] text-slate-600">
-                <th className="px-3 py-3">CTE / Ficha</th>
-                <th className="px-3 py-3">Emissão</th>
-                <th className="px-3 py-3">Motorista</th>
-                <th className="px-3 py-3">Origem / Destino</th>
-                <th className="px-3 py-3">Cliente</th>
-                <th className="px-3 py-3 text-right">Valor CTE</th>
-                <th className="px-3 py-3 text-right">Frete</th>
-                <th className="px-3 py-3 text-right">Adiant.</th>
-                <th className="px-3 py-3 text-right">À vista</th>
-                <th className="px-3 py-3 text-right">Saldo</th>
-                <th className="px-3 py-3 text-right">Despesas</th>
-                <th className="px-3 py-3 text-right">Líquido</th>
-                <th className="px-3 py-3 text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {rows.map((row) => {
-                const statusMeta = getFreightStatusMeta(row.status);
-                return (
-                  <tr key={row.id || `${row.orderNumber}-${row.cteNumber}`} className="align-top transition hover:bg-slate-50">
-                    <td className="px-3 py-3">
-                      {row.id ? (
-                        <Link href={`/ordens/${row.id}`} className="font-black text-[#8a6725] hover:underline">
-                          {row.cteNumber !== 'A emitir' ? row.cteNumber : `#${row.orderNumber}`}
-                        </Link>
-                      ) : (
-                        <span className="font-black text-slate-900">{row.cteNumber}</span>
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-3 font-semibold text-slate-500">{row.emissionDate}</td>
-                    <td className="max-w-48 px-3 py-3 font-bold text-slate-900">{row.driverName}</td>
-                    <td className="max-w-64 px-3 py-3 leading-relaxed">
-                      <span className="font-semibold text-slate-900">{row.origin || 'N/A'}</span>
-                      <span className="mx-1 text-slate-400">→</span>
-                      <span>{row.destination || 'N/A'}</span>
-                    </td>
-                    <td className="max-w-44 px-3 py-3">{row.clientName}</td>
-                    <td className="whitespace-nowrap px-3 py-3 text-right font-black text-slate-950">{formatCurrency(row.cteValue)}</td>
-                    <td className="whitespace-nowrap px-3 py-3 text-right font-bold">{formatCurrency(row.freightValue)}</td>
-                    <td className="whitespace-nowrap px-3 py-3 text-right">{formatCurrency(row.advanceValue)}</td>
-                    <td className="whitespace-nowrap px-3 py-3 text-right">{formatCurrency(row.cashValue)}</td>
-                    <td className="whitespace-nowrap px-3 py-3 text-right font-bold text-amber-800">{formatCurrency(row.balanceValue)}</td>
-                    <td className="whitespace-nowrap px-3 py-3 text-right">{formatCurrency(row.totalExpenses)}</td>
-                    <td className="whitespace-nowrap px-3 py-3 text-right font-black text-emerald-800">{formatCurrency(row.netValue)}</td>
-                    <td className="whitespace-nowrap px-3 py-3 text-center">
-                      <span className={`inline-flex rounded-full px-2 py-1 text-[9px] font-black uppercase ${statusMeta.className}`}>
-                        {statusMeta.label}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-}
+const generateReportData = async (
+  config: ReportConfiguration,
+  clients: SelectOption[],
+  drivers: SelectOption[],
+): Promise<GeneratedReport> => {
+  const period = resolvePeriod(config);
+  const previousPeriod = config.includePrevious ? resolvePreviousPeriod(config, period) : null;
+  const previousYearPeriod = config.includePreviousYear ? getPreviousYearRange(period) : null;
+
+  const [orders, previousOrders, previousYearOrders] = await Promise.all([
+    fetchReportingOrders(config, period),
+    previousPeriod ? fetchReportingOrders(config, previousPeriod) : Promise.resolve([]),
+    previousYearPeriod ? fetchReportingOrders(config, previousYearPeriod) : Promise.resolve([]),
+  ]);
+
+  const current = buildReportAnalytics(orders);
+  const previous = previousOrders.length > 0 ? buildReportAnalytics(previousOrders) : null;
+  const previousYear = previousYearOrders.length > 0 ? buildReportAnalytics(previousYearOrders) : null;
+
+  return {
+    kind: config.kind,
+    period,
+    previousPeriod,
+    previousYearPeriod,
+    filtersLabel: buildFiltersLabel(config, clients, drivers),
+    generatedAt: new Date(),
+    orders,
+    current,
+    previous,
+    previousYear,
+    previousComparison: previous ? buildReportComparison(current, previous) : null,
+    previousYearComparison: previousYear ? buildReportComparison(current, previousYear) : null,
+    insights: buildReportInsights(current, previous, previousYear, config.kind),
+    includeDetails: config.includeDetails,
+    rankingLimit: config.rankingLimit,
+  };
+};
+
+const buildExportFileName = (report: GeneratedReport, extension: 'csv' | 'xlsx' | 'pdf'): string =>
+  `rba-${report.kind}-${report.period.startDate}-${report.period.endDate}.${extension}`;
+
+const downloadBlob = (blob: Blob, fileName: string) => {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
 
 export default function ReportsPage() {
-  const [orders, setOrders] = useState<ReportOrder[]>([]);
-  const [clients, setClients] = useState<ClientOption[]>([]);
+  const [config, setConfig] = useState<ReportConfiguration>(() => buildInitialConfig());
+  const [clients, setClients] = useState<SelectOption[]>([]);
+  const [drivers, setDrivers] = useState<SelectOption[]>([]);
+  const [report, setReport] = useState<GeneratedReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exportingExcel, setExportingExcel] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [selectedClient, setSelectedClient] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [generatedAt, setGeneratedAt] = useState(() => new Date());
 
-  const loadReportData = useCallback(async () => {
-    setLoading(true);
-    setErrorMessage('');
+  useEffect(() => {
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          setLoading(true);
+          setErrorMessage('');
+          const [clientPayload, driverPayload] = await Promise.all([
+            fetchJson<SelectOption[]>('/api/clients'),
+            fetchJson<SelectOption[]>('/api/drivers'),
+          ]);
+          const safeClients = Array.isArray(clientPayload) ? clientPayload : [];
+          const safeDrivers = Array.isArray(driverPayload) ? driverPayload : [];
+          const initialConfig = buildInitialConfig();
+          const initialReport = await generateReportData(initialConfig, safeClients, safeDrivers);
+          if (cancelled) return;
+          setClients(safeClients);
+          setDrivers(safeDrivers);
+          setConfig(initialConfig);
+          setReport(initialReport);
+        } catch (error) {
+          if (!cancelled) setErrorMessage(error instanceof Error ? error.message : 'Não foi possível carregar a central de relatórios.');
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+      })();
+    }, 0);
 
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, []);
+
+  const changeConfig = <Key extends keyof ReportConfiguration>(key: Key, value: ReportConfiguration[Key]) => {
+    setConfig((current) => ({ ...current, [key]: value }));
+  };
+
+  const handleGenerate = async () => {
     try {
-      const [ordersResponse, clientsResponse] = await Promise.all([
-        fetch('/api/orders?page_size=1000', { cache: 'no-store' }),
-        fetch('/api/clients', { cache: 'no-store' }),
-      ]);
-
-      const [ordersPayload, clientsPayload] = await Promise.all([
-        ordersResponse.json(),
-        clientsResponse.json(),
-      ]);
-
-      if (!ordersResponse.ok || !clientsResponse.ok) {
-        const apiMessage = ordersPayload?.error || clientsPayload?.error;
-        throw new Error(apiMessage || 'Não foi possível carregar os dados do relatório.');
-      }
-
-      setOrders(Array.isArray(ordersPayload) ? ordersPayload : []);
-      setClients(Array.isArray(clientsPayload) ? clientsPayload : []);
+      setLoading(true);
+      setErrorMessage('');
+      setReport(await generateReportData(config, clients, drivers));
     } catch (error) {
-      setOrders([]);
-      setClients([]);
-      setErrorMessage(error instanceof Error ? error.message : 'Erro inesperado ao carregar o relatório.');
+      setErrorMessage(error instanceof Error ? error.message : 'Erro inesperado ao gerar o relatório.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void loadReportData();
+  const handleReset = () => {
+    const nextConfig = buildInitialConfig();
+    setConfig(nextConfig);
+    window.setTimeout(() => {
+      void (async () => {
+        try {
+          setLoading(true);
+          setErrorMessage('');
+          setReport(await generateReportData(nextConfig, clients, drivers));
+        } catch (error) {
+          setErrorMessage(error instanceof Error ? error.message : 'Erro inesperado ao limpar os filtros.');
+        } finally {
+          setLoading(false);
+        }
+      })();
     }, 0);
+  };
 
-    return () => window.clearTimeout(timer);
-  }, [loadReportData]);
+  const handleExportCsv = () => {
+    if (!report) return;
+    const csv = serializeReportModelCsv(report.kind, report.orders, report.current);
+    downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), buildExportFileName(report, 'csv'));
+  };
 
-  const dateFilterError = startDate && endDate && startDate > endDate
-    ? 'A data inicial não pode ser posterior à data final.'
-    : '';
+  const handleExportExcel = async () => {
+    if (!report) return;
+    try {
+      setExportingExcel(true);
+      setErrorMessage('');
+      const { buildReportWorkbookBuffer } = await import('@/lib/reporting/excel');
+      const buffer = await buildReportWorkbookBuffer({
+        kind: report.kind,
+        periodLabel: report.period.label,
+        filtersLabel: report.filtersLabel,
+        orders: report.orders,
+        current: report.current,
+        previous: report.previous,
+        previousYear: report.previousYear,
+        insights: report.insights,
+      });
+      downloadBlob(
+        new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+        buildExportFileName(report, 'xlsx'),
+      );
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível gerar o arquivo Excel.');
+    } finally {
+      setExportingExcel(false);
+    }
+  };
 
-  const filteredOrders = useMemo(() => {
-    if (dateFilterError) return [];
-
-    return orders.filter((order) => {
-      const matchesClient = !selectedClient || order.client_id === selectedClient;
-      const matchesStatus = !statusFilter || normalizeFreightOrderStatus(order.status) === statusFilter;
-      if (!matchesClient || !matchesStatus) return false;
-
-      if (!startDate && !endDate) return true;
-      const emissionDate = getFreightOrderEmissionDateValue(order);
-      if (!emissionDate) return false;
-      if (startDate && emissionDate < startDate) return false;
-      if (endDate && emissionDate > endDate) return false;
-      return true;
-    });
-  }, [dateFilterError, endDate, orders, selectedClient, startDate, statusFilter]);
-
-  const ordersWithoutDateCount = useMemo(() => {
-    if ((!startDate && !endDate) || dateFilterError) return 0;
-
-    return orders.filter((order) => {
-      const matchesClient = !selectedClient || order.client_id === selectedClient;
-      const matchesStatus = !statusFilter || normalizeFreightOrderStatus(order.status) === statusFilter;
-      return matchesClient && matchesStatus && !getFreightOrderEmissionDateValue(order);
-    }).length;
-  }, [dateFilterError, endDate, orders, selectedClient, startDate, statusFilter]);
-
-  const reportRows = useMemo(
-    () => buildReportRows(filteredOrders, {
-      normalizeStatus: (status) => normalizeFreightOrderStatus(typeof status === 'string' ? status : ''),
-      formatEmissionDate: (order) => formatFreightOrderEmissionDate(order as ReportOrder),
-    }),
-    [filteredOrders],
-  );
-
-  const summary = useMemo(() => buildReportSummary(reportRows), [reportRows]);
-
-  const selectedClientName = useMemo(
-    () => clients.find((client) => client.id === selectedClient)?.name || 'Todos os clientes',
-    [clients, selectedClient],
-  );
-
-  const selectedStatusName = statusFilter
-    ? getFreightStatusMeta(statusFilter).label
-    : 'Todos os status';
-
-  const periodDescription = startDate || endDate
-    ? `${startDate ? formatDateInput(startDate) : 'Início'} até ${endDate ? formatDateInput(endDate) : 'Fim'}`
-    : 'Todo o período';
-
-  const exportDisabled = loading || Boolean(dateFilterError);
-
-  const handleExportCsv = useCallback(() => {
-    if (exportDisabled) return;
-
-    const exportDate = new Date();
-    setGeneratedAt(exportDate);
-    const csv = serializeReportCsv(reportRows);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = buildReportFileName('csv', exportDate);
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }, [exportDisabled, reportRows]);
-
-  const handlePrintReport = useCallback(() => {
-    if (exportDisabled) return;
-
-    const exportDate = new Date();
-    setGeneratedAt(exportDate);
-    document.querySelectorAll<HTMLElement>('[data-report-generated-at]').forEach((element) => {
-      element.textContent = formatGeneratedAt(exportDate);
+  const handlePrint = () => {
+    if (!report) return;
+    const generatedAt = new Date();
+    setReport((current) => current ? { ...current, generatedAt } : current);
+    document.querySelectorAll<HTMLElement>('[data-dynamic-generated-at]').forEach((element) => {
+      element.textContent = `Emitido em ${generatedAt.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
     });
     const previousTitle = document.title;
-    document.title = buildReportFileName('pdf', exportDate).replace(/\.pdf$/, '');
-    let titleRestored = false;
-
+    document.title = buildExportFileName({ ...report, generatedAt }, 'pdf').replace(/\.pdf$/, '');
+    let restored = false;
     const restoreTitle = () => {
-      if (titleRestored) return;
-      titleRestored = true;
+      if (restored) return;
+      restored = true;
       document.title = previousTitle;
       window.removeEventListener('afterprint', restoreTitle);
     };
-
     window.addEventListener('afterprint', restoreTitle);
-    window.print();
-    window.setTimeout(restoreTitle, 2000);
-  }, [exportDisabled]);
-
-  const clearFilters = () => {
-    setSelectedClient('');
-    setStatusFilter('');
-    setStartDate('');
-    setEndDate('');
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => window.print()));
+    window.setTimeout(restoreTitle, 2500);
   };
 
   return (
     <HeaderAndSidebar>
-      <div id="reports-module" className="space-y-6">
-        <div className="report-screen-only space-y-6">
-          <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-200 bg-slate-950 px-6 py-6 text-white md:px-7">
-              <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-                <div className="flex items-start gap-4">
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#d8b45d] text-slate-950 shadow-lg shadow-black/20">
-                    <BarChart3 className="h-6 w-6" />
-                  </span>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#d8b45d]">Inteligência operacional RBA</p>
-                    <h1 className="mt-1 text-2xl font-black tracking-tight md:text-3xl">Relatório Executivo de Fretes</h1>
-                    <p className="mt-2 max-w-3xl text-xs font-medium leading-relaxed text-slate-300">
-                      Visão consolidada para gestão, auditoria e diretoria. Todos os valores reproduzem os campos registrados nas ordens do sistema, sem um segundo cálculo financeiro no relatório.
-                    </p>
-                  </div>
-                </div>
+      <div id="reports-module" className="min-w-0 space-y-5 pb-12">
+        <ReportBuilder
+          config={config}
+          clients={clients}
+          drivers={drivers}
+          loading={loading}
+          exportingExcel={exportingExcel}
+          hasReport={Boolean(report)}
+          errorMessage={errorMessage}
+          onChange={changeConfig}
+          onGenerate={handleGenerate}
+          onReset={handleReset}
+          onExportCsv={handleExportCsv}
+          onExportExcel={handleExportExcel}
+          onPrint={handlePrint}
+        />
 
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <button
-                    type="button"
-                    onClick={handleExportCsv}
-                    disabled={exportDisabled}
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.1em] text-slate-950 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <ArrowDownToLine className="h-4 w-4" />
-                    Exportar CSV
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handlePrintReport}
-                    disabled={exportDisabled}
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#d8b45d] px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.1em] text-slate-950 shadow-lg shadow-black/20 transition hover:bg-[#e2c475] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#d8b45d]/30 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <Printer className="h-4 w-4" />
-                    Gerar PDF Executivo
-                  </button>
-                </div>
-              </div>
-            </div>
+        {report && <ReportDashboard report={report} />}
+        {report && <ReportPrintDocument report={report} />}
 
-            <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-2 xl:grid-cols-[1.2fr_1fr_1.4fr_auto] xl:items-end xl:p-6">
-              <label className="space-y-2">
-                <span className="block text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Cliente tomador</span>
-                <span className="flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 focus-within:border-[#c5a866] focus-within:ring-4 focus-within:ring-[#c5a866]/15">
-                  <Filter className="h-4 w-4 shrink-0 text-slate-400" />
-                  <select value={selectedClient} onChange={(event) => setSelectedClient(event.target.value)} className="w-full bg-transparent text-xs font-bold text-slate-800 outline-none">
-                    <option value="">Todos os clientes</option>
-                    {clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}
-                  </select>
-                </span>
-              </label>
-
-              <label className="space-y-2">
-                <span className="block text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Status operacional</span>
-                <span className="flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 focus-within:border-[#c5a866] focus-within:ring-4 focus-within:ring-[#c5a866]/15">
-                  <FileCheck className="h-4 w-4 shrink-0 text-slate-400" />
-                  <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="w-full bg-transparent text-xs font-bold text-slate-800 outline-none">
-                    <option value="">Todos os status</option>
-                    {FREIGHT_ORDER_STATUSES.map((status) => <option key={status} value={status}>{getFreightStatusMeta(status).label}</option>)}
-                  </select>
-                </span>
-              </label>
-
-              <div className="space-y-2">
-                <span className="block text-[10px] font-black uppercase tracking-[0.1em] text-slate-500">Período de emissão</span>
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 focus-within:border-[#c5a866] focus-within:ring-4 focus-within:ring-[#c5a866]/15">
-                    <CalendarDays className="h-4 w-4 shrink-0 text-slate-400" />
-                    <input aria-label="Data inicial" type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="min-w-0 w-full bg-transparent text-[11px] font-bold text-slate-800 outline-none" />
-                  </label>
-                  <label className="flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 focus-within:border-[#c5a866] focus-within:ring-4 focus-within:ring-[#c5a866]/15">
-                    <CalendarDays className="h-4 w-4 shrink-0 text-slate-400" />
-                    <input aria-label="Data final" type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} className="min-w-0 w-full bg-transparent text-[11px] font-bold text-slate-800 outline-none" />
-                  </label>
-                </div>
-              </div>
-
-              <button type="button" onClick={clearFilters} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 text-[10px] font-black uppercase tracking-[0.08em] text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200">
-                <RotateCcw className="h-4 w-4" />
-                Limpar
-              </button>
-            </div>
-          </section>
-
-          <div aria-live="polite" className="space-y-3">
-            {loading && (
-              <div className="flex items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-10 text-xs font-bold text-slate-500">
-                <LoaderCircle className="h-5 w-5 animate-spin text-[#8a6725]" />
-                Carregando dados registrados nas ordens...
-              </div>
-            )}
-
-            {errorMessage && !loading && (
-              <div className="flex flex-col gap-4 rounded-2xl border border-rose-200 bg-rose-50 p-5 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm font-black text-rose-900">Falha ao carregar o relatório</p>
-                  <p className="mt-1 text-xs font-semibold text-rose-700">{errorMessage}</p>
-                </div>
-                <button type="button" onClick={() => void loadReportData()} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-rose-700 px-4 text-[10px] font-black uppercase tracking-[0.08em] text-white hover:bg-rose-800">
-                  <RotateCcw className="h-4 w-4" />
-                  Tentar novamente
-                </button>
-              </div>
-            )}
-
-            {dateFilterError && (
-              <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-bold text-rose-800">{dateFilterError}</div>
-            )}
-
-            {ordersWithoutDateCount > 0 && !dateFilterError && (
-              <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold leading-relaxed text-amber-900">
-                <FileWarning className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>
-                  {ordersWithoutDateCount} {ordersWithoutDateCount === 1 ? 'ordem foi excluída' : 'ordens foram excluídas'} do período porque não possuem data de emissão válida.{' '}
-                  <Link href="/ordens" className="underline underline-offset-2 hover:no-underline">Revisar ordens</Link>.
-                </span>
-              </div>
-            )}
+        {!report && !loading && !errorMessage && (
+          <div className="report-screen-only rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+            <p className="text-sm font-black text-slate-700">Configure os filtros e gere o primeiro relatório.</p>
           </div>
-
-          {!loading && !errorMessage && (
-            <>
-              <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <FinancialMetric label="Valor CTE consolidado" value={formatCurrency(summary.totalCteValue)} helper="Soma dos valores CTE registrados nas ordens filtradas." icon={CircleDollarSign} accent="bg-slate-100 text-slate-700" />
-                <FinancialMetric label="Frete dos motoristas" value={formatCurrency(summary.totalFreightValue)} helper="Soma do campo de frete registrado em cada ordem." icon={Truck} accent="bg-blue-50 text-blue-700" />
-                <FinancialMetric label="Adiantamentos registrados" value={formatCurrency(summary.totalAdvanceValue)} helper="Valores de adiantamento já informados nas fichas." icon={WalletCards} accent="bg-cyan-50 text-cyan-700" />
-                <FinancialMetric label="Saldos registrados" value={formatCurrency(summary.totalBalanceValue)} helper="Soma do campo de saldo a pagar retornado pelo sistema." icon={ReceiptText} accent="bg-amber-50 text-amber-800" />
-                <FinancialMetric label="Pagamentos à vista" value={formatCurrency(summary.totalCashValue)} helper="Soma do campo de pagamento à vista registrado." icon={CheckCircle2} accent="bg-violet-50 text-violet-700" />
-                <FinancialMetric label="Despesas registradas" value={formatCurrency(summary.totalExpenses)} helper="Total de despesas já consolidado pelo sistema por ordem." icon={FileWarning} accent="bg-rose-50 text-rose-700" />
-                <FinancialMetric label="Líquido registrado" value={formatCurrency(summary.totalNetValue)} helper="Soma do valor líquido devolvido pelo sistema, sem recálculo no relatório." icon={BadgeDollarSign} accent="bg-emerald-50 text-emerald-800" />
-                <FinancialMetric label="CTE médio" value={formatCurrency(summary.averageCteValue)} helper="Média gerencial do valor CTE entre os registros filtrados." icon={BarChart3} accent="bg-[#fff7df] text-[#8a6725]" />
-              </section>
-
-              <section className="grid grid-cols-2 gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-5">
-                <OperationalMetric label="Total de registros" value={integerFormatter.format(summary.totalOrders)} helper="Viagens no filtro atual" />
-                <OperationalMetric label="Entregues" value={integerFormatter.format(summary.deliveredCount)} helper={`${summary.deliveredPercent.toLocaleString('pt-BR')}% do total`} />
-                <OperationalMetric label="Em trânsito" value={integerFormatter.format(summary.inTransitCount)} helper="Operação em andamento" />
-                <OperationalMetric label="Carregando" value={integerFormatter.format(summary.loadingCount)} helper="Em fase de carregamento" />
-                <OperationalMetric label="A contratar" value={integerFormatter.format(summary.contractingCount)} helper="Pendentes de contratação" />
-              </section>
-
-              <ScreenReportTable rows={reportRows} />
-            </>
-          )}
-        </div>
-
-        <section id="report-print-target" className="report-print-only" aria-label="Relatório executivo para impressão">
-          <header className="report-print-header">
-            <div className="report-print-brand">
-              <RBALogo className="report-print-logo" />
-              <div className="report-print-title-block">
-                <p className="report-print-kicker">RBA TRANSPORTE & LOGÍSTICA</p>
-                <h1>Relatório Executivo Consolidado de Fretes</h1>
-                <p>Gestão operacional, financeira e acompanhamento de viagens</p>
-              </div>
-            </div>
-            <div className="report-print-meta">
-              <strong>Emitido em <span data-report-generated-at>{formatGeneratedAt(generatedAt)}</span></strong>
-              <span>Documento interno - uso gerencial</span>
-              <span>RBA Fretes Digital</span>
-            </div>
-          </header>
-
-          <div className="report-print-filters">
-            <span><strong>Cliente:</strong> {selectedClientName}</span>
-            <span><strong>Status:</strong> {selectedStatusName}</span>
-            <span><strong>Período:</strong> {periodDescription}</span>
-            <span><strong>Registros:</strong> {integerFormatter.format(reportRows.length)}</span>
-          </div>
-
-          <div className="report-print-financials">
-            <div><span>Valor CTE</span><strong>{formatCurrency(summary.totalCteValue)}</strong><small>Registrado</small></div>
-            <div><span>Frete motorista</span><strong>{formatCurrency(summary.totalFreightValue)}</strong><small>Registrado</small></div>
-            <div><span>Adiantamentos</span><strong>{formatCurrency(summary.totalAdvanceValue)}</strong><small>Registrados</small></div>
-            <div><span>Saldos</span><strong>{formatCurrency(summary.totalBalanceValue)}</strong><small>Registrados</small></div>
-            <div><span>Despesas</span><strong>{formatCurrency(summary.totalExpenses)}</strong><small>Consolidadas pelo sistema</small></div>
-            <div className="report-print-highlight"><span>Líquido</span><strong>{formatCurrency(summary.totalNetValue)}</strong><small>Registrado</small></div>
-          </div>
-
-          <div className="report-print-operations">
-            <span><strong>{summary.deliveredCount}</strong> entregues</span>
-            <span><strong>{summary.inTransitCount}</strong> em trânsito</span>
-            <span><strong>{summary.loadingCount}</strong> carregando</span>
-            <span><strong>{summary.contractingCount}</strong> a contratar</span>
-            <span><strong>{summary.deliveredPercent.toLocaleString('pt-BR')}%</strong> concluídas</span>
-            <span><strong>{formatCurrency(summary.averageCteValue)}</strong> CTE médio</span>
-          </div>
-
-          <table className="report-print-table">
-            <colgroup>
-              <col className="report-col-reference" />
-              <col className="report-col-date" />
-              <col className="report-col-driver" />
-              <col className="report-col-route" />
-              <col className="report-col-client" />
-              <col className="report-col-money" />
-              <col className="report-col-money" />
-              <col className="report-col-money-small" />
-              <col className="report-col-money-small" />
-              <col className="report-col-money-small" />
-              <col className="report-col-money" />
-              <col className="report-col-money" />
-              <col className="report-col-status" />
-            </colgroup>
-            <thead>
-              <tr>
-                <th>CTE / Ficha</th>
-                <th>Emissão</th>
-                <th>Motorista</th>
-                <th>Origem / Destino</th>
-                <th>Cliente</th>
-                <th className="report-number">CTE</th>
-                <th className="report-number">Frete</th>
-                <th className="report-number">Adiant.</th>
-                <th className="report-number">À vista</th>
-                <th className="report-number">Saldo</th>
-                <th className="report-number">Despesas</th>
-                <th className="report-number">Líquido</th>
-                <th className="report-status">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {reportRows.length === 0 ? (
-                <tr><td colSpan={13} className="report-print-empty">Nenhuma viagem atende aos filtros aplicados.</td></tr>
-              ) : reportRows.map((row) => (
-                <tr key={`print-${row.id || `${row.orderNumber}-${row.cteNumber}`}`}>
-                  <td className="report-reference">{row.cteNumber !== 'A emitir' ? row.cteNumber : `#${row.orderNumber}`}</td>
-                  <td className="report-date">{row.emissionDate}</td>
-                  <td>{row.driverName}</td>
-                  <td><strong>{row.origin || 'N/A'}</strong><span className="report-route-arrow"> → </span>{row.destination || 'N/A'}</td>
-                  <td>{row.clientName}</td>
-                  <td className="report-number report-strong">{formatCurrency(row.cteValue)}</td>
-                  <td className="report-number">{formatCurrency(row.freightValue)}</td>
-                  <td className="report-number">{formatCurrency(row.advanceValue)}</td>
-                  <td className="report-number">{formatCurrency(row.cashValue)}</td>
-                  <td className="report-number">{formatCurrency(row.balanceValue)}</td>
-                  <td className="report-number">{formatCurrency(row.totalExpenses)}</td>
-                  <td className="report-number report-net">{formatCurrency(row.netValue)}</td>
-                  <td className={`report-status report-status-${row.status.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-')}`}>{row.status}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <footer className="report-print-closing">
-            <div className="report-print-source">
-              <strong>Fonte e integridade dos dados</strong>
-              <p>
-                Este documento apresenta os valores retornados pelas ordens, fichas, CTEs e manifestos registrados no RBA Fretes Digital. O relatório apenas organiza e agrega os campos recebidos da API; não executa um segundo cálculo financeiro por viagem.
-              </p>
-            </div>
-            <div className="report-print-signatures">
-              <div><span />Responsável operacional</div>
-              <div><span />Conferência financeira</div>
-              <div><span />Aprovação da diretoria</div>
-            </div>
-            <div className="report-print-document-id">
-              <span>RBA TRANSPORTE & LOGÍSTICA - RELATÓRIO EXECUTIVO</span>
-              <span>Gerado em <span data-report-generated-at>{formatGeneratedAt(generatedAt)}</span></span>
-            </div>
-          </footer>
-        </section>
+        )}
       </div>
     </HeaderAndSidebar>
   );
