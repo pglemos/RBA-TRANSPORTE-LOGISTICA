@@ -214,6 +214,7 @@ function addRankingTable(sheet: ExcelJS.Worksheet, title: string, items: Ranking
 
 function addModelSheet(sheet: ExcelJS.Worksheet, input: ReportWorkbookInput) {
   addBrandHeader(sheet, `Relatório de ${MODEL_LABELS[input.kind]}`, input.periodLabel, input.filtersLabel);
+  let headerRowNumber: number | null = null;
 
   if (input.kind === 'expenses') {
     const header = sheet.addRow(['Categoria', 'Valor registrado', 'Operações com lançamento', 'Participação']);
@@ -242,6 +243,7 @@ function addModelSheet(sheet: ExcelJS.Worksheet, input: ReportWorkbookInput) {
     const source = input.kind === 'in-progress' ? input.current.inProgress : input.orders;
     const header = sheet.addRow(['Ordem', 'CTE / Manifesto', 'Emissão', 'Cliente', 'Motorista', 'Origem', 'Destino', 'Valor CTE', 'Frete', 'Despesas', 'Lucro', 'Status']);
     styleTableHeader(header);
+    headerRowNumber = header.number;
     const start = header.number + 1;
     source.forEach((order) => sheet.addRow([
       order.orderNumber,
@@ -264,8 +266,13 @@ function addModelSheet(sheet: ExcelJS.Worksheet, input: ReportWorkbookInput) {
     }
   }
 
-  sheet.views = [{ state: 'frozen', ySplit: 5 }];
-  sheet.autoFilter = { from: { row: 5, column: 1 }, to: { row: 5, column: Math.max(1, sheet.columnCount) } };
+  sheet.views = [{ state: 'frozen', ySplit: headerRowNumber || 4 }];
+  if (headerRowNumber !== null) {
+    sheet.autoFilter = {
+      from: { row: headerRowNumber, column: 1 },
+      to: { row: headerRowNumber, column: Math.max(1, sheet.columnCount) },
+    };
+  }
   autoFitColumns(sheet);
 }
 

@@ -1,10 +1,11 @@
+/* stylelint-disable property-no-deprecated */
 .dynamic-report-document {
   display: none;
 }
 
 @media print {
   @page {
-    size: A4 landscape;
+    size: a4 landscape;
     margin: 8mm 7mm 9mm;
   }
 
@@ -19,7 +20,7 @@
     overflow: visible !important;
     background: #ffffff !important;
     color: #172033 !important;
-    font-family: 'Inter', Arial, sans-serif !important;
+    font-family: Inter, Arial, sans-serif !important;
     font-size: 6.5pt !important;
     line-height: 1.25 !important;
     print-color-adjust: exact !important;
@@ -79,7 +80,7 @@
   .dynamic-report-title-block h1 {
     margin: 0 !important;
     color: #0b1730 !important;
-    font-family: 'Outfit', 'Inter', Arial, sans-serif !important;
+    font-family: Outfit, Inter, Arial, sans-serif !important;
     font-size: 14pt !important;
     font-weight: 900 !important;
     line-height: 1.05 !important;
@@ -182,7 +183,7 @@
     border-left: 0.8mm solid #c5a866 !important;
     background: #f4ebdd !important;
     color: #0b1730 !important;
-    font-family: 'Outfit', 'Inter', Arial, sans-serif !important;
+    font-family: Outfit, Inter, Arial, sans-serif !important;
     font-size: 7.3pt !important;
     font-weight: 900 !important;
     line-height: 1.15 !important;

@@ -167,25 +167,25 @@ export default function ReportBuilder({
               <div className="grid min-w-0 gap-3 sm:grid-cols-2">
                 {config.periodMode === 'month' && (
                   <div className="min-w-0 sm:col-span-2">
-                    <label className={labelClassName}>Mês do relatório</label>
-                    <input type="month" value={config.monthValue} onChange={(event) => onChange('monthValue', event.target.value)} className={fieldClassName} />
+                    <label htmlFor="report-month" className={labelClassName}>Mês do relatório</label>
+                    <input id="report-month" type="month" value={config.monthValue} onChange={(event) => onChange('monthValue', event.target.value)} className={fieldClassName} />
                   </div>
                 )}
                 {config.periodMode === 'year' && (
                   <div className="min-w-0 sm:col-span-2">
-                    <label className={labelClassName}>Ano do relatório</label>
-                    <input type="number" min="2000" max="9999" value={config.yearValue} onChange={(event) => onChange('yearValue', event.target.value)} className={fieldClassName} />
+                    <label htmlFor="report-year" className={labelClassName}>Ano do relatório</label>
+                    <input id="report-year" type="number" min="2000" max="9999" value={config.yearValue} onChange={(event) => onChange('yearValue', event.target.value)} className={fieldClassName} />
                   </div>
                 )}
                 {config.periodMode === 'custom' && (
                   <>
                     <div className="min-w-0">
-                      <label className={labelClassName}>Data inicial</label>
-                      <input type="date" value={config.startDate} onChange={(event) => onChange('startDate', event.target.value)} className={fieldClassName} />
+                      <label htmlFor="report-start-date" className={labelClassName}>Data inicial</label>
+                      <input id="report-start-date" type="date" value={config.startDate} onChange={(event) => onChange('startDate', event.target.value)} className={fieldClassName} />
                     </div>
                     <div className="min-w-0">
-                      <label className={labelClassName}>Data final</label>
-                      <input type="date" value={config.endDate} onChange={(event) => onChange('endDate', event.target.value)} className={fieldClassName} />
+                      <label htmlFor="report-end-date" className={labelClassName}>Data final</label>
+                      <input id="report-end-date" type="date" value={config.endDate} onChange={(event) => onChange('endDate', event.target.value)} className={fieldClassName} />
                     </div>
                   </>
                 )}
@@ -204,37 +204,37 @@ export default function ReportBuilder({
 
             <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-3">
               <div className="min-w-0">
-                <label className={labelClassName}>Cliente</label>
-                <select value={config.clientId} onChange={(event) => onChange('clientId', event.target.value)} className={fieldClassName}>
+                <label htmlFor="report-client" className={labelClassName}>Cliente</label>
+                <select id="report-client" value={config.clientId} onChange={(event) => onChange('clientId', event.target.value)} className={fieldClassName}>
                   <option value="">Todos os clientes</option>
                   {clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}
                 </select>
               </div>
               <div className="min-w-0">
-                <label className={labelClassName}>Motorista</label>
-                <select value={config.driverId} onChange={(event) => onChange('driverId', event.target.value)} className={fieldClassName}>
+                <label htmlFor="report-driver" className={labelClassName}>Motorista</label>
+                <select id="report-driver" value={config.driverId} onChange={(event) => onChange('driverId', event.target.value)} className={fieldClassName}>
                   <option value="">Todos os motoristas</option>
                   {drivers.map((driver) => <option key={driver.id} value={driver.id}>{driver.name}</option>)}
                 </select>
               </div>
               <div className="min-w-0">
-                <label className={labelClassName}>Status operacional</label>
-                <select value={config.status} onChange={(event) => onChange('status', event.target.value)} className={fieldClassName}>
+                <label htmlFor="report-status" className={labelClassName}>Status operacional</label>
+                <select id="report-status" value={config.status} onChange={(event) => onChange('status', event.target.value)} className={fieldClassName}>
                   <option value="">Todos os status</option>
                   {FREIGHT_ORDER_STATUSES.map((status) => <option key={status} value={status}>{getFreightStatusMeta(status).label}</option>)}
                 </select>
               </div>
               <div className="min-w-0">
-                <label className={labelClassName}>Origem contém</label>
-                <input value={config.origin} onChange={(event) => onChange('origin', event.target.value)} placeholder="Ex.: Betim - MG" className={fieldClassName} />
+                <label htmlFor="report-origin" className={labelClassName}>Origem contém</label>
+                <input id="report-origin" value={config.origin} onChange={(event) => onChange('origin', event.target.value)} placeholder="Ex.: Betim - MG" className={fieldClassName} />
               </div>
               <div className="min-w-0">
-                <label className={labelClassName}>Destino contém</label>
-                <input value={config.destination} onChange={(event) => onChange('destination', event.target.value)} placeholder="Ex.: São Paulo - SP" className={fieldClassName} />
+                <label htmlFor="report-destination" className={labelClassName}>Destino contém</label>
+                <input id="report-destination" value={config.destination} onChange={(event) => onChange('destination', event.target.value)} placeholder="Ex.: São Paulo - SP" className={fieldClassName} />
               </div>
               <div className="min-w-0">
-                <label className={labelClassName}>Busca geral</label>
-                <input value={config.search} onChange={(event) => onChange('search', event.target.value)} placeholder="CTE, ficha, cliente, motorista ou rota" className={fieldClassName} />
+                <label htmlFor="report-search" className={labelClassName}>Busca geral</label>
+                <input id="report-search" value={config.search} onChange={(event) => onChange('search', event.target.value)} placeholder="CTE, ficha, cliente, motorista ou rota" className={fieldClassName} />
               </div>
             </div>
           </div>
@@ -244,8 +244,8 @@ export default function ReportBuilder({
             <Toggle checked={config.includePreviousYear} label="Comparar ano anterior" helper="Mesmas datas deslocadas em um ano, quando houver registros." onChange={(value) => onChange('includePreviousYear', value)} />
             <Toggle checked={config.includeDetails} label="Incluir detalhamento" helper="Adiciona a base de ordens ao PDF e aos arquivos analíticos." onChange={(value) => onChange('includeDetails', value)} />
             <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-3">
-              <label className={labelClassName}>Itens nos rankings</label>
-              <select value={config.rankingLimit} onChange={(event) => onChange('rankingLimit', Number(event.target.value))} className={fieldClassName}>
+              <label htmlFor="report-ranking-limit" className={labelClassName}>Itens nos rankings</label>
+              <select id="report-ranking-limit" value={config.rankingLimit} onChange={(event) => onChange('rankingLimit', Number(event.target.value))} className={fieldClassName}>
                 {[5, 10, 15, 20, 30].map((value) => <option key={value} value={value}>Top {value}</option>)}
               </select>
             </div>
