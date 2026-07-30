@@ -1,4 +1,4 @@
-import { APPENDIX_ROWS_PER_PAGE, chunkForPrint } from '@/lib/reporting/printLayout';
+import { APPENDIX_ROWS_PER_PAGE, chunkForPrint, selectAppendixOrders } from '@/lib/reporting/printLayout';
 import type { GeneratedReport, ReportingOrder } from '@/lib/reporting/types';
 
 import { formatCurrency, formatPercent, PrintPage } from './PrintPrimitives';
@@ -70,9 +70,7 @@ export default function AppendixPages({
   basePageCount: number;
   totalPages: number;
 }) {
-  const source = report.kind === 'in-progress'
-    ? report.orders.filter((order) => ['Contratar', 'Carregando', 'Em Trânsito'].includes(order.status))
-    : report.orders;
+  const source = selectAppendixOrders(report);
   const pages = chunkForPrint(source);
 
   return (
