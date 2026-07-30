@@ -1,0 +1,95 @@
+name: Apply Reporting Polish
+
+on:
+  push:
+    branches:
+      - feat/central-relatorios-dinamicos
+
+permissions:
+  contents: write
+
+jobs:
+  apply-reporting-polish:
+    if: ${{ !contains(github.event.head_commit.message, '[reporting-polish-applied]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/central-relatorios-dinamicos
+          fetch-depth: 0
+
+      - name: Apply source polish
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          dashboard = Path('components/reports/ReportDashboard.tsx')
+          source = dashboard.read_text(encoding='utf-8')
+          for line in [
+              '  Clock3,\n',
+              '  Route,\n',
+              '  Users,\n',
+              '  WalletCards,\n',
+          ]:
+              source = source.replace(line, '')
+          source = source.replace(
+              'O período anterior usa a mesma quantidade de dias. A comparação anual usa as mesmas datas do ano anterior.',
+              'Relatórios mensais usam o mês-calendário anterior. Períodos personalizados usam uma janela anterior equivalente. A comparação anual preserva as mesmas datas.',
+          )
+          dashboard.write_text(source, encoding='utf-8')
+
+          insights = Path('components/reports/ReportInsights.tsx')
+          source = insights.read_text(encoding='utf-8')
+          source = source.replace(
+              'Cada observação abaixo informa a evidência numérica que a originou. Nada de horóscopo corporativo com gráfico de pizza.',
+              'Cada observação apresenta a evidência numérica que a originou, permitindo leitura gerencial objetiva e auditável.',
+          )
+          insights.write_text(source, encoding='utf-8')
+
+          print_file = Path('components/reports/ReportPrintDocument.tsx')
+          source = print_file.read_text(encoding='utf-8')
+          source = source.replace(
+              "const percentFormatter = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });\n",
+              "const percentFormatter = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });\n\nconst INSIGHT_KIND_LABELS = {\n  strength: 'Ponto forte',\n  highlight: 'Destaque',\n  attention: 'Ponto de atenção',\n  opportunity: 'Oportunidade',\n  priority: 'Prioridade sugerida',\n  info: 'Informação',\n} as const;\n",
+              1,
+          )
+          source = source.replace(
+              'className="dynamic-report-section dynamic-report-avoid-break"',
+              'className="dynamic-report-section"',
+              1,
+          )
+          source = source.replace(
+              '<strong>Emitido em {formatGeneratedAt(report.generatedAt)}</strong>',
+              '<strong data-dynamic-generated-at>Emitido em {formatGeneratedAt(report.generatedAt)}</strong>',
+              1,
+          )
+          source = source.replace(
+              '<span>{insight.kind}</span>',
+              '<span>{INSIGHT_KIND_LABELS[insight.kind]}</span>',
+              1,
+          )
+          print_file.write_text(source, encoding='utf-8')
+
+          layout = Path('app/relatorios/layout.tsx')
+          source = layout.read_text(encoding='utf-8')
+          source = source.replace(
+              "import './reporting.css';\n",
+              "import type { ReactNode } from 'react';\n\nimport './reporting.css';\n",
+              1,
+          )
+          source = source.replace('React.ReactNode', 'ReactNode')
+          layout.write_text(source, encoding='utf-8')
+          PY
+
+      - name: Commit polish
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add components/reports app/relatorios/layout.tsx
+          git commit -m "fix(reporting): polish dynamic reports [reporting-polish-applied]"
+          git push origin HEAD:feat/central-relatorios-dinamicos
