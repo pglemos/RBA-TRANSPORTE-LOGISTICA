@@ -1,0 +1,119 @@
+name: Apply Premium Review Fixes
+
+on:
+  push:
+    branches:
+      - fix/premium-report-print-engine
+
+permissions:
+  contents: write
+
+jobs:
+  apply-review-fixes:
+    if: ${{ !contains(github.event.head_commit.message, '[premium-review-fixed]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/premium-report-print-engine
+          fetch-depth: 0
+
+      - name: Apply exact review corrections
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          primitives = Path('components/reports/print/PrintPrimitives.tsx')
+          source = primitives.read_text(encoding='utf-8')
+          old_currency = """export const formatCompactCurrency = (value: number) => {
+            const absolute = Math.abs(value);
+            if (absolute >= 1_000_000) return `R$ ${(value / 1_000_000).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} mi`;
+            if (absolute >= 1_000) return `R$ ${(value / 1_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`;
+            return formatCurrency(value);
+          };"""
+          new_currency = """export const formatCompactCurrency = (value: number) => {
+            const absolute = Math.abs(value);
+            const sign = value < 0 ? '-' : '';
+            if (absolute >= 1_000_000) return `${sign}R$ ${(absolute / 1_000_000).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} mi`;
+            if (absolute >= 1_000) return `${sign}R$ ${(absolute / 1_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`;
+            return formatCurrency(value);
+          };"""
+          if old_currency not in source:
+              raise SystemExit('currency block not found')
+          source = source.replace(old_currency, new_currency)
+
+          old_polyline = """function buildPolyline(
+            points: TimeSeriesPoint[],
+            getter: (point: TimeSeriesPoint) => number,
+            width: number,
+            height: number,
+            scaleMax: number,
+          ): string {
+            if (points.length === 0) return '';
+            const max = Math.max(1, scaleMax);
+            const usableWidth = width - 80;
+            const usableHeight = height - 70;
+            return points.map((point, index) => {
+              const x = 50 + (points.length === 1 ? usableWidth / 2 : (index / (points.length - 1)) * usableWidth);
+              const y = 20 + usableHeight - (getter(point) / max) * usableHeight;
+              return `${x},${y}`;
+            }).join(' ');
+          }"""
+          new_polyline = """function buildPolyline(
+            points: TimeSeriesPoint[],
+            getter: (point: TimeSeriesPoint) => number,
+            width: number,
+            height: number,
+            scaleMin: number,
+            scaleMax: number,
+          ): string {
+            if (points.length === 0) return '';
+            const range = Math.max(1, scaleMax - scaleMin);
+            const usableWidth = width - 80;
+            const usableHeight = height - 70;
+            return points.map((point, index) => {
+              const x = 50 + (points.length === 1 ? usableWidth / 2 : (index / (points.length - 1)) * usableWidth);
+              const y = 20 + usableHeight - ((getter(point) - scaleMin) / range) * usableHeight;
+              return `${x},${y}`;
+            }).join(' ');
+          }"""
+          if old_polyline not in source:
+              raise SystemExit('polyline block not found')
+          source = source.replace(old_polyline, new_polyline)
+
+          old_calls = """  const scaleMax = Math.max(1, ...points.flatMap((point) => [point.cteValue, point[secondary]]));
+            const cteLine = buildPolyline(points, (point) => point.cteValue, width, height, scaleMax);
+            const secondaryLine = buildPolyline(points, (point) => point[secondary], width, height, scaleMax);"""
+          new_calls = """  const chartValues = points.flatMap((point) => [point.cteValue, point[secondary]]);
+            const scaleMin = Math.min(0, ...chartValues);
+            const scaleMax = Math.max(1, ...chartValues);
+            const cteLine = buildPolyline(points, (point) => point.cteValue, width, height, scaleMin, scaleMax);
+            const secondaryLine = buildPolyline(points, (point) => point[secondary], width, height, scaleMin, scaleMax);"""
+          if old_calls not in source:
+              raise SystemExit('chart calls not found')
+          source = source.replace(old_calls, new_calls)
+          primitives.write_text(source, encoding='utf-8')
+
+          css1 = Path('app/relatorios/reporting-print-1.css')
+          source = css1.read_text(encoding='utf-8')
+          source = source.replace('    page-break-after: always !important;\n', '')
+          source = source.replace('    page-break-after: auto !important;\n', '')
+          css1.write_text(source, encoding='utf-8')
+
+          css3 = Path('app/relatorios/reporting-print-3.css')
+          source = css3.read_text(encoding='utf-8')
+          source = source.replace('    page-break-inside: avoid !important;\n', '')
+          source = source.replace('{ width: 6% !important; }', '{ width: 5.5% !important; }')
+          css3.write_text(source, encoding='utf-8')
+          PY
+
+      - name: Commit review corrections
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add components/reports/print/PrintPrimitives.tsx app/relatorios/reporting-print-1.css app/relatorios/reporting-print-3.css
+          git commit -m "fix(reporting): corrigir revisão final do PDF premium [premium-review-fixed]"
+          git push origin HEAD:fix/premium-report-print-engine
