@@ -1,0 +1,49 @@
+name: Apply Excel Buffer Fix
+
+on:
+  push:
+    branches:
+      - feat/central-relatorios-dinamicos
+
+permissions:
+  contents: write
+
+jobs:
+  apply-excel-buffer-fix:
+    if: ${{ !contains(github.event.head_commit.message, '[excel-buffer-fix-applied]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/central-relatorios-dinamicos
+          fetch-depth: 0
+      - name: Replace workbook buffer conversion
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('lib/reporting/excel.ts')
+          source = path.read_text(encoding='utf-8')
+          old = """export async function buildReportWorkbookBuffer(input: ReportWorkbookInput): Promise<ArrayBuffer> {
+            const buffer = await buildReportWorkbook(input).xlsx.writeBuffer();
+            return buffer instanceof ArrayBuffer
+              ? buffer
+              : buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+          }"""
+          new = """export async function buildReportWorkbookBuffer(input: ReportWorkbookInput): Promise<Uint8Array> {
+            const buffer = await buildReportWorkbook(input).xlsx.writeBuffer();
+            return new Uint8Array(buffer);
+          }"""
+          if old not in source:
+              raise SystemExit('Expected Excel buffer function not found.')
+          path.write_text(source.replace(old, new, 1), encoding='utf-8')
+          PY
+      - name: Commit fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/reporting/excel.ts
+          git commit -m "fix(reporting): normalize Excel buffer [excel-buffer-fix-applied]"
+          git push origin HEAD:feat/central-relatorios-dinamicos
