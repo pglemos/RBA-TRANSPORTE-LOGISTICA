@@ -1,3 +1,4 @@
+
 export type ReportKind =
   | 'executive'
   | 'expenses'
@@ -14,6 +15,7 @@ export interface DateRange {
   startDate: string;
   endDate: string;
   label: string;
+  isPartial?: boolean;
 }
 
 export interface ReportingOrder {
@@ -32,10 +34,15 @@ export interface ReportingOrder {
   destination: string;
   status: string;
   cteValue: number;
+  cteDiscountPercent: number;
+  cteDiscountValue: number;
+  netRevenue: number;
   freightValue: number;
   advanceValue: number;
   cashValue: number;
   balanceValue: number;
+  classifiedPaymentValue: number;
+  unclassifiedPaymentValue: number;
   loadingExpense: number;
   unloadingExpense: number;
   otherExpenses: number;
@@ -46,10 +53,16 @@ export interface ReportingOrder {
 export interface ReportSummary {
   totalOrders: number;
   totalCteValue: number;
+  totalRecordedDiscountValue: number;
+  totalNetRevenue: number;
   totalFreightValue: number;
   totalAdvanceValue: number;
   totalCashValue: number;
   totalBalanceValue: number;
+  totalClassifiedPaymentValue: number;
+  totalUnclassifiedPaymentValue: number;
+  unclassifiedPaymentOrderCount: number;
+  paymentCoveragePercent: number;
   totalExpenses: number;
   totalNetValue: number;
   averageCteValue: number;

@@ -231,7 +231,7 @@ export default function ModelPrintPages({ report, totalPages }: { report: Genera
         <InsightAgenda insights={report.insights} limit={6} />
       </PrintPage>
       <PrintPage report={report} pageNumber={7} totalPages={totalPages} eyebrow="GOVERNANÇA E INTEGRIDADE" title="Confiança para decisão executiva" subtitle="Fonte única, rastreabilidade, transparência e confidencialidade">
-        <GovernancePanel />
+        <GovernancePanel report={report} />
       </PrintPage>
     </>
   );

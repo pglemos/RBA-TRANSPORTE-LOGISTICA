@@ -211,10 +211,10 @@ function buildPolyline(
 ): string {
   if (points.length === 0) return '';
   const range = Math.max(1, scaleMax - scaleMin);
-  const usableWidth = width - 80;
+  const usableWidth = width - 140;
   const usableHeight = height - 70;
   return points.map((point, index) => {
-    const x = 50 + (points.length === 1 ? usableWidth / 2 : (index / (points.length - 1)) * usableWidth);
+    const x = 70 + (points.length === 1 ? usableWidth / 2 : (index / (points.length - 1)) * usableWidth);
     const y = 20 + usableHeight - ((getter(point) - scaleMin) / range) * usableHeight;
     return `${x},${y}`;
   }).join(' ');
@@ -240,11 +240,11 @@ export function TrendChart({
   return (
     <div className="rba-chart-card">
       <svg className="rba-trend-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Evolução temporal do período">
-        {[0, 1, 2, 3, 4].map((line) => <line key={line} x1="50" x2="910" y1={25 + line * 47} y2={25 + line * 47} className="rba-chart-gridline" />)}
+        {[0, 1, 2, 3, 4].map((line) => { const y = 25 + line * 47; const tick = scaleMax - ((scaleMax - scaleMin) * line) / 4; return <g key={line}><line x1="70" x2="870" y1={y} y2={y} className="rba-chart-gridline" /><text x="64" y={y + 5} textAnchor="end" className="rba-chart-axis-label">{formatCompactCurrency(tick)}</text></g>; })}
         <polyline points={cteLine} className="rba-chart-line rba-chart-line-primary" />
         <polyline points={secondaryLine} className="rba-chart-line rba-chart-line-secondary" />
         {points.map((point, index) => {
-          const x = 50 + (points.length === 1 ? 430 : (index / (points.length - 1)) * 860);
+          const x = 70 + (points.length === 1 ? 400 : (index / (points.length - 1)) * 800);
           return <text key={point.key} x={x} y="260" textAnchor="middle" className="rba-chart-label">{point.label.replace('Semana de ', '')}</text>;
         })}
       </svg>
@@ -258,21 +258,35 @@ export function TrendChart({
 
 export function ComparisonGrid({ report }: { report: GeneratedReport }) {
   const rows = [
-    ['Operações', report.previousComparison?.totalOrders, report.previousYearComparison?.totalOrders],
-    ['Valor CTE', report.previousComparison?.totalCteValue, report.previousYearComparison?.totalCteValue],
-    ['Lucro líquido', report.previousComparison?.totalNetValue, report.previousYearComparison?.totalNetValue],
-    ['Despesas', report.previousComparison?.totalExpenses, report.previousYearComparison?.totalExpenses],
-    ['Margem', report.previousComparison?.marginPercent, report.previousYearComparison?.marginPercent],
-    ['Entregues', report.previousComparison?.deliveredPercent, report.previousYearComparison?.deliveredPercent],
+    ['Operações', 'integer', report.previousComparison?.totalOrders, report.previousYearComparison?.totalOrders],
+    ['Valor CTE', 'currency', report.previousComparison?.totalCteValue, report.previousYearComparison?.totalCteValue],
+    ['Lucro líquido', 'currency', report.previousComparison?.totalNetValue, report.previousYearComparison?.totalNetValue],
+    ['Despesas', 'currency', report.previousComparison?.totalExpenses, report.previousYearComparison?.totalExpenses],
+    ['Margem', 'points', report.previousComparison?.marginPercent, report.previousYearComparison?.marginPercent],
+    ['Taxa de entrega', 'points', report.previousComparison?.deliveredPercent, report.previousYearComparison?.deliveredPercent],
   ] as const;
+  const value = (metric: ComparisonMetric | null | undefined, mode: string, field: 'current' | 'reference') => {
+    if (!metric) return 'Sem base';
+    const number = metric[field];
+    if (mode === 'currency') return formatCompactCurrency(number);
+    if (mode === 'points') return formatPercent(number);
+    return integerFormatter.format(number);
+  };
+  const delta = (metric: ComparisonMetric | null | undefined, mode: string) => {
+    if (!metric) return 'Sem base';
+    if (mode === 'points') return `${metric.absoluteChange > 0 ? '+' : ''}${percentFormatter.format(metric.absoluteChange)} p.p.`;
+    return formatDelta(metric);
+  };
   return (
     <div className="rba-comparison-grid">
-      <div className="rba-comparison-head"><span>Indicador</span><span>Período anterior</span><span>Mesmo período do ano anterior</span></div>
-      {rows.map(([label, previous, previousYear]) => (
+      <div className="rba-comparison-head"><span>Indicador</span><span>Atual</span><span>Anterior</span><span>Δ</span><span>Ano anterior / Δ</span></div>
+      {rows.map(([label, mode, previous, previousYear]) => (
         <div className="rba-comparison-row" key={label}>
           <strong>{label}</strong>
-          <span>{formatDelta(previous)}</span>
-          <span>{formatDelta(previousYear)}</span>
+          <span>{value(previous, mode, 'current')}</span>
+          <span>{value(previous, mode, 'reference')}</span>
+          <span>{delta(previous, mode)}</span>
+          <span>{previousYear ? `${value(previousYear, mode, 'reference')} · ${delta(previousYear, mode)}` : 'Sem base'}</span>
         </div>
       ))}
     </div>
@@ -306,7 +320,7 @@ export function InsightAgenda({ insights, limit = 6 }: { insights: ReportInsight
   );
 }
 
-export function GovernancePanel() {
+export function GovernancePanel({ report }: { report: GeneratedReport }) {
   return (
     <div className="rba-governance-layout">
       <div className="rba-governance-lead">
@@ -321,6 +335,8 @@ export function GovernancePanel() {
         <article><h4>Rastreabilidade</h4><p>Cada linha permanece vinculada à ordem, CTE ou manifesto, motorista, rota e cliente.</p></article>
         <article><h4>Transparência</h4><p>Indicadores gerenciais são identificados como consolidações, médias, percentuais ou comparações.</p></article>
         <article><h4>Confidencialidade</h4><p>Documento destinado à Diretoria, liderança e partes expressamente autorizadas.</p></article>
+        <article><h4>Identificação</h4><p>{report.kind} · {report.period.startDate} a {report.period.endDate} · {report.current.summary.totalOrders} registros.</p></article>
+        <article><h4>Integridade financeira</h4><p>Dedução registrada: {formatCurrency(report.current.summary.totalRecordedDiscountValue)}. Pagamentos não classificados: {formatCurrency(report.current.summary.totalUnclassifiedPaymentValue)}.</p></article>
       </div>
     </div>
   );

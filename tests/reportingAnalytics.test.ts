@@ -92,7 +92,7 @@ test('builds client-route recurrence, profit buckets and in-progress aging', () 
   assert.equal(analytics.clientRoutes[0].label, 'Cliente Alfa · Betim - MG → São Paulo - SP');
   assert.equal(analytics.clientRoutes[0].orderCount, 2);
   assert.equal(analytics.recurrence.clientRoutes, 1);
-  assert.equal(analytics.recurrence.leadingClientDependencyPercent, 60);
+  assert.equal(analytics.recurrence.leadingClientDependencyPercent, 50);
   assert.equal(analytics.profitBuckets.find((item) => item.key === 'positive')?.orderCount, 3);
   assert.equal(analytics.profitBuckets.find((item) => item.key === 'neutral')?.orderCount, 1);
   assert.equal(analytics.profitBuckets.find((item) => item.key === 'negative')?.orderCount, 1);

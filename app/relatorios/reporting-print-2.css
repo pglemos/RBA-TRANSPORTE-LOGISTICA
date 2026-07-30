@@ -166,7 +166,7 @@
 
   .rba-financial-strip {
     display: grid !important;
-    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     gap: 2mm !important;
     margin-bottom: 5mm !important;
   }
@@ -223,10 +223,13 @@
   .rba-payment-bar span:nth-child(1) { background: #111c32 !important; }
   .rba-payment-bar span:nth-child(2) { background: #4f6d94 !important; }
   .rba-payment-bar span:nth-child(3) { background: #b3924e !important; }
+  .rba-payment-bar span:nth-child(4), .rba-payment-unclassified { background: #a44e3f !important; }
   .rba-payment-bar strong { margin-top: 1mm !important; font-size: 10pt !important; }
 
   .rba-operation-layout {
     display: grid !important;
+    width: 100% !important;
+    min-width: 0 !important;
     min-height: 0 !important;
     flex: 1 1 auto !important;
     grid-template-columns: 1.7fr 0.7fr !important;
@@ -235,6 +238,8 @@
 
   .rba-pipeline-panel {
     display: flex !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
     flex-direction: column !important;
     padding: 5mm !important;
     background: #111c32 !important;
@@ -288,6 +293,8 @@
 
   .rba-two-column-wide {
     display: grid !important;
+    width: 100% !important;
+    min-width: 0 !important;
     min-height: 0 !important;
     flex: 1 1 auto !important;
     grid-template-columns: 1.65fr 0.75fr !important;
@@ -296,6 +303,8 @@
 
   .rba-side-stack {
     display: flex !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
     min-height: 0 !important;
     flex-direction: column !important;
     gap: 3mm !important;
@@ -320,13 +329,13 @@
   .rba-bar-row {
     display: grid !important;
     min-width: 0 !important;
-    grid-template-columns: 8mm 52mm minmax(0, 1fr) 27mm !important;
+    grid-template-columns: 7mm minmax(34mm, 48mm) minmax(0, 1fr) 36mm !important;
     gap: 2mm !important;
     align-items: center !important;
   }
 
   .rba-dual-ranking .rba-bar-row {
-    grid-template-columns: 7mm 37mm minmax(0, 1fr) 23mm !important;
+    grid-template-columns: 6mm minmax(28mm, 34mm) minmax(0, 1fr) 30mm !important;
   }
 
   .rba-bar-position {

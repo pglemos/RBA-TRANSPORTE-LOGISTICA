@@ -24,6 +24,10 @@ function sumOrders(items: RankingItem[], predicate: (item: RankingItem) => boole
   return items.filter(predicate).reduce((total, item) => total + item.orderCount, 0);
 }
 
+function countItems(items: RankingItem[], predicate: (item: RankingItem) => boolean): number {
+  return items.filter(predicate).length;
+}
+
 export default function ExecutivePrintPages({ report, totalPages }: { report: GeneratedReport; totalPages: number }) {
   const analytics = report.current;
   const summary = analytics.summary;
@@ -32,6 +36,9 @@ export default function ExecutivePrintPages({ report, totalPages }: { report: Ge
   const recurringOnce = sumOrders(analytics.drivers, (item) => item.orderCount === 1);
   const recurringTwice = sumOrders(analytics.drivers, (item) => item.orderCount === 2);
   const recurringMore = sumOrders(analytics.drivers, (item) => item.orderCount >= 3);
+  const singleTripDrivers = countItems(analytics.drivers, (item) => item.orderCount === 1);
+  const twoTripDrivers = countItems(analytics.drivers, (item) => item.orderCount === 2);
+  const threePlusDrivers = countItems(analytics.drivers, (item) => item.orderCount >= 3);
   const activeOrders = summary.totalOrders - summary.deliveredCount;
   const topClient = analytics.clients[0];
   const topOrigin = analytics.origins[0];
@@ -91,12 +98,13 @@ export default function ExecutivePrintPages({ report, totalPages }: { report: Ge
         <div className="rba-financial-strip">
           {[
             ['CTE', summary.totalCteValue],
+            ['Dedução registrada', summary.totalRecordedDiscountValue],
+            ['Receita líquida', summary.totalNetRevenue],
             ['Frete', summary.totalFreightValue],
-            ['Adiant.', summary.totalAdvanceValue],
-            ['À vista', summary.totalCashValue],
-            ['Saldos', summary.totalBalanceValue],
+            ['Pagamentos classificados', summary.totalClassifiedPaymentValue],
+            ['Não classificado', summary.totalUnclassifiedPaymentValue],
             ['Despesas', summary.totalExpenses],
-            ['Líquido', summary.totalNetValue],
+            ['Lucro registrado', summary.totalNetValue],
           ].map(([label, value]) => <div key={String(label)}><span>{label}</span><strong>{formatCompactCurrency(Number(value))}</strong></div>)}
         </div>
         <MetricGrid columns={3}>
@@ -105,11 +113,12 @@ export default function ExecutivePrintPages({ report, totalPages }: { report: Ge
           <MetricCard label="Despesa / CTE" value={formatPercent(summary.expenseRatioPercent)} helper="Participação das despesas registradas" />
         </MetricGrid>
         <div className="rba-payment-composition">
-          <SectionTitle title="Composição de pagamentos" />
+          <SectionTitle title="Composição de pagamentos" subtitle={`${formatPercent(summary.paymentCoveragePercent)} do frete está classificado; ${integerFormatter.format(summary.unclassifiedPaymentOrderCount)} ordem(ns) possuem diferença.`} />
           <div className="rba-payment-bar">
             <span style={{ flex: Math.max(1, summary.totalAdvanceValue) }}>Adiantamentos <strong>{formatCompactCurrency(summary.totalAdvanceValue)}</strong></span>
             <span style={{ flex: Math.max(1, summary.totalCashValue) }}>À vista <strong>{formatCompactCurrency(summary.totalCashValue)}</strong></span>
             <span style={{ flex: Math.max(1, summary.totalBalanceValue) }}>Saldo a pagar <strong>{formatCompactCurrency(summary.totalBalanceValue)}</strong></span>
+            <span className="rba-payment-unclassified" style={{ flex: Math.max(1, summary.totalUnclassifiedPaymentValue) }}>Não classificado <strong>{formatCompactCurrency(summary.totalUnclassifiedPaymentValue)}</strong></span>
           </div>
         </div>
       </PrintPage>
@@ -144,7 +153,7 @@ export default function ExecutivePrintPages({ report, totalPages }: { report: Ge
         <div className="rba-two-column-wide">
           <div>
             <SectionTitle title="Top 10 clientes por valor CTE" subtitle="Valor consolidado e número de operações por cliente" />
-            <HorizontalBars items={topClients} value={(item) => item.cteValue} valueLabel={(item) => formatCompactCurrency(item.cteValue)} />
+            <HorizontalBars items={topClients} value={(item) => item.cteValue} valueLabel={(item) => `${formatCompactCurrency(item.cteValue)} · ${item.orderCount} op.`} />
           </div>
           <div className="rba-side-stack">
             <MetricCard label="Clientes atendidos" value={integerFormatter.format(analytics.clients.length)} helper="Carteira no período" />
@@ -174,9 +183,9 @@ export default function ExecutivePrintPages({ report, totalPages }: { report: Ge
             <MetricCard label="Motoristas únicos" value={integerFormatter.format(analytics.drivers.length)} helper="Rede mobilizada no período" tone="navy" />
             <div className="rba-recurrence-card">
               <span>RECORRÊNCIA OPERACIONAL</span>
-              <div><strong>{recurringOnce}</strong><p>operações de motoristas com 1 viagem</p></div>
-              <div><strong>{recurringTwice}</strong><p>operações de motoristas com 2 viagens</p></div>
-              <div><strong>{recurringMore}</strong><p>operações de motoristas com 3 ou mais</p></div>
+              <div><strong>{singleTripDrivers}</strong><p>motoristas · {recurringOnce} operações com 1 viagem</p></div>
+              <div><strong>{twoTripDrivers}</strong><p>motoristas · {recurringTwice} operações com 2 viagens</p></div>
+              <div><strong>{threePlusDrivers}</strong><p>motoristas · {recurringMore} operações com 3 ou mais</p></div>
             </div>
             <ReadingCard label="Leitura de capacidade" value={`${integerFormatter.format(analytics.recurrence.drivers)} recorrentes`} description="A rede amplia cobertura, mas exige disciplina de cadastro, documentação, homologação e qualidade operacional." />
           </div>
@@ -199,7 +208,7 @@ export default function ExecutivePrintPages({ report, totalPages }: { report: Ge
       </PrintPage>
 
       <PrintPage report={report} pageNumber={10} totalPages={totalPages} eyebrow="GOVERNANÇA E INTEGRIDADE" title="Confiança para decisão executiva" subtitle="Fonte única, rastreabilidade, transparência e confidencialidade">
-        <GovernancePanel />
+        <GovernancePanel report={report} />
       </PrintPage>
     </>
   );

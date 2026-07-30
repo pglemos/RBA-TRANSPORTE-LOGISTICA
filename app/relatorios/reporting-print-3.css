@@ -25,7 +25,8 @@
 
   .rba-chart-line-primary { stroke: #111c32 !important; }
   .rba-chart-line-secondary { stroke: #c2a35e !important; }
-  .rba-chart-label { fill: #69758a !important; font-size: 18px !important; font-weight: 700 !important; }
+  .rba-chart-label { fill: #69758a !important; font-size: 16px !important; font-weight: 700 !important; }
+  .rba-chart-axis-label { fill: #69758a !important; font-size: 12px !important; font-weight: 700 !important; }
 
   .rba-chart-legend {
     display: flex !important;
@@ -137,7 +138,7 @@
   .rba-comparison-head,
   .rba-comparison-row {
     display: grid !important;
-    grid-template-columns: 1.15fr 1fr 1fr !important;
+    grid-template-columns: 1.1fr 0.75fr 0.75fr 0.55fr 1.25fr !important;
     align-items: center !important;
   }
 
@@ -215,7 +216,7 @@
 
   .rba-governance-grid {
     display: grid !important;
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     gap: 4mm !important;
   }
 
@@ -236,7 +237,7 @@
   .rba-governance-grid p {
     margin: 2mm 0 0 !important;
     color: #657086 !important;
-    font-size: 6.5pt !important;
+    font-size: 7pt !important;
     font-weight: 600 !important;
     line-height: 1.4 !important;
   }
