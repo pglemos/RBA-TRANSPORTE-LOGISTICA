@@ -3,7 +3,6 @@ import { RBADatabase } from '@/lib/db';
 import { RBAAuth } from '@/lib/auth';
 import { FreightOrderSchema } from '@/lib/validators';
 import { signFreightOrderProof } from '@/lib/proof';
-import { getFreightOrderEmissionDateValue } from '@/lib/freightOrderDates';
 import { normalizeFreightOrderStatus, syncFreightOrderStatuses } from '@/lib/freightStatus';
 import {
   findDriverByCpf,
@@ -25,15 +24,10 @@ export async function GET(req: NextRequest) {
     const clientId = searchParams.get('client_id') || '';
     const startDate = searchParams.get('start_date') || '';
     const endDate = searchParams.get('end_date') || '';
-    const useEmissionDate = searchParams.get('date_field') === 'emission';
     const page = Number(searchParams.get('page') || '1');
     const pageSize = Number(searchParams.get('page_size') || '1000');
  
-    const orders = await RBADatabase.getFreightOrders({
-      search, status, driverId, clientId, page, pageSize,
-      startDate: useEmissionDate ? '' : startDate,
-      endDate: useEmissionDate ? '' : endDate,
-    });
+    const orders = await RBADatabase.getFreightOrders({ search, status, driverId, clientId, page, pageSize, startDate, endDate });
 
     const driverIds = Array.from(new Set(orders.map((o) => o.driver_id).filter(Boolean)));
     const vehicleIds = Array.from(new Set(orders.map((o) => o.vehicle_id).filter(Boolean)));
@@ -66,13 +60,7 @@ export async function GET(req: NextRequest) {
           pdf_proof_token: signFreightOrderProof(order),
         };
       })
-      .filter((order) => !status || normalizeFreightOrderStatus(order.status) === normalizeFreightOrderStatus(status))
-      .filter((order) => {
-        if (!useEmissionDate) return true;
-        const emissionDate = getFreightOrderEmissionDateValue(order);
-        if (!emissionDate) return false;
-        return (!startDate || emissionDate >= startDate) && (!endDate || emissionDate <= endDate);
-      });
+      .filter((order) => !status || normalizeFreightOrderStatus(order.status) === normalizeFreightOrderStatus(status));
 
     return NextResponse.json(populated);
   } catch (error: any) {

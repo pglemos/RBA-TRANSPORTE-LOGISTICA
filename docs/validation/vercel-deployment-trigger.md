@@ -1,7 +1,7 @@
 # Disparo de Deploy da Central de Relatórios
 
 - Branch: `main`
-- Data inicial: `2026-07-30T03:57:00-03:00`
-- Execução auditada: `2026-07-30T06:50:00-03:00`
-- Motivo: disparar o workflow já instalado no branch main para aplicar e validar as correções de integridade dos relatórios PDF, Excel e CSV.
-- Estado esperado: testes de regressão e build de produção obrigatórios antes do commit funcional.
+- Data: `2026-07-30T03:57:00-03:00`
+- Motivo: disparar o deploy de produção conectado ao Vercel após a integração completa da Central Dinâmica de Relatórios.
+- Commit funcional integrado anteriormente: `e9649e229c39fdf3266d9657fb21a4448af0f663`
+- Estado da validação: 23 testes aprovados, build de produção aprovado e revisão concluída.

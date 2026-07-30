@@ -60,9 +60,9 @@ test('creates an Excel workbook with executive, comparison, insight and order sh
 
   assert.deepEqual(workbook.worksheets.map((sheet) => sheet.name), [
     'Resumo Executivo',
+    'Executivo',
     'Comparações',
     'Insights',
-    'Qualidade dos Dados',
     'Base de Ordens',
   ]);
   assert.equal(workbook.getWorksheet('Base de Ordens')?.views[0]?.state, 'frozen');

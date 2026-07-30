@@ -1,4 +1,3 @@
-import { summarizePaymentIntegrity } from './reportAudit.ts';
 import type {
   BreakdownItem,
   InProgressSummary,
@@ -77,21 +76,14 @@ function buildSummary(orders: ReportingOrder[]): ReportSummary {
   const totalNetValue = sum((order) => order.netValue);
   const totalExpenses = sum((order) => order.totalExpenses);
   const deliveredCount = orders.filter((order) => order.status === 'Entregue').length;
-  const integrity = summarizePaymentIntegrity(orders);
 
   return {
     totalOrders,
     totalCteValue,
-    totalRecordedDiscountValue: integrity.totalRecordedDiscountValue,
-    totalNetRevenue: integrity.totalNetRevenue,
     totalFreightValue: sum((order) => order.freightValue),
     totalAdvanceValue: sum((order) => order.advanceValue),
     totalCashValue: sum((order) => order.cashValue),
     totalBalanceValue: sum((order) => order.balanceValue),
-    totalClassifiedPaymentValue: integrity.totalClassifiedPaymentValue,
-    totalUnclassifiedPaymentValue: integrity.totalUnclassifiedPaymentValue,
-    unclassifiedPaymentOrderCount: integrity.unclassifiedPaymentOrderCount,
-    paymentCoveragePercent: integrity.paymentCoveragePercent,
     totalExpenses,
     totalNetValue,
     averageCteValue: totalOrders > 0 ? roundCurrency(totalCteValue / totalOrders) : 0,
@@ -303,7 +295,7 @@ export function buildReportAnalytics(
       recurringDriverOrderPercent: recurringOrderPercent(drivers, orders.length),
       recurringRouteOrderPercent: recurringOrderPercent(routes, orders.length),
       recurringClientRouteOrderPercent: recurringOrderPercent(clientRoutes, orders.length),
-      leadingClientDependencyPercent: clients[0]?.sharePercent || 0,
+      leadingClientDependencyPercent: safePercent(clients[0]?.orderCount || 0, orders.length),
     },
   };
 }

@@ -11,7 +11,6 @@ import { normalizeFreightOrderStatus } from '@/lib/freightStatus';
 import { buildReportAnalytics } from '@/lib/reporting/analytics';
 import { serializeReportModelCsv } from '@/lib/reporting/csv';
 import { buildReportComparison, buildReportInsights } from '@/lib/reporting/insights';
-import { clampRangeToDate, filterOrdersByEmissionRange, getPreviousMonthEquivalentRange } from '@/lib/reporting/reportAudit';
 import { buildReportingOrders, filterReportingOrders, type ReportOrderSource } from '@/lib/reporting/orders';
 import {
   getCustomRange,
@@ -74,7 +73,6 @@ const resolvePeriod = (config: ReportConfiguration): DateRange => {
 
 const resolvePreviousPeriod = (config: ReportConfiguration, period: DateRange): DateRange => {
   if (config.periodMode === 'month') {
-    if (period.isPartial) return getPreviousMonthEquivalentRange(period);
     const [year, month] = config.monthValue.split('-').map(Number);
     return getPreviousMonthRange(year, month);
   }
@@ -101,7 +99,6 @@ const buildOrdersUrl = (config: ReportConfiguration, range: DateRange): string =
     page_size: '10000',
     start_date: range.startDate,
     end_date: range.endDate,
-    date_field: 'emission',
   });
   if (config.clientId) params.set('client_id', config.clientId);
   if (config.driverId) params.set('driver_id', config.driverId);
@@ -117,12 +114,11 @@ const fetchReportingOrders = async (config: ReportConfiguration, range: DateRang
     formatEmissionDate: (order) => formatFreightOrderEmissionDate(order as never),
     getEmissionDateValue: (order) => getFreightOrderEmissionDateValue(order as never) || '',
   });
-  const textFiltered = filterReportingOrders(orders, {
+  return filterReportingOrders(orders, {
     origin: config.origin,
     destination: config.destination,
     search: config.search,
   });
-  return filterOrdersByEmissionRange(textFiltered, range);
 };
 
 const optionName = (options: SelectOption[], id: string, fallback: string): string =>
@@ -149,8 +145,7 @@ const generateReportData = async (
   clients: SelectOption[],
   drivers: SelectOption[],
 ): Promise<GeneratedReport> => {
-  const generatedAt = new Date();
-  const period = clampRangeToDate(resolvePeriod(config), generatedAt);
+  const period = resolvePeriod(config);
   const previousPeriod = config.includePrevious ? resolvePreviousPeriod(config, period) : null;
   const previousYearPeriod = config.includePreviousYear ? getPreviousYearRange(period) : null;
 
@@ -160,9 +155,9 @@ const generateReportData = async (
     previousYearPeriod ? fetchReportingOrders(config, previousYearPeriod) : Promise.resolve([]),
   ]);
 
-  const current = buildReportAnalytics(orders, period.endDate);
-  const previous = previousOrders.length > 0 ? buildReportAnalytics(previousOrders, previousPeriod?.endDate || period.endDate) : null;
-  const previousYear = previousYearOrders.length > 0 ? buildReportAnalytics(previousYearOrders, previousYearPeriod?.endDate || period.endDate) : null;
+  const current = buildReportAnalytics(orders);
+  const previous = previousOrders.length > 0 ? buildReportAnalytics(previousOrders) : null;
+  const previousYear = previousYearOrders.length > 0 ? buildReportAnalytics(previousYearOrders) : null;
 
   return {
     kind: config.kind,
@@ -170,7 +165,7 @@ const generateReportData = async (
     previousPeriod,
     previousYearPeriod,
     filtersLabel: buildFiltersLabel(config, clients, drivers),
-    generatedAt,
+    generatedAt: new Date(),
     orders,
     current,
     previous,
@@ -296,7 +291,6 @@ export default function ReportsPage() {
         previous: report.previous,
         previousYear: report.previousYear,
         insights: report.insights,
-        generatedAt: report.generatedAt,
       });
       downloadBlob(
         new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),

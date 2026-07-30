@@ -124,9 +124,9 @@ function addModelInsights(insights: ReportInsight[], current: ReportAnalytics, k
       addInsight(insights, {
         id: 'clients-volume-dependency',
         kind: 'attention',
-        title: 'Dependência financeira do principal cliente',
-        description: 'O cliente líder representa parcela elevada do valor CTE consolidado.',
-        evidence: `${current.recurrence.leadingClientDependencyPercent.toLocaleString('pt-BR')}% do valor CTE pertence ao cliente líder.`,
+        title: 'Dependência operacional do principal cliente',
+        description: 'O cliente com mais ordens representa parcela elevada do volume operacional.',
+        evidence: `${current.recurrence.leadingClientDependencyPercent.toLocaleString('pt-BR')}% das operações pertencem ao cliente líder em volume.`,
         priority: 91,
       });
     }

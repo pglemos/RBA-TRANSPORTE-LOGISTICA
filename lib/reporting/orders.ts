@@ -1,5 +1,3 @@
-
-import { normalizeLocationText, normalizeReferenceText } from './reportAudit.ts';
 import type { ReportingOrder } from './types.ts';
 
 export interface ReportOrderSource extends Record<string, unknown> {
@@ -14,9 +12,6 @@ export interface ReportOrderSource extends Record<string, unknown> {
   destination?: unknown;
   status?: unknown;
   cte_value?: unknown;
-  cte_discount_percent?: unknown;
-  cte_discount_value?: unknown;
-  net_revenue?: unknown;
   freight_value?: unknown;
   advance_value?: unknown;
   cash_value?: unknown;
@@ -63,42 +58,30 @@ export function buildReportingOrders(
   orders: ReportOrderSource[],
   options: ReportingOrderAdapterOptions,
 ): ReportingOrder[] {
-  return orders.map((order) => {
-    const freightValue = toNumber(order.freight_value);
-    const advanceValue = toNumber(order.advance_value);
-    const cashValue = toNumber(order.cash_value);
-    const balanceValue = toNumber(order.balance_value);
-    const classifiedPaymentValue = advanceValue + cashValue + balanceValue;
-    return {
-      id: toText(order.id),
-      orderNumber: toText(order.order_number),
-      cteNumber: normalizeReferenceText(toText(order.cte_number, 'A emitir')),
-      emissionDate: toText(options.formatEmissionDate(order), 'N/A'),
-      emissionDateValue: toText(options.getEmissionDateValue(order)),
-      clientId: toText(order.client_id),
-      clientName: toText(order.client_name, 'Não informado').replace(/\s{2,}/g, ' ').trim(),
-      driverId: toText(order.driver_id),
-      driverName: toText(order.driver_name, 'Não informado').replace(/\s{2,}/g, ' ').trim(),
-      origin: normalizeLocationText(toText(order.origin, 'Não informado')),
-      destination: normalizeLocationText(toText(order.destination, 'Não informado')),
-      status: toText(options.normalizeStatus(order.status), 'Contratar'),
-      cteValue: toNumber(order.cte_value),
-      cteDiscountPercent: toNumber(order.cte_discount_percent),
-      cteDiscountValue: toNumber(order.cte_discount_value),
-      netRevenue: toNumber(order.net_revenue),
-      freightValue,
-      advanceValue,
-      cashValue,
-      balanceValue,
-      classifiedPaymentValue,
-      unclassifiedPaymentValue: Math.max(0, freightValue - classifiedPaymentValue),
-      loadingExpense: toNumber(order.loading_expense),
-      unloadingExpense: toNumber(order.unloading_expense),
-      otherExpenses: toNumber(order.other_expenses),
-      totalExpenses: toNumber(order.total_expenses),
-      netValue: toNumber(order.net_value),
-    };
-  });
+  return orders.map((order) => ({
+    id: toText(order.id),
+    orderNumber: toText(order.order_number),
+    cteNumber: toText(order.cte_number, 'A emitir'),
+    emissionDate: toText(options.formatEmissionDate(order), 'N/A'),
+    emissionDateValue: toText(options.getEmissionDateValue(order)),
+    clientId: toText(order.client_id),
+    clientName: toText(order.client_name, 'Não informado'),
+    driverId: toText(order.driver_id),
+    driverName: toText(order.driver_name, 'Não informado'),
+    origin: toText(order.origin, 'Não informado'),
+    destination: toText(order.destination, 'Não informado'),
+    status: toText(options.normalizeStatus(order.status), 'Contratar'),
+    cteValue: toNumber(order.cte_value),
+    freightValue: toNumber(order.freight_value),
+    advanceValue: toNumber(order.advance_value),
+    cashValue: toNumber(order.cash_value),
+    balanceValue: toNumber(order.balance_value),
+    loadingExpense: toNumber(order.loading_expense),
+    unloadingExpense: toNumber(order.unloading_expense),
+    otherExpenses: toNumber(order.other_expenses),
+    totalExpenses: toNumber(order.total_expenses),
+    netValue: toNumber(order.net_value),
+  }));
 }
 
 export function filterReportingOrders(
