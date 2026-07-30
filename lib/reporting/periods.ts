@@ -74,6 +74,12 @@ export function getMonthRange(year: number, month: number): DateRange {
   };
 }
 
+export function getPreviousMonthRange(year: number, month: number): DateRange {
+  if (!Number.isInteger(year) || !Number.isInteger(month)) throw new Error('Mês inválido.');
+  const previous = new Date(Date.UTC(year, month - 2, 1));
+  return getMonthRange(previous.getUTCFullYear(), previous.getUTCMonth() + 1);
+}
+
 export function getYearRange(year: number): DateRange {
   if (!Number.isInteger(year) || year < 2000 || year > 9999) throw new Error('Ano inválido.');
   return {
