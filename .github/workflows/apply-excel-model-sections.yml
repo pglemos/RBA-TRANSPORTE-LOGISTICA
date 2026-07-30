@@ -1,0 +1,195 @@
+name: Apply Excel Model Sections
+
+on:
+  push:
+    branches:
+      - feat/central-relatorios-dinamicos
+
+permissions:
+  contents: write
+
+jobs:
+  apply-excel-model-sections:
+    if: ${{ !contains(github.event.head_commit.message, '[excel-model-sections-applied]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/central-relatorios-dinamicos
+          fetch-depth: 0
+      - name: Expand Excel model sections
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('lib/reporting/excel.ts')
+          source = path.read_text(encoding='utf-8')
+          marker = "\nfunction addModelSheet(sheet: ExcelJS.Worksheet, input: ReportWorkbookInput) {"
+          helpers = r'''
+
+function addBreakdownTable(
+  sheet: ExcelJS.Worksheet,
+  title: string,
+  items: Array<{ label: string; value: number; orderCount: number; sharePercent: number }>,
+  valueMode: 'currency' | 'count' = 'currency',
+) {
+  sheet.addRow([]);
+  const section = sheet.addRow([title]);
+  sheet.mergeCells(section.number, 1, section.number, 4);
+  styleSectionHeader(section);
+  const header = sheet.addRow(['Categoria', 'Valor', 'Operações', 'Participação']);
+  styleTableHeader(header);
+  const start = header.number + 1;
+  items.forEach((item) => sheet.addRow([
+    item.label,
+    valueMode === 'currency' ? item.value : item.orderCount,
+    item.orderCount,
+    item.sharePercent / 100,
+  ]));
+  const end = sheet.lastRow?.number || start - 1;
+  styleBodyRows(sheet, start, end);
+  for (let row = start; row <= end; row += 1) {
+    sheet.getCell(row, 2).numFmt = valueMode === 'currency' ? CURRENCY_FORMAT : '0';
+    sheet.getCell(row, 3).numFmt = '0';
+    sheet.getCell(row, 4).numFmt = PERCENT_FORMAT;
+  }
+}
+
+function addTimeSeriesTable(sheet: ExcelJS.Worksheet, title: string, input: ReportWorkbookInput) {
+  sheet.addRow([]);
+  const section = sheet.addRow([title]);
+  sheet.mergeCells(section.number, 1, section.number, 5);
+  styleSectionHeader(section);
+  const header = sheet.addRow(['Semana', 'Operações', 'Valor CTE', 'Despesas', 'Lucro líquido']);
+  styleTableHeader(header);
+  const start = header.number + 1;
+  input.current.timeSeries.forEach((point) => sheet.addRow([
+    point.label,
+    point.orderCount,
+    point.cteValue,
+    point.expenses,
+    point.netValue,
+  ]));
+  const end = sheet.lastRow?.number || start - 1;
+  styleBodyRows(sheet, start, end);
+  for (let row = start; row <= end; row += 1) {
+    sheet.getCell(row, 2).numFmt = '0';
+    for (const column of [3, 4, 5]) sheet.getCell(row, column).numFmt = CURRENCY_FORMAT;
+  }
+}
+
+function addOpenOperationsTable(sheet: ExcelJS.Worksheet, input: ReportWorkbookInput): number {
+  const header = sheet.addRow(['Ordem', 'CTE / Manifesto', 'Emissão', 'Cliente', 'Motorista', 'Origem', 'Destino', 'Valor CTE', 'Frete', 'Despesas', 'Lucro', 'Status']);
+  styleTableHeader(header);
+  const start = header.number + 1;
+  input.current.inProgress.forEach((order) => sheet.addRow([
+    order.orderNumber,
+    order.cteNumber,
+    order.emissionDate,
+    order.clientName,
+    order.driverName,
+    order.origin,
+    order.destination,
+    order.cteValue,
+    order.freightValue,
+    order.totalExpenses,
+    order.netValue,
+    order.status,
+  ]));
+  const end = sheet.lastRow?.number || start - 1;
+  styleBodyRows(sheet, start, end);
+  for (let row = start; row <= end; row += 1) {
+    for (const column of [8, 9, 10, 11]) sheet.getCell(row, column).numFmt = CURRENCY_FORMAT;
+  }
+  return header.number;
+}
+'''
+          if marker not in source:
+              raise SystemExit('addModelSheet marker not found')
+          source = source.replace(marker, helpers + marker, 1)
+
+          start = source.index('function addModelSheet(')
+          end = source.index('\nfunction addComparisonSheet(', start)
+          replacement = r'''function addModelSheet(sheet: ExcelJS.Worksheet, input: ReportWorkbookInput) {
+  addBrandHeader(sheet, `Relatório de ${MODEL_LABELS[input.kind]}`, input.periodLabel, input.filtersLabel);
+  let headerRowNumber: number | null = null;
+  const limit = 30;
+  const byExpense = (items: RankingItem[]) => [...items].sort((a, b) => b.expenses - a.expenses).slice(0, limit);
+  const byProfit = (items: RankingItem[]) => [...items].sort((a, b) => b.netValue - a.netValue).slice(0, limit);
+  const recurring = (items: RankingItem[]) => items.filter((item) => item.orderCount >= 2).slice(0, limit);
+
+  if (input.kind === 'expenses') {
+    addBreakdownTable(sheet, 'Composição das despesas', input.current.expenses);
+    addRankingTable(sheet, 'Clientes com maior despesa', byExpense(input.current.clients));
+    addRankingTable(sheet, 'Motoristas com maior despesa', byExpense(input.current.drivers));
+    addRankingTable(sheet, 'Rotas com maior despesa', byExpense(input.current.routes));
+    addTimeSeriesTable(sheet, 'Evolução semanal das despesas', input);
+  } else if (input.kind === 'profits') {
+    addBreakdownTable(sheet, 'Distribuição dos resultados registrados', input.current.profitBuckets);
+    addRankingTable(sheet, 'Clientes com maior lucro líquido', byProfit(input.current.clients));
+    addRankingTable(sheet, 'Motoristas com maior lucro líquido', byProfit(input.current.drivers));
+    addRankingTable(sheet, 'Rotas com maior lucro líquido', byProfit(input.current.routes));
+    addTimeSeriesTable(sheet, 'Evolução semanal do lucro registrado', input);
+  } else if (input.kind === 'clients') {
+    addRankingTable(sheet, 'Performance por cliente', input.current.clients.slice(0, limit));
+    addRankingTable(sheet, 'Clientes recorrentes', recurring(input.current.clients));
+  } else if (input.kind === 'drivers') {
+    addRankingTable(sheet, 'Performance por motorista', input.current.drivers.slice(0, limit));
+    addRankingTable(sheet, 'Motoristas recorrentes', recurring(input.current.drivers));
+  } else if (input.kind === 'routes') {
+    addRankingTable(sheet, 'Performance por rota', input.current.routes.slice(0, limit));
+    addRankingTable(sheet, 'Principais origens', input.current.origins.slice(0, limit));
+    addRankingTable(sheet, 'Principais destinos', input.current.destinations.slice(0, limit));
+    addTimeSeriesTable(sheet, 'Evolução semanal das rotas', input);
+  } else if (input.kind === 'recurrence') {
+    addRankingTable(sheet, 'Clientes recorrentes', recurring(input.current.clients));
+    addRankingTable(sheet, 'Motoristas recorrentes', recurring(input.current.drivers));
+    addRankingTable(sheet, 'Rotas recorrentes', recurring(input.current.routes));
+    addRankingTable(sheet, 'Combinações cliente + rota', recurring(input.current.clientRoutes));
+  } else if (input.kind === 'in-progress') {
+    addBreakdownTable(sheet, 'Operações abertas por status', input.current.inProgressSummary.byStatus, 'count');
+    addRankingTable(sheet, 'Clientes com operações abertas', input.current.inProgressSummary.byClient.slice(0, limit));
+    addRankingTable(sheet, 'Rotas com operações abertas', input.current.inProgressSummary.byRoute.slice(0, limit));
+    headerRowNumber = addOpenOperationsTable(sheet, input);
+  } else {
+    addRankingTable(sheet, 'Principais clientes', input.current.clients.slice(0, limit));
+    addRankingTable(sheet, 'Principais rotas', input.current.routes.slice(0, limit));
+    addTimeSeriesTable(sheet, 'Evolução semanal', input);
+    const header = sheet.addRow(['Ordem', 'CTE / Manifesto', 'Emissão', 'Cliente', 'Motorista', 'Origem', 'Destino', 'Valor CTE', 'Frete', 'Despesas', 'Lucro', 'Status']);
+    styleTableHeader(header);
+    headerRowNumber = header.number;
+    const startRow = header.number + 1;
+    input.orders.forEach((order) => sheet.addRow([
+      order.orderNumber, order.cteNumber, order.emissionDate, order.clientName, order.driverName,
+      order.origin, order.destination, order.cteValue, order.freightValue, order.totalExpenses,
+      order.netValue, order.status,
+    ]));
+    const endRow = sheet.lastRow?.number || startRow - 1;
+    styleBodyRows(sheet, startRow, endRow);
+    for (let row = startRow; row <= endRow; row += 1) {
+      for (const column of [8, 9, 10, 11]) sheet.getCell(row, column).numFmt = CURRENCY_FORMAT;
+    }
+  }
+
+  sheet.views = [{ state: 'frozen', ySplit: headerRowNumber || 4 }];
+  if (headerRowNumber !== null) {
+    sheet.autoFilter = {
+      from: { row: headerRowNumber, column: 1 },
+      to: { row: headerRowNumber, column: Math.max(1, sheet.columnCount) },
+    };
+  }
+  autoFitColumns(sheet);
+}
+'''
+          source = source[:start] + replacement + source[end:]
+          path.write_text(source, encoding='utf-8')
+          PY
+      - name: Commit Excel sections
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/reporting/excel.ts
+          git commit -m "feat(reporting): expand Excel model sections [excel-model-sections-applied]"
+          git push origin HEAD:feat/central-relatorios-dinamicos
