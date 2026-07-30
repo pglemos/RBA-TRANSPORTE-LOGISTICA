@@ -12,6 +12,15 @@ const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', cu
 const integerFormatter = new Intl.NumberFormat('pt-BR');
 const percentFormatter = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
 
+const INSIGHT_KIND_LABELS = {
+  strength: 'Ponto forte',
+  highlight: 'Destaque',
+  attention: 'Ponto de atenção',
+  opportunity: 'Oportunidade',
+  priority: 'Prioridade sugerida',
+  info: 'Informação',
+} as const;
+
 const formatCurrency = (value: number) => currencyFormatter.format(value);
 const formatPercent = (value: number) => `${percentFormatter.format(value)}%`;
 const formatGeneratedAt = (date: Date) => date.toLocaleString('pt-BR', {
@@ -33,7 +42,7 @@ function RankingTable({ title, items, valueKey = 'cteValue' }: {
   valueKey?: 'cteValue' | 'netValue' | 'expenses' | 'orderCount';
 }) {
   return (
-    <section className="dynamic-report-section dynamic-report-avoid-break">
+    <section className="dynamic-report-section">
       <h2>{title}</h2>
       <table className="dynamic-report-table dynamic-report-ranking-table">
         <thead>
@@ -186,7 +195,7 @@ export default function ReportPrintDocument({ report }: { report: GeneratedRepor
           </div>
         </div>
         <div className="dynamic-report-meta">
-          <strong>Emitido em {formatGeneratedAt(report.generatedAt)}</strong>
+          <strong data-dynamic-generated-at>Emitido em {formatGeneratedAt(report.generatedAt)}</strong>
           <span>{report.filtersLabel}</span>
           <span>Documento interno - uso gerencial</span>
         </div>
@@ -218,7 +227,7 @@ export default function ReportPrintDocument({ report }: { report: GeneratedRepor
         <div className="dynamic-report-insights">
           {report.insights.map((insight) => (
             <article key={insight.id} className={`dynamic-report-insight dynamic-report-insight-${insight.kind}`}>
-              <span>{insight.kind}</span>
+              <span>{INSIGHT_KIND_LABELS[insight.kind]}</span>
               <h3>{insight.title}</h3>
               <p>{insight.description}</p>
               <strong>{insight.evidence}</strong>

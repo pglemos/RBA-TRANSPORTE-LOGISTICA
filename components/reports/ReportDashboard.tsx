@@ -6,13 +6,9 @@ import {
   BarChart3,
   CheckCircle2,
   CircleDollarSign,
-  Clock3,
   Minus,
   ReceiptText,
-  Route,
   Truck,
-  Users,
-  WalletCards,
 } from 'lucide-react';
 
 import { getFreightStatusMeta } from '@/lib/freightStatus';
@@ -106,7 +102,7 @@ function ComparisonPanel({ report }: { report: GeneratedReport }) {
         <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#9e8245]">Comparações</p>
         <h2 className="mt-1 break-words text-lg font-black text-slate-950">Variação frente às bases históricas</h2>
         <p className="mt-1 break-words text-xs font-semibold leading-relaxed text-slate-500">
-          O período anterior usa a mesma quantidade de dias. A comparação anual usa as mesmas datas do ano anterior.
+          Relatórios mensais usam o mês-calendário anterior. Períodos personalizados usam uma janela anterior equivalente. A comparação anual preserva as mesmas datas.
         </p>
       </div>
       <div className="mt-5 overflow-x-auto rounded-2xl border border-slate-200">

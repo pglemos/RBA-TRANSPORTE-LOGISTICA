@@ -32,7 +32,7 @@ export default function ReportInsights({ insights }: { insights: ReportInsight[]
         <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#9e8245]">Leitura gerencial</p>
         <h2 className="mt-1 break-words text-lg font-black text-slate-950">Insights, destaques e prioridades</h2>
         <p className="mt-1 max-w-3xl break-words text-xs font-semibold leading-relaxed text-slate-500">
-          Cada observação abaixo informa a evidência numérica que a originou. Nada de horóscopo corporativo com gráfico de pizza.
+          Cada observação apresenta a evidência numérica que a originou, permitindo leitura gerencial objetiva e auditável.
         </p>
       </div>
 
