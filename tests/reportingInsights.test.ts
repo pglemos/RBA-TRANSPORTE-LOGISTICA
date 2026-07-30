@@ -30,6 +30,12 @@ const analytics = (overrides: Partial<ReportAnalytics['summary']> = {}): ReportA
   recurrence: { clients: 3, drivers: 4, routes: 2 },
 });
 
+const hasInsight = (
+  insights: ReturnType<typeof buildReportInsights>,
+  kind: ReturnType<typeof buildReportInsights>[number]['kind'],
+  titleFragment: string,
+) => insights.some((item) => item.kind === kind && item.title.toLocaleLowerCase('pt-BR').includes(titleFragment));
+
 test('calculates percentage deltas against comparable periods', () => {
   const comparison = buildReportComparison(analytics(), analytics({ totalCteValue: 160000, totalNetValue: 64000 }));
 
@@ -48,8 +54,8 @@ test('generates strengths, attention points and priorities from explicit evidenc
   const previous = analytics({ totalCteValue: 150000, totalNetValue: 70000, deliveredPercent: 85, expenseRatioPercent: 7 });
   const insights = buildReportInsights(current, previous, null);
 
-  assert.ok(insights.some((item) => item.kind === 'strength' && item.title.includes('receita')));
-  assert.ok(insights.some((item) => item.kind === 'attention' && item.title.includes('despesas')));
-  assert.ok(insights.some((item) => item.kind === 'priority' && item.title.includes('operações')));
-  assert.ok(insights.some((item) => item.kind === 'attention' && item.title.includes('concentração')));
+  assert.ok(hasInsight(insights, 'strength', 'receita'));
+  assert.ok(hasInsight(insights, 'attention', 'despesas'));
+  assert.ok(hasInsight(insights, 'priority', 'operações'));
+  assert.ok(hasInsight(insights, 'attention', 'concentração'));
 });
