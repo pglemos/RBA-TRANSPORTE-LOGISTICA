@@ -1,0 +1,57 @@
+name: Apply Report Audit Fixes
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  apply-report-audit-fixes:
+    if: ${{ !contains(github.event.head_commit.message, '[report-audit-fixed]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Assemble and verify audited patch
+        run: |
+          cat scripts/report-audit-patch/part-*.b64 > /tmp/apply_report_audit_fixes.py.b64
+          base64 --decode /tmp/apply_report_audit_fixes.py.b64 > /tmp/apply_report_audit_fixes.py
+          python -m py_compile /tmp/apply_report_audit_fixes.py
+          test "$(wc -c < /tmp/apply_report_audit_fixes.py)" = "64699"
+          echo "763c98cb944d90496b928b43e05a923c1010bb0f8186e342ec1932bb2a0a1d76  /tmp/apply_report_audit_fixes.py" | sha256sum --check
+
+      - name: Apply audited report corrections
+        run: python /tmp/apply_report_audit_fixes.py
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run report regression tests
+        run: npm run test:report
+
+      - name: Build production application
+        run: npm run build
+
+      - name: Commit validated corrections to main
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm -r scripts/report-audit-patch
+          git rm .github/workflows/apply-report-audit-fixes.yml
+          git add app components lib tests docs
+          git commit -m 'fix(reports): corrigir dados PDF Excel e CSV [report-audit-fixed]'
+          git push origin main
