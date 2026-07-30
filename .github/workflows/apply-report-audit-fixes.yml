@@ -34,9 +34,15 @@ jobs:
           cat > /tmp/chunk-hashes <<'HASHES'
           101a4ca369d511f60dcc0817269d93695768a3d7518698dc4321b1d1b62da2fd  scripts/report-audit-patch/part-00.b64
           39a2c88ccdf03756798a2c32047231ea863de6232d529b63b79cd1aa661ebbb1  scripts/report-audit-patch/part-01.b64
-          218418174190186a72f6fbde6a52e3574dcc1090603ec9a3095fdcf5e18730c0  scripts/report-audit-patch/part-02.b64
+          8c981d41cc37ebbe217fefe94cddbf6e520f79a7508ffa7abd67fa9005fbc81c  scripts/report-audit-patch/part-02-00.b64
+          41203ad4133d90af972d5ace4fc794982060a3ce9f2afda5f7d4407d31f196fc  scripts/report-audit-patch/part-02-01.b64
+          03032dad10558aa1eb6b4446755241965a275bc8dd7f55e27172ff7415b8bc27  scripts/report-audit-patch/part-02-02.b64
+          96105d259e233ee766c294a9db128a7043ea50f24e973971428af2663862eac9  scripts/report-audit-patch/part-02-03.b64
           c6a39bf82fefd0064b1fb71f87e1a5edcfa952246beb61f6fee6cd4f8a7a5691  scripts/report-audit-patch/part-03.b64
-          fddffe76a6626933dee254965d6f19812490e9f2b9f6bdeb20d9b269c05a3ca8  scripts/report-audit-patch/part-04.b64
+          a68b402febf9d6a4416fb04ca41ded54674c67d3b4b3a5d4fd99b1b05bc46fe1  scripts/report-audit-patch/part-04-00.b64
+          f84d07dac104ade8088be1e67d38310495d2860f0f7dc2e92d99b5120d0834e0  scripts/report-audit-patch/part-04-01.b64
+          89c482f25b844c9198dd03e78aed8a2063a8640516cfc45708e0b66df183aa05  scripts/report-audit-patch/part-04-02.b64
+          bd8502fba8c8be9836630a1cabefa5287c4e3366d8ba14f01155d7a4115c2da5  scripts/report-audit-patch/part-04-03.b64
           dd419309671a42e4b6fa7f591c10a2f3c8457536c58abf25b6854c4e4691889a  scripts/report-audit-patch/part-05-00.b64
           783514540577a95f8716327a10e9ddac314db4e346d72280f4a8bcebc501552e  scripts/report-audit-patch/part-05-01.b64
           fbcd589011adb49f8b51c5bd749aceb94cc327ddc7ef1975c59544165d58fcec  scripts/report-audit-patch/part-05-02.b64
