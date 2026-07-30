@@ -31,8 +31,9 @@ test('print document orchestrates premium pages instead of the old continuous re
   assert.doesNotMatch(source, /<ModelSections/);
 });
 
-test('appendix uses the same twenty-row page size defined by the planner', () => {
+test('appendix reuses the planner page-size constant instead of duplicating a magic number', () => {
   const source = read('components/reports/print/AppendixPages.tsx');
+  assert.match(source, /APPENDIX_ROWS_PER_PAGE/);
   assert.match(source, /chunkForPrint\(source\)/);
-  assert.match(source, /index \* 20 \+ 1/);
+  assert.match(source, /index \* APPENDIX_ROWS_PER_PAGE \+ 1/);
 });
