@@ -1,5 +1,6 @@
 import type {
   BreakdownItem,
+  InProgressSummary,
   RankingItem,
   ReportAnalytics,
   ReportingOrder,
@@ -9,6 +10,7 @@ import type {
 
 const IN_PROGRESS_STATUSES = new Set(['Contratar', 'Carregando', 'Em Trânsito']);
 const STATUS_ORDER = ['Entregue', 'Em Trânsito', 'Carregando', 'Contratar'];
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const roundCurrency = (value: number): number =>
   Math.round((value + Number.EPSILON) * 100) / 100;
@@ -139,6 +141,25 @@ function buildExpenses(orders: ReportingOrder[]): BreakdownItem[] {
   });
 }
 
+function buildProfitBuckets(orders: ReportingOrder[]): BreakdownItem[] {
+  const definitions = [
+    { key: 'positive', label: 'Resultado positivo', predicate: (order: ReportingOrder) => order.netValue > 0 },
+    { key: 'neutral', label: 'Resultado neutro', predicate: (order: ReportingOrder) => order.netValue === 0 },
+    { key: 'negative', label: 'Resultado negativo', predicate: (order: ReportingOrder) => order.netValue < 0 },
+  ];
+
+  return definitions.map((definition) => {
+    const selected = orders.filter(definition.predicate);
+    return {
+      key: definition.key,
+      label: definition.label,
+      value: roundCurrency(selected.reduce((sum, order) => sum + order.netValue, 0)),
+      orderCount: selected.length,
+      sharePercent: safePercent(selected.length, orders.length),
+    };
+  });
+}
+
 function mondayOfWeek(dateValue: string): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) return 'sem-data';
   const [year, month, day] = dateValue.split('-').map(Number);
@@ -184,9 +205,57 @@ function buildTimeSeries(orders: ReportingOrder[]): TimeSeriesPoint[] {
   });
 }
 
-const recurringCount = (ranking: RankingItem[]): number => ranking.filter((item) => item.orderCount >= 2).length;
+function parseDateOnly(value: string | Date): number | null {
+  if (value instanceof Date) return Number.isFinite(value.getTime()) ? Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()) : null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const [year, month, day] = value.split('-').map(Number);
+  const date = Date.UTC(year, month - 1, day);
+  return Number.isFinite(date) ? date : null;
+}
 
-export function buildReportAnalytics(orders: ReportingOrder[]): ReportAnalytics {
+function daysOpen(order: ReportingOrder, referenceDate: string | Date): number {
+  const start = parseDateOnly(order.emissionDateValue);
+  const end = parseDateOnly(referenceDate);
+  if (start === null || end === null || end < start) return 0;
+  return Math.floor((end - start) / DAY_MS);
+}
+
+function recurringCount(ranking: RankingItem[]): number {
+  return ranking.filter((item) => item.orderCount >= 2).length;
+}
+
+function recurringOrderPercent(ranking: RankingItem[], totalOrders: number): number {
+  const recurringOrders = ranking
+    .filter((item) => item.orderCount >= 2)
+    .reduce((sum, item) => sum + item.orderCount, 0);
+  return safePercent(recurringOrders, totalOrders);
+}
+
+function buildInProgressSummary(
+  inProgress: ReportingOrder[],
+  referenceDate: string | Date,
+): InProgressSummary {
+  const ages = inProgress.map((order) => daysOpen(order, referenceDate));
+  return {
+    totalOrders: inProgress.length,
+    totalCteValue: roundCurrency(inProgress.reduce((sum, order) => sum + order.cteValue, 0)),
+    totalNetValue: roundCurrency(inProgress.reduce((sum, order) => sum + order.netValue, 0)),
+    averageOpenDays: ages.length > 0 ? Math.round(ages.reduce((sum, value) => sum + value, 0) / ages.length) : 0,
+    oldestOpenDays: ages.length > 0 ? Math.max(...ages) : 0,
+    byStatus: buildStatusBreakdown(inProgress),
+    byClient: buildRanking(inProgress, (order) => order.clientId || order.clientName, (order) => order.clientName),
+    byRoute: buildRanking(
+      inProgress,
+      (order) => `${order.origin || 'Sem origem'}::${order.destination || 'Sem destino'}`,
+      (order) => `${order.origin || 'Sem origem'} → ${order.destination || 'Sem destino'}`,
+    ),
+  };
+}
+
+export function buildReportAnalytics(
+  orders: ReportingOrder[],
+  referenceDate: string | Date = new Date(),
+): ReportAnalytics {
   const clients = buildRanking(orders, (order) => order.clientId || order.clientName, (order) => order.clientName);
   const drivers = buildRanking(orders, (order) => order.driverId || order.driverName, (order) => order.driverName);
   const routes = buildRanking(
@@ -194,24 +263,39 @@ export function buildReportAnalytics(orders: ReportingOrder[]): ReportAnalytics 
     (order) => `${order.origin || 'Sem origem'}::${order.destination || 'Sem destino'}`,
     (order) => `${order.origin || 'Sem origem'} → ${order.destination || 'Sem destino'}`,
   );
+  const clientRoutes = buildRanking(
+    orders,
+    (order) => `${order.clientId || order.clientName}::${order.origin || 'Sem origem'}::${order.destination || 'Sem destino'}`,
+    (order) => `${order.clientName} · ${order.origin || 'Sem origem'} → ${order.destination || 'Sem destino'}`,
+  );
   const origins = buildRanking(orders, (order) => order.origin || 'Sem origem', (order) => order.origin || 'Sem origem');
   const destinations = buildRanking(orders, (order) => order.destination || 'Sem destino', (order) => order.destination || 'Sem destino');
+  const inProgress = orders.filter((order) => IN_PROGRESS_STATUSES.has(order.status));
 
   return {
     summary: buildSummary(orders),
     clients,
     drivers,
     routes,
+    clientRoutes,
     origins,
     destinations,
     statuses: buildStatusBreakdown(orders),
     expenses: buildExpenses(orders),
+    profitBuckets: buildProfitBuckets(orders),
     timeSeries: buildTimeSeries(orders),
-    inProgress: orders.filter((order) => IN_PROGRESS_STATUSES.has(order.status)),
+    inProgress,
+    inProgressSummary: buildInProgressSummary(inProgress, referenceDate),
     recurrence: {
       clients: recurringCount(clients),
       drivers: recurringCount(drivers),
       routes: recurringCount(routes),
+      clientRoutes: recurringCount(clientRoutes),
+      recurringClientOrderPercent: recurringOrderPercent(clients, orders.length),
+      recurringDriverOrderPercent: recurringOrderPercent(drivers, orders.length),
+      recurringRouteOrderPercent: recurringOrderPercent(routes, orders.length),
+      recurringClientRouteOrderPercent: recurringOrderPercent(clientRoutes, orders.length),
+      leadingClientDependencyPercent: safePercent(clients[0]?.orderCount || 0, orders.length),
     },
   };
 }
