@@ -31,7 +31,18 @@ jobs:
 
       - name: Assemble and verify audited patch
         run: |
-          cat scripts/report-audit-patch/part-*.b64 > /tmp/apply_report_audit_fixes.py.b64
+          cat > /tmp/chunk-hashes <<'HASHES'
+          101a4ca369d511f60dcc0817269d93695768a3d7518698dc4321b1d1b62da2fd  scripts/report-audit-patch/part-00.b64
+          39a2c88ccdf03756798a2c32047231ea863de6232d529b63b79cd1aa661ebbb1  scripts/report-audit-patch/part-01.b64
+          218418174190186a72f6fbde6a52e3574dcc1090603ec9a3095fdcf5e18730c0  scripts/report-audit-patch/part-02.b64
+          c6a39bf82fefd0064b1fb71f87e1a5edcfa952246beb61f6fee6cd4f8a7a5691  scripts/report-audit-patch/part-03.b64
+          fddffe76a6626933dee254965d6f19812490e9f2b9f6bdeb20d9b269c05a3ca8  scripts/report-audit-patch/part-04.b64
+          dd419309671a42e4b6fa7f591c10a2f3c8457536c58abf25b6854c4e4691889a  scripts/report-audit-patch/part-05-00.b64
+          783514540577a95f8716327a10e9ddac314db4e346d72280f4a8bcebc501552e  scripts/report-audit-patch/part-05-01.b64
+          fbcd589011adb49f8b51c5bd749aceb94cc327ddc7ef1975c59544165d58fcec  scripts/report-audit-patch/part-05-02.b64
+          HASHES
+          sha256sum --check /tmp/chunk-hashes
+          cat scripts/report-audit-patch/part-*.b64 | tr -d '\r\n\t ' > /tmp/apply_report_audit_fixes.py.b64
           base64 --decode /tmp/apply_report_audit_fixes.py.b64 > /tmp/apply_report_audit_fixes.py
           python -m py_compile /tmp/apply_report_audit_fixes.py
           test "$(wc -c < /tmp/apply_report_audit_fixes.py)" = "64699"
