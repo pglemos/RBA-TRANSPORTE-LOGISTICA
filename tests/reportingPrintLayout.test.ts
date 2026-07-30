@@ -1,7 +1,38 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { APPENDIX_ROWS_PER_PAGE, buildPrintPagePlan, chunkForPrint } from '../lib/reporting/printLayout.ts';
+import {
+  APPENDIX_ROWS_PER_PAGE,
+  buildPrintPagePlan,
+  chunkForPrint,
+  selectAppendixOrders,
+} from '../lib/reporting/printLayout.ts';
+import type { ReportingOrder } from '../lib/reporting/types.ts';
+
+const order = (id: string, status: string): ReportingOrder => ({
+  id,
+  orderNumber: `RBA-${id}`,
+  cteNumber: `CTE-${id}`,
+  emissionDate: '30/07/2026',
+  emissionDateValue: '2026-07-30',
+  clientId: 'cliente',
+  clientName: 'Cliente',
+  driverId: 'motorista',
+  driverName: 'Motorista',
+  origin: 'Betim - MG',
+  destination: 'São Paulo - SP',
+  status,
+  cteValue: 1000,
+  freightValue: 500,
+  advanceValue: 200,
+  cashValue: 0,
+  balanceValue: 300,
+  loadingExpense: 10,
+  unloadingExpense: 10,
+  otherExpenses: 0,
+  totalExpenses: 20,
+  netValue: 480,
+});
 
 test('executive report with 119 orders reproduces the 16-page premium structure', () => {
   const plan = buildPrintPagePlan('executive', 119, true);
@@ -51,4 +82,19 @@ test('chunkForPrint never creates an empty trailing page', () => {
   assert.deepEqual(chunkForPrint([1, 2, 3], 2), [[1, 2], [3]]);
   assert.deepEqual(chunkForPrint([1, 2, 3, 4], 2), [[1, 2], [3, 4]]);
   assert.throws(() => chunkForPrint([1], 0), /maior que zero/);
+});
+
+test('appendix order selection is shared and keeps only active statuses for in-progress reports', () => {
+  const orders = [
+    order('1', 'Entregue'),
+    order('2', 'Contratar'),
+    order('3', 'Carregando'),
+    order('4', 'Em Trânsito'),
+  ];
+
+  assert.deepEqual(
+    selectAppendixOrders({ kind: 'in-progress', orders }).map((item) => item.id),
+    ['2', '3', '4'],
+  );
+  assert.equal(selectAppendixOrders({ kind: 'executive', orders }).length, 4);
 });
