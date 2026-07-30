@@ -1,0 +1,405 @@
+.rba-print-document {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: a4 landscape;
+    margin: 0;
+  }
+
+  html,
+  body,
+  #rba-app-root,
+  #rba-app-root > div,
+  #rba-app-root main,
+  #reports-module {
+    width: 297mm !important;
+    min-width: 297mm !important;
+    max-width: 297mm !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  #dynamic-report-print-target.rba-print-document {
+    display: block !important;
+    width: 297mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #101a2e !important;
+    font-family: Inter, Arial, sans-serif !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  .rba-print-document,
+  .rba-print-document *,
+  .rba-print-document *::before,
+  .rba-print-document *::after {
+    box-sizing: border-box !important;
+  }
+
+  .rba-print-page {
+    position: relative !important;
+    display: flex !important;
+    width: 297mm !important;
+    height: 210mm !important;
+    min-height: 210mm !important;
+    max-height: 210mm !important;
+    flex-direction: column !important;
+    margin: 0 !important;
+    padding: 11mm 13mm 8mm !important;
+    overflow: hidden !important;
+    background: #f5f7fb !important;
+    color: #101a2e !important;
+    break-after: page !important;
+  }
+
+  .rba-print-page:last-child {
+    break-after: auto !important;
+  }
+
+  .rba-cover-page {
+    padding: 13mm 16mm 12mm !important;
+    background: linear-gradient(135deg, #07152e 0%, #0b1d3b 58%, #10284f 100%) !important;
+    color: #fff !important;
+  }
+
+  .rba-cover-orbit {
+    position: absolute !important;
+    border: 0.5mm solid rgba(202, 171, 105, 0.22) !important;
+    border-radius: 50% !important;
+  }
+
+  .rba-cover-orbit-one {
+    top: -58mm !important;
+    right: -20mm !important;
+    width: 150mm !important;
+    height: 150mm !important;
+  }
+
+  .rba-cover-orbit-two {
+    right: 20mm !important;
+    bottom: -95mm !important;
+    width: 180mm !important;
+    height: 180mm !important;
+  }
+
+  .rba-cover-topline {
+    position: relative !important;
+    z-index: 2 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  .rba-cover-logo {
+    display: block !important;
+    width: 34mm !important;
+    height: 12mm !important;
+    padding: 2.2mm !important;
+    border-radius: 2.5mm !important;
+    background: #fff !important;
+    object-fit: contain !important;
+  }
+
+  .rba-cover-topline > span {
+    color: #d6bd84 !important;
+    font-size: 7pt !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.2em !important;
+  }
+
+  .rba-cover-content {
+    position: relative !important;
+    z-index: 2 !important;
+    display: flex !important;
+    flex: 1 1 auto !important;
+    max-width: 225mm !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    padding-top: 6mm !important;
+  }
+
+  .rba-cover-kicker {
+    margin: 0 0 4mm !important;
+    color: #cbb071 !important;
+    font-size: 8.5pt !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.18em !important;
+  }
+
+  .rba-cover-content h1 {
+    max-width: 205mm !important;
+    margin: 0 !important;
+    color: #fff !important;
+    font-family: Outfit, Inter, Arial, sans-serif !important;
+    font-size: 31pt !important;
+    font-weight: 900 !important;
+    line-height: 1.02 !important;
+    letter-spacing: -0.025em !important;
+  }
+
+  .rba-cover-subtitle {
+    max-width: 195mm !important;
+    margin: 5mm 0 0 !important;
+    color: #d9e0ec !important;
+    font-size: 11pt !important;
+    font-weight: 600 !important;
+    line-height: 1.45 !important;
+  }
+
+  .rba-cover-metrics {
+    display: grid !important;
+    max-width: 230mm !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 5mm !important;
+    margin-top: 11mm !important;
+  }
+
+  .rba-cover-metrics > div {
+    padding: 0 5mm 0 0 !important;
+    border-right: 0.3mm solid rgba(255, 255, 255, 0.25) !important;
+  }
+
+  .rba-cover-metrics > div:last-child {
+    border-right: 0 !important;
+  }
+
+  .rba-cover-metrics strong,
+  .rba-cover-metrics span {
+    display: block !important;
+  }
+
+  .rba-cover-metrics strong {
+    color: #fff !important;
+    font-family: Outfit, Inter, Arial, sans-serif !important;
+    font-size: 20pt !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+  }
+
+  .rba-cover-metrics span {
+    margin-top: 2mm !important;
+    color: #cbb071 !important;
+    font-size: 6.7pt !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.1em !important;
+  }
+
+  .rba-cover-bottom {
+    position: relative !important;
+    z-index: 2 !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: space-between !important;
+    gap: 12mm !important;
+    padding-top: 5mm !important;
+    border-top: 0.3mm solid rgba(255, 255, 255, 0.2) !important;
+  }
+
+  .rba-cover-bottom span,
+  .rba-cover-bottom strong,
+  .rba-cover-bottom small {
+    display: block !important;
+  }
+
+  .rba-cover-bottom span {
+    color: #9eabc0 !important;
+    font-size: 6.4pt !important;
+    font-weight: 700 !important;
+  }
+
+  .rba-cover-bottom strong {
+    margin-top: 1mm !important;
+    color: #fff !important;
+    font-size: 8.5pt !important;
+    font-weight: 900 !important;
+  }
+
+  .rba-cover-bottom small {
+    margin-top: 1mm !important;
+    color: #d6bd84 !important;
+    font-size: 6pt !important;
+    font-weight: 700 !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .rba-cover-confidential {
+    max-width: 105mm !important;
+    text-align: right !important;
+  }
+
+  .rba-page-header {
+    display: grid !important;
+    grid-template-columns: 65mm minmax(0, 1fr) 72mm !important;
+    gap: 7mm !important;
+    align-items: start !important;
+    padding-bottom: 4mm !important;
+    border-bottom: 0.6mm solid #111c32 !important;
+  }
+
+  .rba-page-brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: 3mm !important;
+  }
+
+  .rba-page-logo {
+    display: block !important;
+    width: 25mm !important;
+    height: 8mm !important;
+    object-fit: contain !important;
+  }
+
+  .rba-page-brand p,
+  .rba-page-brand span,
+  .rba-page-heading h2,
+  .rba-page-heading p,
+  .rba-page-meta strong,
+  .rba-page-meta span,
+  .rba-page-meta small {
+    margin: 0 !important;
+  }
+
+  .rba-page-brand p {
+    color: #111c32 !important;
+    font-size: 5.6pt !important;
+    font-weight: 900 !important;
+  }
+
+  .rba-page-brand span {
+    display: block !important;
+    margin-top: 0.8mm !important;
+    color: #a0813f !important;
+    font-size: 5pt !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.08em !important;
+  }
+
+  .rba-page-heading h2 {
+    color: #111c32 !important;
+    font-family: Outfit, Inter, Arial, sans-serif !important;
+    font-size: 18pt !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+  }
+
+  .rba-page-heading p {
+    margin-top: 1.3mm !important;
+    color: #68748a !important;
+    font-size: 7.2pt !important;
+    font-weight: 600 !important;
+  }
+
+  .rba-page-meta {
+    min-width: 0 !important;
+    text-align: right !important;
+  }
+
+  .rba-page-meta strong {
+    display: block !important;
+    color: #111c32 !important;
+    font-size: 6.7pt !important;
+    font-weight: 900 !important;
+  }
+
+  .rba-page-meta span,
+  .rba-page-meta small {
+    display: block !important;
+    margin-top: 0.8mm !important;
+    color: #68748a !important;
+    font-size: 5.2pt !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .rba-page-body {
+    display: flex !important;
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    padding-top: 5mm !important;
+  }
+
+  .rba-page-footer {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10mm !important;
+    padding-top: 2.5mm !important;
+    border-top: 0.25mm solid #c9d0dc !important;
+    color: #7b8597 !important;
+    font-size: 5.3pt !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em !important;
+  }
+
+  .rba-page-footer strong {
+    color: #111c32 !important;
+    font-size: 5.8pt !important;
+  }
+
+  .rba-metric-grid {
+    display: grid !important;
+    gap: 3mm !important;
+    margin-bottom: 4mm !important;
+  }
+
+  .rba-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  .rba-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+  .rba-grid-5 { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
+  .rba-grid-6 { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; }
+
+  .rba-metric-card {
+    min-width: 0 !important;
+    padding: 4mm !important;
+    border: 0.25mm solid #d9dee8 !important;
+    border-radius: 3mm !important;
+    background: #fff !important;
+    box-shadow: 0 1.5mm 3mm rgba(17, 28, 50, 0.04) !important;
+  }
+
+  .rba-metric-card span,
+  .rba-metric-card strong,
+  .rba-metric-card small {
+    display: block !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .rba-metric-card span {
+    color: #748095 !important;
+    font-size: 6pt !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+  }
+
+  .rba-metric-card strong {
+    margin-top: 2mm !important;
+    color: #111c32 !important;
+    font-family: Outfit, Inter, Arial, sans-serif !important;
+    font-size: 16pt !important;
+    font-weight: 900 !important;
+    line-height: 1.02 !important;
+  }
+
+  .rba-metric-card small {
+    margin-top: 1.5mm !important;
+    color: #68748a !important;
+    font-size: 6.2pt !important;
+    font-weight: 600 !important;
+    line-height: 1.25 !important;
+  }
+
+  .rba-tone-gold { border-color: #d9c18b !important; background: #fffaf0 !important; }
+  .rba-tone-positive { border-color: #9dc9ad !important; background: #f0f8f3 !important; }
+  .rba-tone-warning { border-color: #e8b995 !important; background: #fff5ed !important; }
+  .rba-tone-navy { border-color: #aebbd1 !important; background: #f0f4fa !important; }
+}

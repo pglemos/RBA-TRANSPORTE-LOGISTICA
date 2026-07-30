@@ -1,0 +1,348 @@
+@media print {
+  .rba-chart-card {
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    padding: 4mm !important;
+  }
+
+  .rba-trend-chart {
+    display: block !important;
+    width: 100% !important;
+    height: 82mm !important;
+  }
+
+  .rba-chart-gridline {
+    stroke: #dfe4eb !important;
+    stroke-width: 1 !important;
+  }
+
+  .rba-chart-line {
+    fill: none !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    stroke-width: 5 !important;
+  }
+
+  .rba-chart-line-primary { stroke: #111c32 !important; }
+  .rba-chart-line-secondary { stroke: #c2a35e !important; }
+  .rba-chart-label { fill: #69758a !important; font-size: 18px !important; font-weight: 700 !important; }
+
+  .rba-chart-legend {
+    display: flex !important;
+    justify-content: center !important;
+    gap: 8mm !important;
+    color: #596579 !important;
+    font-size: 6.2pt !important;
+    font-weight: 700 !important;
+  }
+
+  .rba-chart-legend span { display: flex !important; align-items: center !important; gap: 2mm !important; }
+  .rba-chart-legend i { display: block !important; width: 7mm !important; height: 1.2mm !important; border-radius: 999px !important; }
+  .rba-legend-primary { background: #111c32 !important; }
+  .rba-legend-secondary { background: #c2a35e !important; }
+
+  .rba-empty-state {
+    display: grid !important;
+    min-height: 55mm !important;
+    place-items: center !important;
+    border: 0.25mm dashed #cdd4df !important;
+    border-radius: 3mm !important;
+    color: #788397 !important;
+    font-size: 8pt !important;
+    font-weight: 700 !important;
+  }
+
+  .rba-insight-agenda {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 3mm !important;
+  }
+
+  .rba-insight-item {
+    display: grid !important;
+    min-width: 0 !important;
+    grid-template-columns: 13mm minmax(0, 1fr) !important;
+    gap: 3mm !important;
+    padding: 3.5mm !important;
+    border: 0.25mm solid #d9dee8 !important;
+    border-left: 1mm solid #77849a !important;
+    border-radius: 2.5mm !important;
+    background: #fff !important;
+  }
+
+  .rba-insight-number {
+    display: grid !important;
+    width: 11mm !important;
+    height: 11mm !important;
+    place-items: center !important;
+    border-radius: 50% !important;
+    background: #111c32 !important;
+    color: #fff !important;
+    font-size: 11pt !important;
+    font-weight: 900 !important;
+  }
+
+  .rba-insight-item small {
+    color: #8c6d2f !important;
+    font-size: 5pt !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+  }
+
+  .rba-insight-item h3 {
+    margin: 1mm 0 0 !important;
+    color: #111c32 !important;
+    font-size: 8.5pt !important;
+    font-weight: 900 !important;
+    line-height: 1.15 !important;
+  }
+
+  .rba-insight-item p {
+    margin: 1.2mm 0 0 !important;
+    color: #68748a !important;
+    font-size: 5.8pt !important;
+    font-weight: 600 !important;
+    line-height: 1.3 !important;
+  }
+
+  .rba-insight-item > div > strong {
+    display: block !important;
+    margin-top: 1.2mm !important;
+    color: #344158 !important;
+    font-size: 5.5pt !important;
+    font-weight: 900 !important;
+  }
+
+  .rba-insight-strength,
+  .rba-insight-highlight { border-left-color: #34815a !important; background: #f3faf6 !important; }
+  .rba-insight-attention { border-left-color: #c48b35 !important; background: #fff9ef !important; }
+  .rba-insight-opportunity { border-left-color: #7052a9 !important; background: #f7f3fc !important; }
+  .rba-insight-priority { border-left-color: #c8633f !important; background: #fff4ef !important; }
+
+  .rba-comparison-box {
+    padding: 3.5mm !important;
+  }
+
+  .rba-comparison-box-spaced {
+    margin-top: 4mm !important;
+  }
+
+  .rba-comparison-grid {
+    overflow: hidden !important;
+    border: 0.25mm solid #d9dee8 !important;
+    border-radius: 2mm !important;
+  }
+
+  .rba-comparison-head,
+  .rba-comparison-row {
+    display: grid !important;
+    grid-template-columns: 1.15fr 1fr 1fr !important;
+    align-items: center !important;
+  }
+
+  .rba-comparison-head {
+    background: #111c32 !important;
+    color: #fff !important;
+  }
+
+  .rba-comparison-head span,
+  .rba-comparison-row span,
+  .rba-comparison-row strong {
+    padding: 2.1mm 3mm !important;
+    font-size: 5.8pt !important;
+  }
+
+  .rba-comparison-head span {
+    font-weight: 900 !important;
+    text-transform: uppercase !important;
+  }
+
+  .rba-comparison-row {
+    border-top: 0.2mm solid #e0e5ec !important;
+    background: #fff !important;
+  }
+
+  .rba-comparison-row:nth-child(odd) { background: #f7f9fc !important; }
+  .rba-comparison-row strong { color: #111c32 !important; }
+  .rba-comparison-row span { color: #354158 !important; font-weight: 800 !important; text-align: center !important; }
+
+  .rba-governance-layout {
+    display: flex !important;
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 8mm !important;
+  }
+
+  .rba-governance-lead {
+    display: grid !important;
+    grid-template-columns: 22mm minmax(0, 1fr) !important;
+    gap: 5mm !important;
+    align-items: center !important;
+    padding: 7mm !important;
+    border-radius: 4mm !important;
+    background: #111c32 !important;
+    color: #fff !important;
+  }
+
+  .rba-governance-lead > span {
+    display: grid !important;
+    width: 18mm !important;
+    height: 18mm !important;
+    place-items: center !important;
+    border-radius: 50% !important;
+    background: #c2a35e !important;
+    color: #111c32 !important;
+    font-size: 20pt !important;
+    font-weight: 900 !important;
+  }
+
+  .rba-governance-lead h3 {
+    margin: 0 !important;
+    font-size: 16pt !important;
+    font-weight: 900 !important;
+  }
+
+  .rba-governance-lead p {
+    margin: 2mm 0 0 !important;
+    color: #d1d8e3 !important;
+    font-size: 8pt !important;
+    font-weight: 600 !important;
+    line-height: 1.4 !important;
+  }
+
+  .rba-governance-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 4mm !important;
+  }
+
+  .rba-governance-grid article {
+    padding: 5mm !important;
+    border: 0.25mm solid #d9dee8 !important;
+    border-radius: 3mm !important;
+    background: #fff !important;
+  }
+
+  .rba-governance-grid h4 {
+    margin: 0 !important;
+    color: #a0813f !important;
+    font-size: 8pt !important;
+    font-weight: 900 !important;
+  }
+
+  .rba-governance-grid p {
+    margin: 2mm 0 0 !important;
+    color: #657086 !important;
+    font-size: 6.5pt !important;
+    font-weight: 600 !important;
+    line-height: 1.4 !important;
+  }
+
+  .rba-status-summary-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 4mm !important;
+  }
+
+  .rba-appendix-page {
+    padding: 8mm 10mm 7mm !important;
+  }
+
+  .rba-appendix-page .rba-page-header {
+    grid-template-columns: 54mm minmax(0, 1fr) 62mm !important;
+    gap: 5mm !important;
+    padding-bottom: 2.5mm !important;
+  }
+
+  .rba-appendix-page .rba-page-heading h2 { font-size: 13.5pt !important; }
+  .rba-appendix-page .rba-page-body { padding-top: 3mm !important; }
+
+  .rba-appendix-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+    color: #28344b !important;
+    font-size: 5.1pt !important;
+    line-height: 1.1 !important;
+  }
+
+  .rba-appendix-table thead {
+    display: table-header-group !important;
+  }
+
+  .rba-appendix-table tr {
+    height: 6.35mm !important;
+    break-inside: avoid !important;
+  }
+
+  .rba-appendix-table th {
+    padding: 1.2mm 0.8mm !important;
+    border: 0.15mm solid #24324b !important;
+    background: #111c32 !important;
+    color: #fff !important;
+    font-size: 4.5pt !important;
+    font-weight: 900 !important;
+    text-align: left !important;
+    text-transform: uppercase !important;
+  }
+
+  .rba-appendix-table td {
+    padding: 0.75mm 0.8mm !important;
+    border-right: 0.12mm solid #dce1e9 !important;
+    border-bottom: 0.12mm solid #d5dbe5 !important;
+    background: #fff !important;
+    vertical-align: middle !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+  }
+
+  .rba-appendix-table tbody tr:nth-child(even) td { background: #f1f4f8 !important; }
+
+  .rba-appendix-table-wide th:nth-child(1), .rba-appendix-table-wide td:nth-child(1) { width: 9% !important; }
+  .rba-appendix-table-wide th:nth-child(2), .rba-appendix-table-wide td:nth-child(2) { width: 6.5% !important; }
+  .rba-appendix-table-wide th:nth-child(3), .rba-appendix-table-wide td:nth-child(3) { width: 11% !important; }
+  .rba-appendix-table-wide th:nth-child(4), .rba-appendix-table-wide td:nth-child(4) { width: 18% !important; }
+  .rba-appendix-table-wide th:nth-child(5), .rba-appendix-table-wide td:nth-child(5) { width: 9% !important; }
+  .rba-appendix-table-wide th:nth-child(n+6):nth-child(-n+12), .rba-appendix-table-wide td:nth-child(n+6):nth-child(-n+12) { width: 5.5% !important; }
+  .rba-appendix-table-wide th:nth-child(13), .rba-appendix-table-wide td:nth-child(13) { width: 8% !important; }
+
+  .rba-cell-number {
+    text-align: right !important;
+    white-space: nowrap !important;
+    font-variant-numeric: tabular-nums !important;
+  }
+
+  .rba-cell-center { text-align: center !important; }
+  .rba-cell-positive { color: #227149 !important; font-weight: 900 !important; }
+  .rba-cell-strong { color: #111c32 !important; font-weight: 900 !important; }
+
+  .rba-status-pill {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 15mm !important;
+    padding: 0.6mm 1.2mm !important;
+    border-radius: 999px !important;
+    background: #e9edf3 !important;
+    color: #4e5b70 !important;
+    font-size: 4.2pt !important;
+    font-weight: 900 !important;
+    text-align: center !important;
+    text-transform: uppercase !important;
+  }
+
+  .rba-status-entregue { background: #e9f6ee !important; color: #23704a !important; }
+  .rba-status-em-transito { background: #eaf3fb !important; color: #356d9d !important; }
+  .rba-status-carregando { background: #fff3dd !important; color: #9c6c1e !important; }
+  .rba-status-contratar { background: #fff0ea !important; color: #a34e36 !important; }
+
+  .rba-appendix-source {
+    margin-top: 1.5mm !important;
+    color: #788397 !important;
+    font-size: 4.6pt !important;
+    font-weight: 600 !important;
+  }
+}
