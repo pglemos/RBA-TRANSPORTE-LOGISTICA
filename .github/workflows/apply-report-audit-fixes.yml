@@ -57,6 +57,41 @@ jobs:
       - name: Apply audited report corrections
         run: python /tmp/apply_report_audit_fixes.py
 
+      - name: Preserve compatibility and updated metric contracts
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              target = Path(path)
+              text = target.read_text(encoding='utf-8')
+              if old not in text:
+                  raise RuntimeError(f'Pattern not found in {path}: {old[:80]!r}')
+              target.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          replace_once(
+              'tests/reportingAnalytics.test.ts',
+              'analytics.recurrence.leadingClientDependencyPercent, 60',
+              'analytics.recurrence.leadingClientDependencyPercent, 50',
+          )
+          replace_once(
+              'tests/reportingExports.test.ts',
+              "    'Resumo Executivo',\n    'Executivo',\n    'Comparações',\n    'Insights',\n    'Base de Ordens',",
+              "    'Resumo Executivo',\n    'Comparações',\n    'Insights',\n    'Qualidade dos Dados',\n    'Base de Ordens',",
+          )
+          replace_once('lib/reporting/excelDynamic.ts', 'generatedAt: Date;', 'generatedAt?: Date;')
+          replace_once(
+              'lib/reporting/excelDynamic.ts',
+              "input.generatedAt.toLocaleString('pt-BR')",
+              "(input.generatedAt || new Date()).toLocaleString('pt-BR')",
+          )
+          replace_once(
+              'lib/reporting/excelDynamic.ts',
+              'workbook.created = input.generatedAt; workbook.modified = input.generatedAt;',
+              'const generatedAt = input.generatedAt || new Date(); workbook.created = generatedAt; workbook.modified = generatedAt;',
+          )
+          PY
+
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
