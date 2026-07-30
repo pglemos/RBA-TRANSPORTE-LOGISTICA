@@ -172,7 +172,7 @@ const generateReportData = async (
     previousYear,
     previousComparison: previous ? buildReportComparison(current, previous) : null,
     previousYearComparison: previousYear ? buildReportComparison(current, previousYear) : null,
-    insights: buildReportInsights(current, previous, previousYear),
+    insights: buildReportInsights(current, previous, previousYear, config.kind),
     includeDetails: config.includeDetails,
     rankingLimit: config.rankingLimit,
   };
