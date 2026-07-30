@@ -1,4 +1,4 @@
-import type { ReportKind } from './types.ts';
+import type { GeneratedReport, ReportKind, ReportingOrder } from './types.ts';
 
 export type PrintPageType = 'cover' | 'content' | 'insights' | 'governance' | 'appendix';
 
@@ -12,6 +12,8 @@ export interface PrintPagePlanItem {
 }
 
 export const APPENDIX_ROWS_PER_PAGE = 20;
+
+const IN_PROGRESS_APPENDIX_STATUSES = new Set(['Contratar', 'Carregando', 'Em Trânsito']);
 
 const EXECUTIVE_PAGES: PrintPagePlanItem[] = [
   { key: 'cover', type: 'cover', title: 'Relatório executivo de performance logística' },
@@ -35,6 +37,13 @@ const MODEL_PAGES: PrintPagePlanItem[] = [
   { key: 'insights', type: 'insights', title: 'Insights e prioridades' },
   { key: 'governance', type: 'governance', title: 'Governança, integridade e rastreabilidade' },
 ];
+
+export function selectAppendixOrders(
+  report: Pick<GeneratedReport, 'kind' | 'orders'>,
+): ReportingOrder[] {
+  if (report.kind !== 'in-progress') return report.orders;
+  return report.orders.filter((order) => IN_PROGRESS_APPENDIX_STATUSES.has(order.status));
+}
 
 export function chunkForPrint<T>(items: readonly T[], pageSize = APPENDIX_ROWS_PER_PAGE): T[][] {
   if (!Number.isInteger(pageSize) || pageSize <= 0) {
