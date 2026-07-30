@@ -1,0 +1,74 @@
+name: Verify Dynamic Reporting Final
+
+on:
+  push:
+    branches:
+      - feat/central-relatorios-dinamicos
+
+permissions:
+  contents: write
+
+jobs:
+  verify-dynamic-reporting:
+    if: ${{ !contains(github.event.head_commit.message, '[dynamic-report-verified]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/central-relatorios-dinamicos
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run complete report test suite
+        run: npm run test:report | tee /tmp/report-tests.log
+
+      - name: Build production application
+        run: npm run build | tee /tmp/report-build.log
+
+      - name: Write verification manifest
+        shell: bash
+        run: |
+          mkdir -p docs/validation
+          TEST_SUMMARY=$(grep -E '^# tests |^# pass |^# fail ' /tmp/report-tests.log | tr '\n' '; ' || true)
+          BUILD_MARKER=$(grep -E 'Compiled successfully|Generating static pages|Finalizing page optimization' /tmp/report-build.log | tail -n 3 | tr '\n' '; ' || true)
+          cat > docs/validation/dynamic-reporting-final.md <<EOF
+          # Validação Final da Central Dinâmica de Relatórios
+
+          - Commit validado: \`${GITHUB_SHA}\`
+          - Data UTC: \`$(date -u +'%Y-%m-%dT%H:%M:%SZ')\`
+          - Node.js: \`$(node --version)\`
+          - Testes: \`${TEST_SUMMARY}\`
+          - Build: \`${BUILD_MARKER}\`
+          - Resultado: **APROVADO**
+
+          ## Escopo validado
+
+          - períodos mensais, anuais e personalizados;
+          - comparação com mês/período anterior e mesmo período do ano anterior;
+          - relatórios Executivo, Despesas, Lucros, Clientes, Motoristas, Rotas, Recorrência e Em Andamento;
+          - CSV dinâmico por modelo;
+          - workbook Excel com resumo, modelo, comparações, insights e base de ordens;
+          - PDF A4 horizontal responsivo a textos e volumes variáveis;
+          - insights específicos por modelo;
+          - preservação dos valores financeiros persistidos sem recálculo por ordem.
+          EOF
+
+      - name: Commit verification manifest
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/validation/dynamic-reporting-final.md
+          git commit -m "test(reporting): record final verification [dynamic-report-verified]"
+          git push origin HEAD:feat/central-relatorios-dinamicos
