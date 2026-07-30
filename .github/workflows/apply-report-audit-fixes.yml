@@ -90,6 +90,11 @@ jobs:
               'workbook.created = input.generatedAt; workbook.modified = input.generatedAt;',
               'const generatedAt = input.generatedAt || new Date(); workbook.created = generatedAt; workbook.modified = generatedAt;',
           )
+          replace_once(
+              'components/reports/print/ModelPrintPages.tsx',
+              '<GovernancePanel />',
+              '<GovernancePanel report={report} />',
+          )
           PY
 
       - name: Install dependencies
