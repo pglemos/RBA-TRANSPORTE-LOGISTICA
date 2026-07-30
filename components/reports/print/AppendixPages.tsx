@@ -1,4 +1,4 @@
-import { chunkForPrint } from '@/lib/reporting/printLayout';
+import { APPENDIX_ROWS_PER_PAGE, chunkForPrint } from '@/lib/reporting/printLayout';
 import type { GeneratedReport, ReportingOrder } from '@/lib/reporting/types';
 
 import { formatCurrency, formatPercent, PrintPage } from './PrintPrimitives';
@@ -78,7 +78,7 @@ export default function AppendixPages({
   return (
     <>
       {pages.map((orders, index) => {
-        const start = index * 20 + 1;
+        const start = index * APPENDIX_ROWS_PER_PAGE + 1;
         const end = start + orders.length - 1;
         return (
           <PrintPage
