@@ -82,7 +82,7 @@ export default function LoginPage() {
               <input
                 id="ip-email"
                 type="email"
-                autoComplete="email"
+                autoComplete="off"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 className="min-w-0 flex-1 bg-transparent text-xs font-semibold text-white outline-none placeholder:text-slate-650"
@@ -98,7 +98,7 @@ export default function LoginPage() {
               <input
                 id="ip-password"
                 type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
+                autoComplete="off"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 className="min-w-0 flex-1 bg-transparent text-xs font-semibold text-white outline-none placeholder:text-slate-650"

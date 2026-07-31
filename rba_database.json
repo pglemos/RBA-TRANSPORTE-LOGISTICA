@@ -39,6 +39,46 @@
       "active": true,
       "created_at": "2026-05-22T14:15:00Z",
       "updated_at": "2026-05-22T14:15:00Z"
+    },
+    {
+      "id": "prof_5",
+      "user_id": "00000000-0000-0000-0000-000000000005",
+      "name": "Paulo (Admin)",
+      "email": "pauloadm@rba.com",
+      "role": "Administrador",
+      "active": true,
+      "created_at": "2026-07-31T12:00:00Z",
+      "updated_at": "2026-07-31T12:00:00Z"
+    },
+    {
+      "id": "prof_6",
+      "user_id": "00000000-0000-0000-0000-000000000006",
+      "name": "Ricardo (Admin)",
+      "email": "ricardoadm@rba.com",
+      "role": "Administrador",
+      "active": true,
+      "created_at": "2026-07-31T12:00:00Z",
+      "updated_at": "2026-07-31T12:00:00Z"
+    },
+    {
+      "id": "prof_7",
+      "user_id": "00000000-0000-0000-0000-000000000007",
+      "name": "Caique (Operacional)",
+      "email": "caiqueoperacional@rba.com",
+      "role": "Operacional",
+      "active": true,
+      "created_at": "2026-07-31T12:00:00Z",
+      "updated_at": "2026-07-31T12:00:00Z"
+    },
+    {
+      "id": "prof_8",
+      "user_id": "00000000-0000-0000-0000-000000000008",
+      "name": "Isabella (Operacional)",
+      "email": "isabellaoperacional@rba.com",
+      "role": "Operacional",
+      "active": true,
+      "created_at": "2026-07-31T12:00:00Z",
+      "updated_at": "2026-07-31T12:00:00Z"
     }
   ],
   "drivers": [

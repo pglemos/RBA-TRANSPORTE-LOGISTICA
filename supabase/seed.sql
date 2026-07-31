@@ -12,7 +12,11 @@ INSERT INTO public.profiles (id, user_id, name, email, role, active, created_at,
 ('prof_1', '00000000-0000-0000-0000-000000000001', 'Morgan Ribeiro (Admin)', 'admin@rba.com', 'Administrador', true, now(), now()),
 ('prof_2', '00000000-0000-0000-0000-000000000002', 'Ana Costa', 'operacional@rba.com', 'Operacional', true, now(), now()),
 ('prof_3', '00000000-0000-0000-0000-000000000003', 'Bruno Silva', 'financeiro@rba.com', 'Financeiro', true, now(), now()),
-('prof_4', '00000000-0000-0000-0000-000000000004', 'Carlos Santos', 'auditor@rba.com', 'Consulta/Auditoria', true, now(), now())
+('prof_4', '00000000-0000-0000-0000-000000000004', 'Carlos Santos', 'auditor@rba.com', 'Consulta/Auditoria', true, now(), now()),
+('prof_5', '00000000-0000-0000-0000-000000000005', 'Paulo (Admin)', 'pauloadm@rba.com', 'Administrador', true, now(), now()),
+('prof_6', '00000000-0000-0000-0000-000000000006', 'Ricardo (Admin)', 'ricardoadm@rba.com', 'Administrador', true, now(), now()),
+('prof_7', '00000000-0000-0000-0000-000000000007', 'Caique (Operacional)', 'caiqueoperacional@rba.com', 'Operacional', true, now(), now()),
+('prof_8', '00000000-0000-0000-0000-000000000008', 'Isabella (Operacional)', 'isabellaoperacional@rba.com', 'Operacional', true, now(), now())
 ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, role = EXCLUDED.role;
 
 -- 3. Inserir Clientes
